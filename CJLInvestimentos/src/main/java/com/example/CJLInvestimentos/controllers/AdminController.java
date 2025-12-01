@@ -5,9 +5,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/dev")
+@RequestMapping("/api/admin")
 public class AdminController {
-    @GetMapping
+    @GetMapping("/dev")
     public String acessoDev(){
         return "Acesso permitido: Desenvolvedor";
     }
