@@ -1,4 +1,4 @@
-package com.example.CJLInvestimentos.dtos.response;
+package com.example.CJLInvestimentos.dtos.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class AuthResponse {
-    private String token;
-    private String mensagem;
+public class LoginRequest {
+    private String email;
+    private String senha;
 }
