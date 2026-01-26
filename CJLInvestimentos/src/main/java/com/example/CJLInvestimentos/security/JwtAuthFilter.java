@@ -10,14 +10,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
 
 @Component
 @RequiredArgsConstructor
@@ -27,45 +25,63 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private final UserRepository userRepository;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
+    ) throws ServletException, IOException {
 
-        // 1) não intercepta endpoints de auth (registro/login)
         String path = request.getServletPath();
-        if (path.startsWith("/api/auth/")) {
+
+        // 🔓 ignora rotas públicas e error
+        if (path.startsWith("/api/auth") || path.equals("/error")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 2) pega header Authorization
         String authHeader = request.getHeader("Authorization");
-        String token = null;
-        String userEmail = null;
 
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            token = authHeader.substring(7);
-            try {
-                userEmail = jwtService.extractEmail(token);
-            } catch (ExpiredJwtException e) {
-                logger.warn("Token expirado: " + e.getMessage());
-            } catch (Exception e) {
-                logger.warn("Erro ao validar token: " + e.getMessage());
-            }
+        // sem token → segue fluxo
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
         }
 
-        // 3) se extraiu email e ainda não autenticado no contexto, autentica
+        String token = authHeader.substring(7);
+        String userEmail;
+
+        try {
+            // ⚠️ deve extrair do SUBJECT do token
+            userEmail = jwtService.extractEmail(token);
+        } catch (ExpiredJwtException e) {
+            logger.warn("JWT expirado: {}");
+            filterChain.doFilter(request, response);
+            return;
+        } catch (Exception e) {
+            logger.warn("Erro ao validar JWT: {}");
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // autentica no contexto
         if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+
             User user = userRepository.findByEmail(userEmail).orElse(null);
+
             if (user != null) {
-                SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + user.getRole().name());
+                UserDetailsImpl userDetails = new UserDetailsImpl(user);
+
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(
-                                user.getEmail(),
+                                userDetails,
                                 null,
-                                Collections.singletonList(authority)
+                                userDetails.getAuthorities()
                         );
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                authToken.setDetails(
+                        new WebAuthenticationDetailsSource().buildDetails(request)
+                );
+
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }

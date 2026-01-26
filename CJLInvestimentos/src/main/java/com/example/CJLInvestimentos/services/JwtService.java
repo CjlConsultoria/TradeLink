@@ -4,60 +4,72 @@ import com.example.CJLInvestimentos.entities.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.MalformedJwtException;
-import io.jsonwebtoken.SignatureException;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Service;
-
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.function.Function;
 
 @Service
 public class JwtService {
 
-    private static final String SECRET = System.getenv("JWT_SECRET") != null ? System.getenv("JWT_SECRET") : "chave-secreta";
+    private static final String SECRET =
+            System.getenv("JWT_SECRET") != null
+                    ? System.getenv("JWT_SECRET")
+                    : "chave-secreta-chave-secreta-chave-secreta"; // mínimo 32 chars
+
+    private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 24; // 24h
+
+    private SecretKey getSigningKey() {
+        return Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /* ===================== TOKEN ===================== */
 
     public String generateToken(User user) {
-        if (user == null || user.getEmail() == null) {
-            throw new IllegalArgumentException("Usuário ou e-mail inválido");
-        }
         return Jwts.builder()
                 .setSubject(user.getEmail())
-                .claim("role", user.getRole() != null ? user.getRole().name() : "ROLE_USER")
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 86400000))
-                .signWith(SignatureAlgorithm.HS256, SECRET)
+                .claim("role", user.getRole().name())
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
+    /* ===================== EXTRAÇÕES ===================== */
+
     public String extractEmail(String token) {
-        if (token == null || token.isEmpty()) {
-            throw new IllegalArgumentException("Token inválido");
-        }
-        try {
-            Claims claims = Jwts.parser().setSigningKey(SECRET).parseClaimsJws(token).getBody();
-            if (claims.getExpiration().before(new Date())) {
-                throw new ExpiredJwtException(null, claims, "Token expirado");
-            }
-            return claims.getSubject();
-        } catch (SignatureException | MalformedJwtException | ExpiredJwtException e) {
-            throw new IllegalArgumentException("Token inválido ou expirado", e);
-        }
+        return extractClaim(token, Claims::getSubject);
     }
 
+    public String extractRole(String token) {
+        return extractAllClaims(token).get("role", String.class);
+    }
+
+    private <T> T extractClaim(String token, Function<Claims, T> resolver) {
+        Claims claims = extractAllClaims(token);
+        return resolver.apply(claims);
+    }
+
+    private Claims extractAllClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+    }
+
+    /* ===================== VALIDAÇÃO ===================== */
+
     public boolean isTokenValid(String token, User user) {
-        try {
-            String email = extractEmail(token);
-            return email.equals(user.getEmail()) && !isTokenExpired(token);
-        } catch (Exception e) {
-            return false;
-        }
+        final String email = extractEmail(token);
+        return email.equals(user.getEmail()) && !isTokenExpired(token);
     }
 
     private boolean isTokenExpired(String token) {
-        try {
-            return Jwts.parser().setSigningKey(SECRET).parseClaimsJws(token).getBody().getExpiration().before(new Date());
-        } catch (Exception e) {
-            return true;
-        }
+        return extractAllClaims(token)
+                .getExpiration()
+                .before(new Date());
     }
 }

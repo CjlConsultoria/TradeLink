@@ -33,6 +33,7 @@ public class User implements UserDetails {
     private String senha;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Role role;
 
     // Spring Security methods

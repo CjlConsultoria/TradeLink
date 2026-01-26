@@ -1,9 +1,9 @@
 package com.example.CJLInvestimentos.security;
 
+import com.example.CJLInvestimentos.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -18,8 +18,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import com.example.CJLInvestimentos.repositories.UserRepository;
-
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -30,19 +28,31 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
         http
+                // 🔓 API stateless com JWT
                 .csrf(csrf -> csrf.disable())
-                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(sm ->
+                        sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+
+                // 🔐 Regras de autorização
                 .authorizeHttpRequests(auth -> auth
-                        // libera POSTs de autenticação para registro/login
-                        .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
-                        // opcional: libera GET /api/auth/health ou docs se precisar
+                        // 🔥 endpoints públicos
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/error").permitAll()
+
+                        // swagger (opcional)
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
+
+                        // qualquer outra rota exige JWT
                         .anyRequest().authenticated()
                 )
-                // registra o provider que usa UserDetailsService
+
+                // provider de autenticação
                 .authenticationProvider(authenticationProvider())
-                // adiciona nosso filtro JWT (antes do UsernamePasswordAuthenticationFilter)
+
+                // filtro JWT antes do filtro padrão
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -50,10 +60,10 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider p = new DaoAuthenticationProvider();
-        p.setUserDetailsService(userDetailsService());
-        p.setPasswordEncoder(passwordEncoder());
-        return p;
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(userDetailsService());
+        provider.setPasswordEncoder(passwordEncoder());
+        return provider;
     }
 
     @Bean
@@ -61,7 +71,9 @@ public class SecurityConfig {
         return username ->
                 userRepository.findByEmail(username)
                         .map(UserDetailsImpl::new)
-                        .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado"));
+                        .orElseThrow(() ->
+                                new UsernameNotFoundException("Usuário não encontrado")
+                        );
     }
 
     @Bean
@@ -69,9 +81,10 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // (opcional) se precisar do AuthenticationManager em algum lugar
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration config
+    ) throws Exception {
         return config.getAuthenticationManager();
     }
 }

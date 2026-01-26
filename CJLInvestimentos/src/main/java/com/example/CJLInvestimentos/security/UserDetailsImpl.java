@@ -1,7 +1,6 @@
 package com.example.CJLInvestimentos.security;
 
 import com.example.CJLInvestimentos.entities.User;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -9,14 +8,24 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.Collections;
 
-@RequiredArgsConstructor
 public class UserDetailsImpl implements UserDetails {
 
     private final User user;
 
+    public UserDetailsImpl(User user) {
+        this.user = user;
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
+        // 🔒 proteção contra role null (evita 500)
+        if (user.getRole() == null) {
+            return Collections.emptyList();
+        }
+
+        return Collections.singletonList(
+                new SimpleGrantedAuthority("ROLE_" + user.getRole().name())
+        );
     }
 
     @Override
