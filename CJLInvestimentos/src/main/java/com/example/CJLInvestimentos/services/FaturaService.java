@@ -42,10 +42,11 @@ public class FaturaService {
     /**
      * Verifica se a empresa está em dia: tem período vigente e não passou de 5 dias após o vencimento.
      * AdminMax não usa empresa; para eles sempre true (checado no filtro).
+     * Empresa sem currentPeriodEnd (nova ou sem assinatura) tem acesso liberado até haver período definido.
      */
     public boolean acessoPermitido(Empresa empresa) {
         if (empresa == null) return true;
-        if (empresa.getCurrentPeriodEnd() == null) return false;
+        if (empresa.getCurrentPeriodEnd() == null) return true; // nova empresa ou sem assinatura: libera uso
         Instant limite = empresa.getCurrentPeriodEnd().plus(DIAS_TOLERANCIA_VENCIMENTO, ChronoUnit.DAYS);
         return Instant.now().isBefore(limite) || Instant.now().equals(limite);
     }

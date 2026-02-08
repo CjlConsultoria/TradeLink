@@ -43,7 +43,7 @@ public class SecurityConfig {
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
 
                         .requestMatchers("/api/admin-max/**").hasRole("AdminMax")
-                        .requestMatchers("/api/consultor/**").hasRole("Admin")
+                        .requestMatchers("/api/consultor/**").hasAnyRole("Admin", "AdminMax")
                         .requestMatchers("/api/cliente/**").hasAnyRole("Cliente", "Admin", "AdminMax")
                         .requestMatchers("/api/cotacoes/**").authenticated()
                         .requestMatchers("/api/acoes/**").authenticated()
