@@ -1,0 +1,5 @@
+# Copie para application-local.properties (está no .gitignore).
+# Preencha com sua chave do Stripe (Dashboard > Desenvolvedores > Chaves da API).
+
+# Stripe - chave secreta (backend). Nunca commite a chave real.
+stripe.api-key=sk_test_SUA_CHAVE_AQUI
