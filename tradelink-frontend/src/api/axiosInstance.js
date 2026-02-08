@@ -1,7 +1,20 @@
 import axios from 'axios'
 
+// API: em produção no Render o front está em tradelink-grun e o back em tradelink-1-ed48
+function getBaseURL() {
+  if (import.meta.env.VITE_API_URL) {
+    return `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api`
+  }
+  if (typeof window !== 'undefined' && window.location.hostname === 'tradelink-grun.onrender.com') {
+    return 'https://tradelink-1-ed48.onrender.com/api'
+  }
+  return '/api'
+}
+
+const baseURL = getBaseURL()
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL,
   headers: { 'Content-Type': 'application/json' }
 })
 
