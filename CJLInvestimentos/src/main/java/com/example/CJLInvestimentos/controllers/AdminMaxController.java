@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-<<<<<<< HEAD
 @RequestMapping("/api/admin-max")
 @RequiredArgsConstructor
 public class AdminMaxController {
@@ -184,14 +183,5 @@ public class AdminMaxController {
     public ResponseEntity<Void> zerarCotacoes() {
         cotacaoService.zerarERecarregar();
         return ResponseEntity.noContent().build();
-=======
-@RequestMapping("/api/adminmax")
-public class AdminMaxController {
-
-    @GetMapping
-    public String acessoDev(){
-        return "Acesso permitido: Desenvolvedor";
-
->>>>>>> cb5321501c548ed3f05082169d10608a8ab2570d
     }
 }

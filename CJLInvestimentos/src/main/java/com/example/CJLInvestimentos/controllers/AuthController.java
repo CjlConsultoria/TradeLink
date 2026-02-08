@@ -1,10 +1,6 @@
 package com.example.CJLInvestimentos.controllers;
 
-<<<<<<< HEAD
 import com.example.CJLInvestimentos.dtos.request.LoginRequest;
-=======
-import com.example.CJLInvestimentos.dtos.request.AuthRequest;
->>>>>>> cb5321501c548ed3f05082169d10608a8ab2570d
 import com.example.CJLInvestimentos.dtos.request.RegisterRequest;
 import com.example.CJLInvestimentos.dtos.response.AuthResponse;
 import com.example.CJLInvestimentos.entities.Empresa;
@@ -44,14 +40,8 @@ public class AuthController {
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
 
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-<<<<<<< HEAD
             return ResponseEntity.badRequest()
                     .body(AuthResponse.builder().mensagem("E-mail já registrado").build());
-=======
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(new AuthResponse("E-mail já registrado"));
->>>>>>> cb5321501c548ed3f05082169d10608a8ab2570d
         }
 
         Role role = (request.getRole() != null) ? request.getRole() : Role.Cliente;
@@ -95,10 +85,8 @@ public class AuthController {
                     .body(AuthResponse.builder().mensagem("Senha inválida").build());
         }
 
-        UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
-        String token = jwtService.generateToken(userDetails);
+        String token = jwtService.generateToken(user);
 
-<<<<<<< HEAD
         return ResponseEntity.ok(AuthResponse.builder()
                 .token(token)
                 .role(user.getRole().name())
@@ -106,37 +94,5 @@ public class AuthController {
                 .nome(user.getNome())
                 .empresaId(user.getEmpresa() != null ? user.getEmpresa().getId() : null)
                 .build());
-=======
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(new AuthResponse(token));
-    }
-
-    @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody AuthRequest request) {
-        try {
-            authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            request.getEmail(),
-                            request.getSenha()
-                    )
-            );
-
-            UserDetails userDetails = userDetailsService.loadUserByUsername(request.getEmail());
-
-            String token = jwtService.generateToken(userDetails);
-
-            return ResponseEntity.ok(new AuthResponse(token));
-
-        } catch (BadCredentialsException e) {
-            return ResponseEntity
-                    .status(HttpStatus.UNAUTHORIZED)
-                    .body(new AuthResponse("Email ou senha inválidos"));
-        } catch (Exception e) {
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new AuthResponse("Erro ao processar login"));
-        }
->>>>>>> cb5321501c548ed3f05082169d10608a8ab2570d
     }
 }

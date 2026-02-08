@@ -49,23 +49,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String path = request.getServletPath();
 
-<<<<<<< HEAD
         // 🔓 ignora rotas públicas e error
-        if (path.startsWith("/api/auth") || path.equals("/error")) {
+        if (path.startsWith("/api/auth") || path.startsWith("/api/webhooks/") || path.equals("/error")) {
             filterChain.doFilter(request, response);
             return;
-=======
-
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            token = authHeader.substring(7);
-            try {
-                userEmail = jwtService.extractUsername(token);
-            } catch (ExpiredJwtException e) {
-                logger.warn("Token expirado: " + e.getMessage());
-            } catch (Exception e) {
-                logger.warn("Erro ao validar token: " + e.getMessage());
-            }
->>>>>>> cb5321501c548ed3f05082169d10608a8ab2570d
         }
 
         String authHeader = request.getHeader("Authorization");
