@@ -1,6 +1,5 @@
 package com.example.CJLInvestimentos.entities;
 
-
 import com.example.CJLInvestimentos.entities.enums.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -36,11 +35,20 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private Role role;
 
-    // Spring Security methods
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "empresa_id")
+    private Empresa empresa;
+
+    /** Chat ID do Telegram para notificações (usuário vincula no app). */
+    @Column(name = "telegram_chat_id", length = 50)
+    private String telegramChatId;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean ativo = true;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // ROLE_ + nome da role (ex: ROLE_CLIENTE, ROLE_ADMIN)
         return Collections.singleton(() -> "ROLE_" + role.name());
     }
 
@@ -71,6 +79,6 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return ativo != null ? ativo : true;
     }
 }

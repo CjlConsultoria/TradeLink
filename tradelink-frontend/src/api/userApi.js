@@ -1,0 +1,39 @@
+import api from './axiosInstance'
+
+export default {
+  listarTodos() {
+    return api.get('/admin-max/usuarios')
+  },
+  desativar(id) {
+    return api.delete(`/admin-max/usuarios/${id}`)
+  },
+  listarClientes() {
+    return api.get('/consultor/clientes')
+  },
+  criarCliente(data) {
+    return api.post('/consultor/clientes', data)
+  },
+  dashboard() {
+    return api.get('/cliente/dashboard')
+  },
+
+  // Perfil e notificações (qualquer usuário autenticado)
+  me() {
+    return api.get('/me')
+  },
+  configNotificacao() {
+    return api.get('/me/config-notificacao')
+  },
+  empresaNotificacoes() {
+    return api.get('/me/empresa-notificacoes')
+  },
+  atualizarTelegramChatId(telegramChatId) {
+    return api.put('/me/telegram-chat-id', { telegramChatId })
+  },
+  registrarPushSubscription(subscription) {
+    return api.post('/me/push-subscription', subscription)
+  },
+  removerPushSubscription(endpoint) {
+    return api.delete('/me/push-subscription', { params: { endpoint } })
+  }
+}

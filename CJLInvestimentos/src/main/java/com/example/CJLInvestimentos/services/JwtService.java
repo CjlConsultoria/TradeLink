@@ -6,6 +6,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Service;
+
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
@@ -17,7 +18,7 @@ public class JwtService {
     private static final String SECRET =
             System.getenv("JWT_SECRET") != null
                     ? System.getenv("JWT_SECRET")
-                    : "chave-secreta-chave-secreta-chave-secreta"; // mínimo 32 chars
+                    : "chave-secreta-chave-secreta-chave-secreta";
 
     private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 24; // 24h
 
@@ -25,19 +26,20 @@ public class JwtService {
         return Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
     }
 
-    /* ===================== TOKEN ===================== */
-
     public String generateToken(User user) {
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 .setSubject(user.getEmail())
                 .claim("role", user.getRole().name())
+                .claim("userId", user.getId())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
-                .compact();
-    }
+                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME));
 
-    /* ===================== EXTRAÇÕES ===================== */
+        if (user.getEmpresa() != null) {
+            builder.claim("empresaId", user.getEmpresa().getId());
+        }
+
+        return builder.signWith(getSigningKey(), SignatureAlgorithm.HS256).compact();
+    }
 
     public String extractEmail(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -45,6 +47,14 @@ public class JwtService {
 
     public String extractRole(String token) {
         return extractAllClaims(token).get("role", String.class);
+    }
+
+    public Long extractUserId(String token) {
+        return extractAllClaims(token).get("userId", Long.class);
+    }
+
+    public Long extractEmpresaId(String token) {
+        return extractAllClaims(token).get("empresaId", Long.class);
     }
 
     private <T> T extractClaim(String token, Function<Claims, T> resolver) {
@@ -59,8 +69,6 @@ public class JwtService {
                 .parseClaimsJws(token)
                 .getBody();
     }
-
-    /* ===================== VALIDAÇÃO ===================== */
 
     public boolean isTokenValid(String token, User user) {
         final String email = extractEmail(token);

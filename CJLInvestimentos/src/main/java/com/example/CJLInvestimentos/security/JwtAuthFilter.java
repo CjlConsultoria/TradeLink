@@ -1,8 +1,11 @@
 package com.example.CJLInvestimentos.security;
 
 import com.example.CJLInvestimentos.entities.User;
+import com.example.CJLInvestimentos.entities.enums.Role;
 import com.example.CJLInvestimentos.repositories.UserRepository;
+import com.example.CJLInvestimentos.services.FaturaService;
 import com.example.CJLInvestimentos.services.JwtService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -16,13 +19,26 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
 public class JwtAuthFilter extends OncePerRequestFilter {
 
+    private static final String[] ALLOWED_WHEN_BLOCKED = {
+            "/api/me",
+            "/api/consultor/faturas",
+            "/api/consultor/checkout-pix",
+            "/api/consultor/checkout-cartao-boleto",
+            "/api/cliente/faturas",
+            "/api/cliente/checkout-pix",
+            "/api/cliente/checkout-cartao-boleto"
+    };
+
     private final JwtService jwtService;
     private final UserRepository userRepository;
+    private final FaturaService faturaService;
+    private final ObjectMapper objectMapper;
 
     @Override
     protected void doFilterInternal(
@@ -70,19 +86,38 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
             if (user != null) {
                 UserDetailsImpl userDetails = new UserDetailsImpl(user);
-
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(
                                 userDetails,
                                 null,
                                 userDetails.getAuthorities()
                         );
-
                 authToken.setDetails(
                         new WebAuthenticationDetailsSource().buildDetails(request)
                 );
-
                 SecurityContextHolder.getContext().setAuthentication(authToken);
+
+                // Bloqueio: 5 dias após vencimento, bloqueia acesso de consultor e cliente da empresa (AdminMax não tem empresa)
+                if (user.getRole() != Role.AdminMax && user.getEmpresa() != null) {
+                    if (!faturaService.acessoPermitidoPorUsuarioId(user.getId())) {
+                        boolean allowedPath = false;
+                        for (String prefix : ALLOWED_WHEN_BLOCKED) {
+                            if (path.startsWith(prefix)) {
+                                allowedPath = true;
+                                break;
+                            }
+                        }
+                        if (!allowedPath) {
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.getWriter().write(objectMapper.writeValueAsString(Map.of(
+                                    "bloqueado", true,
+                                    "motivo", "Assinatura vencida. Regularize o pagamento para continuar acessando."
+                            )));
+                            return;
+                        }
+                    }
+                }
             }
         }
 

@@ -3,8 +3,10 @@ package com.example.CJLInvestimentos.controllers;
 import com.example.CJLInvestimentos.dtos.request.LoginRequest;
 import com.example.CJLInvestimentos.dtos.request.RegisterRequest;
 import com.example.CJLInvestimentos.dtos.response.AuthResponse;
+import com.example.CJLInvestimentos.entities.Empresa;
 import com.example.CJLInvestimentos.entities.User;
 import com.example.CJLInvestimentos.entities.enums.Role;
+import com.example.CJLInvestimentos.repositories.EmpresaRepository;
 import com.example.CJLInvestimentos.repositories.UserRepository;
 import com.example.CJLInvestimentos.services.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -22,45 +24,66 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final UserRepository userRepository;
+    private final EmpresaRepository empresaRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request) {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            return new ResponseEntity<>(new AuthResponse(null, "E-mail já registrado"), HttpStatus.BAD_REQUEST);
+            return ResponseEntity.badRequest()
+                    .body(AuthResponse.builder().mensagem("E-mail já registrado").build());
         }
 
         Role role = (request.getRole() != null) ? request.getRole() : Role.Cliente;
 
-        User user = User.builder()
+        User.UserBuilder userBuilder = User.builder()
                 .nome(request.getNome())
                 .email(request.getEmail())
                 .senha(passwordEncoder.encode(request.getSenha()))
-                .role(role)
-                .build();
+                .role(role);
 
-        userRepository.save(user);
+        if (request.getEmpresaId() != null) {
+            Empresa empresa = empresaRepository.findById(request.getEmpresaId()).orElse(null);
+            if (empresa != null) {
+                userBuilder.empresa(empresa);
+            }
+        }
 
+        User user = userRepository.save(userBuilder.build());
         String token = jwtService.generateToken(user);
-        return new ResponseEntity<>(new AuthResponse(token, null), HttpStatus.CREATED);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(AuthResponse.builder()
+                        .token(token)
+                        .role(user.getRole().name())
+                        .userId(user.getId())
+                        .nome(user.getNome())
+                        .empresaId(user.getEmpresa() != null ? user.getEmpresa().getId() : null)
+                        .build());
     }
 
-    //LOGIN
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
-
         User user = userRepository.findByEmail(request.getEmail()).orElse(null);
         if (user == null) {
-            return new ResponseEntity<>(new AuthResponse(null, "Usuário não encontrado"), HttpStatus.NOT_FOUND);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(AuthResponse.builder().mensagem("Usuário não encontrado").build());
         }
 
         if (!passwordEncoder.matches(request.getSenha(), user.getSenha())) {
-            return new ResponseEntity<>(new AuthResponse(null, "Senha inválida"), HttpStatus.UNAUTHORIZED);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(AuthResponse.builder().mensagem("Senha inválida").build());
         }
 
         String token = jwtService.generateToken(user);
-        return new ResponseEntity<>(new AuthResponse(token, null), HttpStatus.OK);
+
+        return ResponseEntity.ok(AuthResponse.builder()
+                .token(token)
+                .role(user.getRole().name())
+                .userId(user.getId())
+                .nome(user.getNome())
+                .empresaId(user.getEmpresa() != null ? user.getEmpresa().getId() : null)
+                .build());
     }
 }

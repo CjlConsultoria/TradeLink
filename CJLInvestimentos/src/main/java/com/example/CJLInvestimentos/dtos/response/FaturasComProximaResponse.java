@@ -1,0 +1,18 @@
+package com.example.CJLInvestimentos.dtos.response;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.List;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class FaturasComProximaResponse {
+    private List<FaturaResponse> faturas;
+    private ProximaFaturaResponse proxima;
+    private Boolean acessoPermitido;
+}

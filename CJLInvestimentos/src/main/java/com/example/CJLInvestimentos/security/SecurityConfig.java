@@ -4,6 +4,7 @@ import com.example.CJLInvestimentos.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -30,29 +31,26 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
-                // 🔓 API stateless com JWT
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm ->
                         sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-
-                // 🔐 Regras de autorização
                 .authorizeHttpRequests(auth -> auth
-                        // 🔥 endpoints públicos
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/webhooks/stripe").permitAll()
                         .requestMatchers("/error").permitAll()
-
-                        // swagger (opcional)
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
 
-                        // qualquer outra rota exige JWT
+                        .requestMatchers("/api/admin-max/**").hasRole("AdminMax")
+                        .requestMatchers("/api/consultor/**").hasRole("Admin")
+                        .requestMatchers("/api/cliente/**").hasAnyRole("Cliente", "Admin", "AdminMax")
+                        .requestMatchers("/api/cotacoes/**").authenticated()
+                        .requestMatchers("/api/acoes/**").authenticated()
+
                         .anyRequest().authenticated()
                 )
-
-                // provider de autenticação
                 .authenticationProvider(authenticationProvider())
-
-                // filtro JWT antes do filtro padrão
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

@@ -1,0 +1,120 @@
+@import "tailwindcss";
+
+/* Design tokens – TradeLink */
+:root {
+  --tl-primary: 99 102 241;
+  --tl-primary-hover: 79 70 229;
+  --tl-primary-light: 238 242 255;
+  --tl-surface: 255 255 255;
+  --tl-surface-alt: 249 250 251;
+  --tl-border: 229 231 235;
+  --tl-text: 17 24 39;
+  --tl-text-muted: 107 114 128;
+  --tl-success: 34 197 94;
+  --tl-warning: 234 179 8;
+  --tl-error: 239 68 68;
+  --tl-radius: 12px;
+  --tl-radius-sm: 8px;
+  --tl-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --tl-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --tl-shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.1);
+  --tl-transition: 0.2s ease;
+}
+
+/* Base */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: rgb(var(--tl-text));
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Inputs e botões consistentes */
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea,
+button {
+  transition: border-color var(--tl-transition), box-shadow var(--tl-transition), background-color var(--tl-transition);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+}
+
+/* Cards padrão */
+.card {
+  background: rgb(var(--tl-surface));
+  border-radius: var(--tl-radius);
+  border: 1px solid rgb(var(--tl-border));
+  box-shadow: var(--tl-shadow);
+  transition: box-shadow var(--tl-transition), border-color var(--tl-transition);
+}
+
+.card:hover {
+  box-shadow: var(--tl-shadow-md);
+}
+
+/* Botão primário */
+.btn-primary {
+  background: rgb(var(--tl-primary));
+  color: white;
+  font-weight: 500;
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--tl-radius-sm);
+  border: none;
+  cursor: pointer;
+  transition: background-color var(--tl-transition), transform 0.1s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: rgb(var(--tl-primary-hover));
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Input padrão */
+.input-base {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid rgb(var(--tl-border));
+  border-radius: var(--tl-radius-sm);
+  font-size: 1rem;
+}
+
+.input-base:focus {
+  border-color: rgb(var(--tl-primary));
+  box-shadow: 0 0 0 3px rgba(var(--tl-primary), 0.15);
+}
+
+.input-base::placeholder {
+  color: rgb(var(--tl-text-muted));
+}
+
+/* Títulos de página */
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: rgb(var(--tl-text));
+  letter-spacing: -0.02em;
+  margin-bottom: 1.5rem;
+}
+
+/* Subtítulo de seção */
+.section-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: rgb(var(--tl-text));
+  margin-bottom: 1rem;
+}
