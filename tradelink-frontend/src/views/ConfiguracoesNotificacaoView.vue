@@ -16,6 +16,29 @@
       </div>
 
       <div class="space-y-6 max-w-xl">
+        <!-- Alterar senha -->
+        <div class="card p-6">
+          <h3 class="section-title">Alterar senha</h3>
+          <p class="text-sm text-gray-500 mb-3">Troque a senha do seu acesso (recomendado após o primeiro login).</p>
+          <div class="space-y-2 max-w-xs">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Senha atual</label>
+              <input v-model="senhaAtual" type="password" placeholder="Senha atual"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Nova senha</label>
+              <input v-model="novaSenha" type="password" placeholder="Mínimo 6 caracteres"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+            </div>
+            <button type="button" @click="trocarSenha" :disabled="salvandoSenha"
+              class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-50">
+              {{ salvandoSenha ? 'Salvando...' : 'Alterar senha' }}
+            </button>
+            <p v-if="erroSenha" class="text-sm text-red-500">{{ erroSenha }}</p>
+          </div>
+        </div>
+
         <!-- Telegram -->
         <div class="card p-6">
           <h3 class="section-title">Telegram</h3>
@@ -69,6 +92,10 @@ const telegramChatId = ref('')
 const salvandoTelegram = ref(false)
 const salvandoPush = ref(false)
 const erroPush = ref('')
+const senhaAtual = ref('')
+const novaSenha = ref('')
+const salvandoSenha = ref(false)
+const erroSenha = ref('')
 
 async function load() {
   loading.value = true
@@ -87,6 +114,30 @@ async function load() {
     console.error(e)
   } finally {
     loading.value = false
+  }
+}
+
+async function trocarSenha() {
+  erroSenha.value = ''
+  if (!senhaAtual.value?.trim() || !novaSenha.value?.trim()) {
+    erroSenha.value = 'Preencha senha atual e nova senha.'
+    return
+  }
+  if (novaSenha.value.length < 6) {
+    erroSenha.value = 'Nova senha deve ter no mínimo 6 caracteres.'
+    return
+  }
+  salvandoSenha.value = true
+  try {
+    await userApi.trocarSenha(senhaAtual.value, novaSenha.value)
+    toast.success('Senha alterada com sucesso.')
+    senhaAtual.value = ''
+    novaSenha.value = ''
+  } catch (e) {
+    erroSenha.value = e.response?.data?.mensagem || e.response?.data?.erro || 'Erro ao alterar senha.'
+    toast.error(erroSenha.value)
+  } finally {
+    salvandoSenha.value = false
   }
 }
 

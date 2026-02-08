@@ -34,7 +34,8 @@ const routes = [
       { path: '', name: 'AdminMaxDashboard', component: DashboardAdminMax },
       { path: 'empresas', name: 'Empresas', component: EmpresasView },
       { path: 'empresas/:id', name: 'EmpresaDetail', component: EmpresaDetailView },
-      { path: 'planos', name: 'Planos', component: PlanosView }
+      { path: 'planos', name: 'Planos', component: PlanosView },
+      { path: 'configuracoes', name: 'ConfiguracoesAdminMax', component: ConfiguracoesNotificacaoView }
     ]
   },
   {

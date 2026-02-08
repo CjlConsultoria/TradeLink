@@ -35,5 +35,8 @@ export default {
   },
   removerPushSubscription(endpoint) {
     return api.delete('/me/push-subscription', { params: { endpoint } })
+  },
+  trocarSenha(senhaAtual, novaSenha) {
+    return api.put('/me/senha', { senhaAtual, novaSenha })
   }
 }

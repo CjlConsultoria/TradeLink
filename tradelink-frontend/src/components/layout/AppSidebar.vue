@@ -44,7 +44,8 @@ const menuItems = computed(() => {
       return [
         { to: '/admin-max', label: 'Dashboard', icon: '📊' },
         { to: '/admin-max/empresas', label: 'Empresas', icon: '🏢' },
-        { to: '/admin-max/planos', label: 'Planos', icon: '💰' }
+        { to: '/admin-max/planos', label: 'Planos', icon: '💰' },
+        { to: '/admin-max/configuracoes', label: 'Configurações', icon: '⚙️' }
       ]
     case 'Admin':
       return [

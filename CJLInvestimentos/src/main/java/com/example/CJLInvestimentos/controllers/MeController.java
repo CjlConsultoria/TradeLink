@@ -1,9 +1,11 @@
 package com.example.CJLInvestimentos.controllers;
 
 import com.example.CJLInvestimentos.dtos.request.PushSubscriptionRequest;
+import com.example.CJLInvestimentos.dtos.request.TrocarSenhaRequest;
 import com.example.CJLInvestimentos.dtos.response.EmpresaResponse;
 import com.example.CJLInvestimentos.dtos.response.UserResponse;
 import com.example.CJLInvestimentos.entities.User;
+import com.example.CJLInvestimentos.exceptions.BusinessException;
 import com.example.CJLInvestimentos.repositories.UserRepository;
 import com.example.CJLInvestimentos.services.EmpresaService;
 import com.example.CJLInvestimentos.services.UserService;
@@ -12,8 +14,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
 import java.util.Map;
 
 @RestController
@@ -24,6 +28,7 @@ public class MeController {
     private final UserRepository userRepository;
     private final UserService userService;
     private final EmpresaService empresaService;
+    private final PasswordEncoder passwordEncoder;
 
     @Value("${app.notificacao.push.vapid-public:}")
     private String vapidPublicKey;
@@ -47,6 +52,20 @@ public class MeController {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.ok(empresaService.buscarPorId(user.getEmpresa().getId()));
+    }
+
+    /** Altera a senha do usuário logado (ex.: AdminMax após primeiro acesso). */
+    @PutMapping("/senha")
+    public ResponseEntity<Void> trocarSenha(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @Valid @RequestBody TrocarSenhaRequest request) {
+        User user = getUser(userDetails);
+        if (!passwordEncoder.matches(request.getSenhaAtual(), user.getSenha())) {
+            throw new BusinessException("Senha atual incorreta");
+        }
+        user.setSenha(passwordEncoder.encode(request.getNovaSenha()));
+        userRepository.save(user);
+        return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/telegram-chat-id")
