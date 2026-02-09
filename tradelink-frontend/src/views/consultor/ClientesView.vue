@@ -21,14 +21,16 @@
       </div>
     </div>
     <LoadingSpinner v-if="loading" />
-    <div v-else class="bg-white rounded-xl shadow-sm border border-gray-200">
-      <table class="w-full text-sm">
+    <div v-else class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="overflow-x-auto">
+      <table class="w-full text-sm table-responsive min-w-[320px]">
         <thead><tr class="border-b border-gray-200"><th class="text-left py-3 px-4 font-medium text-gray-500">Nome</th><th class="text-left py-3 px-4 font-medium text-gray-500">E-mail</th><th class="text-center py-3 px-4 font-medium text-gray-500">Status</th></tr></thead>
         <tbody><tr v-for="c in clientes" :key="c.id" class="border-b border-gray-100 hover:bg-gray-50">
           <td class="py-3 px-4 font-medium">{{ c.nome }}</td><td class="py-3 px-4 text-gray-600">{{ c.email }}</td>
           <td class="py-3 px-4 text-center"><span class="px-2 py-0.5 rounded-full text-xs" :class="c.ativo !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">{{ c.ativo !== false ? 'Ativo' : 'Inativo' }}</span></td>
         </tr></tbody>
       </table>
+      </div>
       <EmptyState v-if="clientes.length === 0" message="Nenhum cliente cadastrado" />
     </div>
   </div>

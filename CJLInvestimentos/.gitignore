@@ -37,3 +37,4 @@ build/
 **/application-local.yml
 .env
 .env.local
+vapid-private-render.txt

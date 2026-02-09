@@ -54,7 +54,7 @@
         <LoadingSpinner v-if="loading" />
         <template v-else>
           <div class="overflow-x-auto">
-            <table class="w-full text-sm">
+            <table class="w-full text-sm table-responsive">
               <thead>
                 <tr class="border-b border-gray-200">
                   <th class="text-left py-3 px-2 font-medium text-gray-500">Vencimento</th>

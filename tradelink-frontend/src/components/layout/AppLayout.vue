@@ -107,6 +107,14 @@ async function onCriarCarteira(payload) {
 
 .app-layout__content {
   flex: 1;
-  padding: 1.5rem;
+  min-width: 0;
+  padding: 1rem;
+  overflow-x: auto;
+}
+@media (min-width: 640px) {
+  .app-layout__content { padding: 1.25rem; }
+}
+@media (min-width: 1024px) {
+  .app-layout__content { padding: 1.5rem; }
 }
 </style>

@@ -87,7 +87,7 @@
         </div>
 
         <div class="overflow-x-auto">
-          <table class="w-full text-sm">
+          <table class="w-full text-sm table-responsive">
             <thead>
               <tr class="border-b border-gray-200">
                 <th class="text-left py-3 px-2 font-medium text-gray-500">Nome</th>
@@ -129,7 +129,7 @@
         <p v-if="faturasProxima?.proxima?.planoNome" class="text-sm text-gray-600 mb-2">Próxima: {{ formatDate(faturasProxima.proxima.dataVencimento) }} · {{ formatCurrency(faturasProxima.proxima.valor) }}</p>
         <LoadingSpinner v-if="loadingFaturas" />
         <div v-else class="overflow-x-auto">
-          <table class="w-full text-sm">
+          <table class="w-full text-sm table-responsive">
             <thead>
               <tr class="border-b border-gray-200">
                 <th class="text-left py-2 px-2 font-medium text-gray-500">Vencimento</th>

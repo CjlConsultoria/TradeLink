@@ -25,14 +25,15 @@
         </div>
         <div class="space-y-3">
           <div v-for="r in recomendacoesFiltradas" :key="r.id" class="border border-gray-200 rounded-lg p-4" :class="{ 'bg-green-50 border-green-200': r.resolvido }">
-            <div class="flex items-center justify-between gap-2 mb-2">
+            <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
               <div class="flex items-center gap-2 flex-wrap">
                 <TipoBadge :tipo="r.tipo" />
                 <span class="font-semibold">{{ r.moeda }}/{{ r.parMoeda }}</span>
                 <StatusBadge :status="r.status" />
-                <label class="flex items-center gap-1.5 cursor-not-allowed opacity-70 ml-2" title="Desabilitado">
-                  <input type="checkbox" :checked="!!r.resolvido" disabled class="rounded border-gray-300 text-green-600" />
-                  <span class="text-sm text-gray-500">Resolvida</span>
+                <label class="flex items-center gap-1.5 cursor-pointer select-none ml-2" :class="{ 'opacity-70': togglingResolvido === r.id }">
+                  <input type="checkbox" :checked="!!r.resolvido" :disabled="togglingResolvido === r.id"
+                    class="rounded border-gray-300 text-green-600 focus:ring-indigo-500" @change="toggleResolvido(r)" />
+                  <span class="text-sm text-gray-600">Resolvida</span>
                 </label>
               </div>
               <button v-if="r.status === 'ATIVA' || r.status === 'EXECUTADA'" @click="abrirOperacao(r.id)" class="text-sm text-indigo-600 hover:underline">Registrar Operação</button>
@@ -67,6 +68,7 @@ import carteiraApi from '../../api/carteiraApi'
 import recomendacaoApi from '../../api/recomendacaoApi'
 import operacaoApi from '../../api/operacaoApi'
 import { formatCurrency, formatDate } from '../../utils/formatters'
+import { useToast } from '../../composables/useToast'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import EmptyState from '../../components/common/EmptyState.vue'
 import StatusBadge from '../../components/common/StatusBadge.vue'
@@ -75,6 +77,7 @@ import OperacaoForm from '../../components/operacao/OperacaoForm.vue'
 import OperacaoList from '../../components/operacao/OperacaoList.vue'
 
 const route = useRoute()
+const toast = useToast()
 const carteira = ref(null)
 const recomendacoes = ref([])
 const loading = ref(true)
@@ -98,6 +101,26 @@ const recomendacoesFiltradas = computed(() => {
 })
 
 const operacoesPorRec = computed(() => operacoesPorRecomendacao.value)
+const togglingResolvido = ref(null)
+
+async function toggleResolvido(r) {
+  if (togglingResolvido.value === r.id) return
+  togglingResolvido.value = r.id
+  try {
+    const res = await recomendacaoApi.marcarResolvido(r.id, !r.resolvido)
+    const updated = res.data
+    const idx = recomendacoes.value.findIndex(x => x.id === r.id)
+    if (idx !== -1) {
+      recomendacoes.value[idx] = { ...recomendacoes.value[idx], resolvido: updated.resolvido, resolvidoEm: updated.resolvidoEm }
+    }
+    toast.success(updated.resolvido ? 'Marcada como resolvida.' : 'Desmarcada como resolvida.')
+  } catch (e) {
+    console.error(e)
+    toast.error(e.response?.data?.mensagem || e.response?.data?.erro || 'Erro ao atualizar.')
+  } finally {
+    togglingResolvido.value = null
+  }
+}
 
 function abrirOperacao(recomendacaoId) {
   operacaoRecomendacaoId.value = recomendacaoId

@@ -33,7 +33,8 @@
     <template v-else>
       <!-- Histórico: lista de operações -->
       <div v-show="tabAtiva === 'historico'" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <table class="w-full text-sm">
+        <div class="overflow-x-auto">
+        <table class="w-full text-sm table-responsive">
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
               <th class="text-left py-3 px-3 font-medium text-gray-500">Data</th>
@@ -59,6 +60,7 @@
             </tr>
           </tbody>
         </table>
+        </div>
         <p v-if="operacoes.length === 0" class="p-6 text-gray-500 text-center">
           Nenhuma operação no período. Registre compras e vendas nas recomendações das suas carteiras para ver o histórico aqui.
         </p>
@@ -91,7 +93,7 @@
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h3 class="text-lg font-semibold mb-4">Resultado por moeda/par</h3>
           <div class="overflow-x-auto">
-            <table class="w-full text-sm">
+            <table class="w-full text-sm table-responsive">
               <thead class="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th class="text-left py-3 px-3 font-medium text-gray-500">Par</th>

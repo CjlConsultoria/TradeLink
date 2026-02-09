@@ -46,7 +46,8 @@
     <template v-else>
       <!-- Histórico: lista de operações (o que o cliente registrou) -->
       <div v-show="tabAtiva === 'historico'" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <table class="w-full text-sm">
+        <div class="overflow-x-auto">
+        <table class="w-full text-sm table-responsive">
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
               <th class="text-left py-3 px-3 font-medium text-gray-500">Data</th>
@@ -79,6 +80,7 @@
             </tr>
           </tbody>
         </table>
+        </div>
         <p v-if="operacoes.length === 0" class="p-6 text-gray-500 text-center">
           Nenhuma operação no período.
           <span v-if="!filtros.dataDe && !filtros.dataAte && !filtros.carteiraId && !filtros.clienteId" class="block mt-2 text-sm">Verifique se as operações foram registradas pelos clientes nas recomendações das suas carteiras.</span>
@@ -145,7 +147,8 @@
       <!-- Recomendações resolvidas (cliente marcou como resolvida) -->
       <div v-show="tabAtiva === 'resolvidas'" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <p class="p-3 text-sm text-gray-600 border-b border-gray-100">Recomendações que os clientes marcaram como resolvidas (com ou sem operação registrada).</p>
-        <table class="w-full text-sm">
+        <div class="overflow-x-auto">
+        <table class="w-full text-sm table-responsive">
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
               <th class="text-left py-3 px-3 font-medium text-gray-500">Data</th>
@@ -163,13 +166,15 @@
             </tr>
           </tbody>
         </table>
+        </div>
         <p v-if="!(resumo?.recomendacoesResolvidas?.length)" class="p-6 text-gray-500 text-center">Nenhuma recomendação marcada como resolvida no período.</p>
       </div>
 
       <!-- Perdas e ganhos por cliente/moeda -->
       <div v-show="tabAtiva === 'perdasganhos'" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <p class="p-3 text-sm text-gray-600 border-b border-gray-100">Comparação de valores: total comprado vs total vendido por cliente e moeda/par. Resultado = vendas − compras.</p>
-        <table class="w-full text-sm">
+        <div class="overflow-x-auto">
+        <table class="w-full text-sm table-responsive">
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
               <th class="text-left py-3 px-3 font-medium text-gray-500">Cliente</th>
@@ -189,6 +194,7 @@
             </tr>
           </tbody>
         </table>
+        </div>
         <p v-if="!(resumo?.perdasGanhosPorClienteMoeda?.length)" class="p-6 text-gray-500 text-center">Nenhum dado de perdas/ganhos no período.</p>
       </div>
     </template>

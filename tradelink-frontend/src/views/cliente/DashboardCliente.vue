@@ -65,9 +65,10 @@
               <TipoBadge :tipo="r.tipo" />
               <span class="font-semibold">{{ r.moeda }}/{{ r.parMoeda }}</span>
               <StatusBadge :status="r.status" />
-              <label class="flex items-center gap-1.5 cursor-not-allowed opacity-70" title="Desabilitado">
-                <input type="checkbox" :checked="!!r.resolvido" disabled class="rounded border-gray-300 text-green-600" />
-                <span class="text-sm text-gray-500">Resolvida</span>
+              <label class="flex items-center gap-1.5 cursor-pointer select-none" :class="{ 'opacity-70': togglingResolvido === r.id }">
+                <input type="checkbox" :checked="!!r.resolvido" :disabled="togglingResolvido === r.id"
+                  class="rounded border-gray-300 text-green-600 focus:ring-indigo-500" @change="toggleResolvido(r)" />
+                <span class="text-sm text-gray-600">Resolvida</span>
               </label>
               <span class="text-xs text-gray-400 ml-auto">{{ r.carteiraNome }}</span>
             </div>
@@ -124,6 +125,35 @@ const abaRec = ref('pendentes')
 const filtros = ref({ carteiraId: '', categoria: '', nome: '' })
 const page = ref({ content: [], totalElements: 0, totalPages: 0, number: 0, first: true, last: true })
 const TAMANHO_PAGINA = 10
+const togglingResolvido = ref(null)
+
+async function toggleResolvido(r) {
+  if (togglingResolvido.value === r.id) return
+  togglingResolvido.value = r.id
+  try {
+    const res = await recomendacaoApi.marcarResolvido(r.id, !r.resolvido)
+    const updated = res.data
+    const idx = page.value.content.findIndex(x => x.id === r.id)
+    if (idx !== -1) {
+      page.value.content[idx] = { ...page.value.content[idx], resolvido: updated.resolvido, resolvidoEm: updated.resolvidoEm }
+    }
+    if (dashboard.value != null) {
+      if (updated.resolvido) {
+        dashboard.value.totalResolvidas = (dashboard.value.totalResolvidas ?? 0) + 1
+        dashboard.value.totalPendentes = Math.max(0, (dashboard.value.totalPendentes ?? 0) - 1)
+      } else {
+        dashboard.value.totalResolvidas = Math.max(0, (dashboard.value.totalResolvidas ?? 0) - 1)
+        dashboard.value.totalPendentes = (dashboard.value.totalPendentes ?? 0) + 1
+      }
+    }
+    toast.success(updated.resolvido ? 'Marcada como resolvida.' : 'Desmarcada como resolvida.')
+  } catch (e) {
+    console.error(e)
+    toast.error(e.response?.data?.mensagem || e.response?.data?.erro || 'Erro ao atualizar.')
+  } finally {
+    togglingResolvido.value = null
+  }
+}
 
 function irParaAba(aba) {
   abaRec.value = aba

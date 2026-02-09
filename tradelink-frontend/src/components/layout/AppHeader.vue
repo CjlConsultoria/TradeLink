@@ -12,7 +12,7 @@
       </div>
     </div>
     <div class="app-header__right">
-      <span class="app-header__user">{{ user?.nome }}</span>
+      <span class="app-header__user" :title="user?.nome">{{ user?.nome }}</span>
       <span class="app-header__badge" :class="roleBadge">{{ roleLabel }}</span>
       <button type="button" @click="handleLogout" class="app-header__logout">Sair</button>
     </div>
@@ -55,16 +55,23 @@ function handleLogout() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.875rem 1.5rem;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  min-height: 3.25rem;
   background: rgb(var(--tl-surface));
   border-bottom: 1px solid rgb(var(--tl-border));
   box-shadow: var(--tl-shadow);
+}
+@media (min-width: 640px) {
+  .app-header { padding: 0.875rem 1.5rem; }
 }
 
 .app-header__left {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  min-width: 0;
+  flex-shrink: 0;
 }
 
 .app-header__menu {
@@ -110,13 +117,28 @@ function handleLogout() {
 .app-header__right {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
+  min-width: 0;
+  flex-shrink: 0;
+}
+@media (min-width: 480px) {
+  .app-header__right { gap: 0.75rem; }
 }
 
 .app-header__user {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   color: rgb(var(--tl-text));
+  max-width: 8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (min-width: 640px) {
+  .app-header__user { max-width: 12rem; font-size: 0.875rem; }
+}
+@media (min-width: 1024px) {
+  .app-header__user { max-width: 20rem; }
 }
 
 .app-header__badge {

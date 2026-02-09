@@ -121,7 +121,7 @@
     <template v-else>
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="overflow-x-auto">
-          <table class="w-full text-sm">
+          <table class="w-full text-sm table-responsive">
             <thead class="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th class="text-left py-3 px-3 font-medium text-gray-500">Moeda</th>

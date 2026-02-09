@@ -33,7 +33,7 @@
         <button type="button" @click="paginaAtual = 0" class="px-3 py-2 bg-gray-100 rounded-lg text-sm hover:bg-gray-200">Filtrar</button>
       </div>
       <div class="overflow-x-auto">
-        <table class="w-full text-sm">
+        <table class="w-full text-sm table-responsive">
           <thead>
             <tr class="border-b border-gray-200">
               <th class="text-left py-3 px-2 font-medium text-gray-500">Nome</th>
