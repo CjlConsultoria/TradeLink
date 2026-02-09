@@ -7,21 +7,30 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "start": "serve -s dist -l ${PORT:-4173}"
+    "start": "serve -s dist -l ${PORT:-4173}",
+    "mobile:build": "vite build && npx cap sync",
+    "mobile:ios": "npx cap open ios",
+    "mobile:android": "npx cap open android",
+    "keystore": "node scripts/generate-keystore.cjs"
   },
   "dependencies": {
-    "serve": "^14.2.4",
-    "vue": "^3.5.0",
-    "vue-router": "^4.5.0",
-    "pinia": "^3.0.0",
     "axios": "^1.7.0",
     "chart.js": "^4.4.0",
-    "vue-chartjs": "^5.3.0"
+    "pinia": "^3.0.0",
+    "serve": "^14.2.4",
+    "vue": "^3.5.0",
+    "vue-chartjs": "^5.3.0",
+    "vue-router": "^4.5.0"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.0.2",
+    "@capacitor/cli": "^8.0.2",
+    "@capacitor/core": "^8.0.2",
+    "@capacitor/ios": "^8.0.2",
+    "@tailwindcss/vite": "^4.0.0",
     "@vitejs/plugin-vue": "^5.2.0",
-    "vite": "^6.0.0",
+    "node-forge": "^1.3.3",
     "tailwindcss": "^4.0.0",
-    "@tailwindcss/vite": "^4.0.0"
+    "vite": "^6.0.0"
   }
 }

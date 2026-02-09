@@ -1,11 +1,16 @@
 import axios from 'axios'
 
 // API: em produção no Render o front está em tradelink-grun e o back em tradelink-1-ed48
+// No app mobile (Capacitor) sempre usa a API de produção.
 function getBaseURL() {
   if (import.meta.env.VITE_API_URL) {
     return `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api`
   }
   if (typeof window !== 'undefined' && window.location.hostname === 'tradelink-grun.onrender.com') {
+    return 'https://tradelink-1-ed48.onrender.com/api'
+  }
+  // App iOS/Android (Capacitor): usar API de produção
+  if (typeof window !== 'undefined' && window.Capacitor?.isNativePlatform?.()) {
     return 'https://tradelink-1-ed48.onrender.com/api'
   }
   return '/api'
