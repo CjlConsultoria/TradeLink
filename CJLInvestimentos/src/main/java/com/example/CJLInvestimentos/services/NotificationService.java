@@ -83,7 +83,7 @@ public class NotificationService {
     /** Envia push para uma inscrição (se VAPID configurado). */
     public void enviarPush(PushSubscription sub, String titulo, String corpo) {
         if (vapidPublicKey == null || vapidPublicKey.isBlank() || vapidPrivateKey == null || vapidPrivateKey.isBlank()) {
-            log.debug("Web Push VAPID não configurado, ignorando envio.");
+            log.info("Web Push: VAPID não configurado (defina VAPID_PRIVATE no Render). Push não enviado.");
             return;
         }
         try {
@@ -92,7 +92,7 @@ public class NotificationService {
             String payload = "{\"title\":\"" + escapeJson(titulo) + "\",\"body\":\"" + escapeJson(corpo) + "\"}";
             Notification notification = new Notification(sub.getEndpoint(), sub.getP256dhKey(), sub.getAuthKey(), payload);
             pushService.send(notification);
-            log.debug("Push enviado para endpoint {}", sub.getEndpoint());
+            log.info("Web Push enviado: {} | endpoint: {}", titulo, sub.getEndpoint() != null ? sub.getEndpoint().substring(0, Math.min(60, sub.getEndpoint().length())) + "..." : "?");
         } catch (Exception e) {
             log.warn("Falha ao enviar Push para endpoint {}: {}", sub.getEndpoint(), e.getMessage());
         }
@@ -121,8 +121,12 @@ public class NotificationService {
         }
         if (Boolean.TRUE.equals(empresa.getNotificacaoPush())) {
             List<PushSubscription> subs = pushSubscriptionRepository.findByUserId(usuario.getId());
-            for (PushSubscription sub : subs) {
-                enviarPush(sub, titulo, corpo);
+            if (subs.isEmpty()) {
+                log.info("Web Push: usuário {} (id={}) não tem inscrição no navegador. Peça para ativar em Configurações.", usuario.getEmail(), usuario.getId());
+            } else {
+                for (PushSubscription sub : subs) {
+                    enviarPush(sub, titulo, corpo);
+                }
             }
         }
         // WhatsApp: futuro (notificacaoWhatsApp)
