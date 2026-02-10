@@ -19,9 +19,21 @@ public class CotacaoScheduler {
         cotacaoService.fetchAndSaveAwesomeApi();
     }
 
-    @Scheduled(initialDelayString = "${app.cotacao.initial-delay:0}", fixedDelayString = "${app.cotacao.coingecko.interval}")
+    @Scheduled(initialDelayString = "${app.cotacao.initial-delay-coingecko:30000}", fixedDelayString = "${app.cotacao.coingecko.interval}")
     public void fetchCoinGecko() {
         log.info("Buscando cotações do CoinGecko...");
         cotacaoService.fetchAndSaveCoinGecko();
+    }
+
+    @Scheduled(initialDelayString = "${app.cotacao.initial-delay-binance:60000}", fixedDelayString = "${app.cotacao.binance.interval:600000}")
+    public void fetchBinance() {
+        log.info("Buscando cotações da Binance...");
+        cotacaoService.fetchAndSaveBinance();
+    }
+
+    @Scheduled(initialDelayString = "${app.cotacao.initial-delay-coincap:90000}", fixedDelayString = "${app.cotacao.coincap.interval:600000}")
+    public void fetchCoinCap() {
+        log.info("Buscando cotações do CoinCap...");
+        cotacaoService.fetchAndSaveCoinCap();
     }
 }

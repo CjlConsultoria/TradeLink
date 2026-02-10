@@ -49,6 +49,15 @@ public class CotacaoService {
     @Value("${app.cotacao.coingecko.url}")
     private String coinGeckoUrl;
 
+    @Value("${app.cotacao.binance.url:https://api.binance.com/api/v3/ticker/price}")
+    private String binanceUrl;
+
+    @Value("${app.cotacao.coincap.assets.url:https://api.coincap.io/v2/assets?limit=80}")
+    private String coinCapAssetsUrl;
+
+    @Value("${app.cotacao.coincap.rate-brl.url:https://api.coincap.io/v2/rates/brazilian-real}")
+    private String coinCapRateBrlUrl;
+
     private static final Map<String, String> CRYPTO_MAP = Map.ofEntries(
             entry("bitcoin", "BTC"),
             entry("ethereum", "ETH"),
@@ -176,10 +185,125 @@ public class CotacaoService {
         }
     }
 
-    /** Atualiza todas as cotações chamando AwesomeAPI e CoinGecko. */
+    @Transactional
+    public void fetchAndSaveBinance() {
+        try {
+            String response = webClientBuilder.build()
+                    .get()
+                    .uri(binanceUrl)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+            JsonNode root = objectMapper.readTree(response);
+            if (!root.isArray()) return;
+            List<Cotacao> cotacoes = new ArrayList<>();
+            LocalDateTime now = LocalDateTime.now();
+            for (JsonNode item : root) {
+                String symbol = item.has("symbol") ? item.get("symbol").asText() : "";
+                if (symbol.length() < 4) continue;
+                String par = symbol.substring(symbol.length() - 3);
+                if (!"BRL".equals(par) && !"USDT".equals(par)) continue;
+                String moeda = symbol.substring(0, symbol.length() - 3);
+                BigDecimal price = parseBigDecimal(item.has("price") ? item.get("price").asText() : null);
+                if (price == null || price.compareTo(BigDecimal.ZERO) <= 0) continue;
+                cotacoes.add(Cotacao.builder()
+                        .moeda(moeda)
+                        .parMoeda(par)
+                        .precoCompra(price)
+                        .precoVenda(price)
+                        .dataHora(now)
+                        .fonte("BINANCE")
+                        .build());
+            }
+            if (!cotacoes.isEmpty()) {
+                cotacaoRepository.deleteByFonte("BINANCE");
+                cotacaoRepository.saveAll(cotacoes);
+                log.info("Binance: {} cotações salvas (substituídas)", cotacoes.size());
+            }
+        } catch (WebClientResponseException e) {
+            if (e.getStatusCode() != null && e.getStatusCode().value() == 429) {
+                log.warn("Binance retornou 429. Próxima tentativa no próximo ciclo.");
+            } else {
+                log.error("Erro ao buscar cotações da Binance: {}", e.getMessage());
+            }
+        } catch (Exception e) {
+            log.error("Erro ao buscar cotações da Binance: {}", e.getMessage());
+        }
+    }
+
+    @Transactional
+    public void fetchAndSaveCoinCap() {
+        try {
+            String rateResponse = webClientBuilder.build()
+                    .get()
+                    .uri(coinCapRateBrlUrl)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+            JsonNode rateNode = objectMapper.readTree(rateResponse);
+            BigDecimal usdPerBrl = BigDecimal.ONE;
+            if (rateNode.has("data") && rateNode.get("data").has("rateUsd")) {
+                try {
+                    usdPerBrl = new BigDecimal(rateNode.get("data").get("rateUsd").asText());
+                } catch (Exception ignored) {}
+            }
+            String assetsResponse = webClientBuilder.build()
+                    .get()
+                    .uri(coinCapAssetsUrl)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+            JsonNode assetsRoot = objectMapper.readTree(assetsResponse);
+            JsonNode data = assetsRoot.has("data") ? assetsRoot.get("data") : null;
+            if (data == null || !data.isArray()) return;
+            List<Cotacao> cotacoes = new ArrayList<>();
+            LocalDateTime now = LocalDateTime.now();
+            for (JsonNode asset : data) {
+                String symbol = asset.has("symbol") ? asset.get("symbol").asText().toUpperCase() : "";
+                if (symbol.isEmpty()) continue;
+                String priceUsdStr = asset.has("priceUsd") ? asset.get("priceUsd").asText() : null;
+                BigDecimal priceUsd = parseBigDecimal(priceUsdStr);
+                if (priceUsd == null || priceUsd.compareTo(BigDecimal.ZERO) <= 0) continue;
+                BigDecimal priceBrl = priceUsd.divide(usdPerBrl, 8, java.math.RoundingMode.HALF_UP);
+                cotacoes.add(Cotacao.builder()
+                        .moeda(symbol)
+                        .parMoeda("BRL")
+                        .precoCompra(priceBrl)
+                        .precoVenda(priceBrl)
+                        .dataHora(now)
+                        .fonte("COINCAP")
+                        .build());
+                cotacoes.add(Cotacao.builder()
+                        .moeda(symbol)
+                        .parMoeda("USD")
+                        .precoCompra(priceUsd)
+                        .precoVenda(priceUsd)
+                        .dataHora(now)
+                        .fonte("COINCAP")
+                        .build());
+            }
+            if (!cotacoes.isEmpty()) {
+                cotacaoRepository.deleteByFonte("COINCAP");
+                cotacaoRepository.saveAll(cotacoes);
+                log.info("CoinCap: {} cotações salvas (substituídas)", cotacoes.size());
+            }
+        } catch (WebClientResponseException e) {
+            if (e.getStatusCode() != null && e.getStatusCode().value() == 429) {
+                log.warn("CoinCap retornou 429. Próxima tentativa no próximo ciclo.");
+            } else {
+                log.error("Erro ao buscar cotações do CoinCap: {}", e.getMessage());
+            }
+        } catch (Exception e) {
+            log.error("Erro ao buscar cotações do CoinCap: {}", e.getMessage());
+        }
+    }
+
+    /** Atualiza todas as cotações chamando todas as fontes (AwesomeAPI, CoinGecko, Binance, CoinCap). */
     public void forceRefresh() {
         fetchAndSaveAwesomeApi();
         fetchAndSaveCoinGecko();
+        fetchAndSaveBinance();
+        fetchAndSaveCoinCap();
     }
 
     /** Remove todas as cotações do banco (zerar). */

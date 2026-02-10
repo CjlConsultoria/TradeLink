@@ -10,6 +10,8 @@ import com.example.CJLInvestimentos.repositories.EmpresaRepository;
 import com.example.CJLInvestimentos.repositories.PlanoRepository;
 import com.example.CJLInvestimentos.repositories.UserRepository;
 import com.stripe.Stripe;
+import com.stripe.exception.AuthenticationException;
+import com.stripe.exception.InvalidRequestException;
 import com.stripe.model.Event;
 import com.stripe.model.PaymentIntent;
 import com.stripe.model.checkout.Session;
@@ -280,9 +282,15 @@ public class StripePaymentService {
             result.put("paymentIntentId", pi.getId());
             result.put("publishableKey", getPublishableKey());
             return result;
+        } catch (AuthenticationException e) {
+            log.warn("Stripe: chave de API inválida ou expirada (pagamento embutido)");
+            throw new BusinessException("Chave de API do Stripe inválida ou expirada. Verifique STRIPE_API_KEY no servidor (Dashboard Stripe).");
+        } catch (InvalidRequestException e) {
+            log.warn("Stripe: requisição inválida (pagamento embutido): {}", e.getMessage());
+            throw new BusinessException("Erro na configuração do pagamento: " + e.getMessage());
         } catch (Exception e) {
             log.error("Erro ao criar PaymentIntent (pagamento embutido)", e);
-            throw new BusinessException("Erro ao iniciar pagamento: " + e.getMessage());
+            throw new BusinessException("Erro ao iniciar pagamento. Verifique a chave Stripe no servidor.");
         }
     }
 
