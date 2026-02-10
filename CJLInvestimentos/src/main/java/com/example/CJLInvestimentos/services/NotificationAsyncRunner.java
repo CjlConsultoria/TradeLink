@@ -30,10 +30,10 @@ public class NotificationAsyncRunner {
     @Async
     public void notificarClientesNovaRecomendacaoAsync(Long recomendacaoId) {
         try {
-            Recomendacao rec = recomendacaoRepository.findById(recomendacaoId).orElse(null);
+            Recomendacao rec = recomendacaoRepository.findByIdWithCarteiraAndEmpresa(recomendacaoId).orElse(null);
             if (rec == null || rec.getCarteira() == null || rec.getCarteira().getEmpresa() == null) return;
             var empresa = rec.getCarteira().getEmpresa();
-            List<User> clientes = carteiraClienteRepository.findByCarteiraId(rec.getCarteira().getId()).stream()
+            List<User> clientes = carteiraClienteRepository.findByCarteiraIdWithCliente(rec.getCarteira().getId()).stream()
                     .map(cc -> cc.getCliente())
                     .filter(u -> u != null && Boolean.TRUE.equals(u.getAtivo()))
                     .collect(Collectors.toList());
@@ -50,7 +50,7 @@ public class NotificationAsyncRunner {
     @Async
     public void notificarConsultorClienteResolveuAsync(Long recomendacaoId, Long clienteId) {
         try {
-            Recomendacao rec = recomendacaoRepository.findById(recomendacaoId).orElse(null);
+            Recomendacao rec = recomendacaoRepository.findByIdWithCarteiraEmpresaAndConsultor(recomendacaoId).orElse(null);
             User cliente = userRepository.findById(clienteId).orElse(null);
             if (rec == null || rec.getCarteira() == null || rec.getCarteira().getConsultor() == null || rec.getCarteira().getEmpresa() == null || cliente == null) return;
             notificationService.notificarClienteResolveuParaConsultor(
