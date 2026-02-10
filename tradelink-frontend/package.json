@@ -14,6 +14,7 @@
     "keystore": "node scripts/generate-keystore.cjs"
   },
   "dependencies": {
+    "@stripe/stripe-js": "^8.7.0",
     "axios": "^1.7.0",
     "chart.js": "^4.4.0",
     "pinia": "^3.0.0",

@@ -17,13 +17,21 @@ export default {
   checkoutPixCliente() {
     return api.post('/cliente/checkout-pix')
   },
-  /** Consultor: abre Checkout Stripe (cartão ou boleto) */
+  /** Consultor: abre Checkout Stripe (cartão ou boleto) – redireciona para página do Stripe */
   checkoutCartaoBoleto() {
     return api.post('/consultor/checkout-cartao-boleto')
   },
-  /** Cliente: abre Checkout Stripe (cartão ou boleto) */
+  /** Cliente: abre Checkout Stripe (cartão ou boleto) – redireciona para página do Stripe */
   checkoutCartaoBoletoCliente() {
     return api.post('/cliente/checkout-cartao-boleto')
+  },
+  /** Consultor: pagamento embutido (cartão, PIX, boleto) na própria tela. Retorna clientSecret e publishableKey. */
+  checkoutEmbedded() {
+    return api.post('/consultor/checkout-embedded')
+  },
+  /** Cliente: pagamento embutido (cartão, PIX, boleto) na própria tela. Retorna clientSecret e publishableKey. */
+  checkoutEmbeddedCliente() {
+    return api.post('/cliente/checkout-embedded')
   },
   /** Consultor: confirma pagamento após retorno do Stripe (session_id na URL) */
   confirmarStripeConsultor(sessionId) {

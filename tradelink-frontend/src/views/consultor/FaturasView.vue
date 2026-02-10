@@ -31,21 +31,43 @@
             <button
               type="button"
               class="btn-primary"
-              :disabled="loadingCheckout"
-              @click="abrirCheckoutCartaoBoleto"
+              :disabled="loadingCheckout || loadingEmbedded"
+              @click="abrirPagamentoEmbutido"
             >
-              {{ loadingCheckout ? 'Abrindo...' : 'Pagar com cartão ou boleto' }}
+              {{ loadingEmbedded ? 'Abrindo...' : 'Pagar (cartão, PIX ou boleto)' }}
             </button>
             <button
               type="button"
-              class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-200 text-gray-500 cursor-not-allowed"
-              disabled
-              title="Em breve"
+              class="px-4 py-2 rounded-lg text-sm font-medium border border-gray-300 text-gray-600 hover:bg-gray-50"
+              :disabled="loadingCheckout || loadingEmbedded"
+              @click="abrirCheckoutCartaoBoleto"
             >
-              PIX em breve
+              Abrir em outra página
             </button>
           </div>
         </template>
+
+        <!-- Modal: pagamento embutido (Stripe Payment Element) -->
+        <div v-if="showModalPagamento" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div class="fixed inset-0 bg-black/50" @click="fecharModalPagamento"></div>
+          <div class="bg-white rounded-xl shadow-xl max-w-md w-full relative z-10 max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+              <h3 class="text-lg font-semibold text-gray-900 mb-2">Pagamento</h3>
+              <p class="text-sm text-gray-600 mb-4">Escolha a forma de pagamento abaixo. Você não sai do sistema.</p>
+              <div v-if="erroModal" class="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">{{ erroModal }}</div>
+              <div v-if="!publishableKey" class="mb-4 p-3 rounded-lg bg-amber-50 text-amber-800 text-sm">
+                Configure <code class="text-xs">STRIPE_PUBLISHABLE_KEY</code> no servidor para pagar aqui. Use "Abrir em outra página" como alternativa.
+              </div>
+              <div id="payment-element" ref="paymentElementRef" class="min-h-[200px] mb-4"></div>
+              <div class="flex gap-3">
+                <button type="button" class="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50" :disabled="enviandoPagamento" @click="fecharModalPagamento">Cancelar</button>
+                <button type="button" class="flex-1 btn-primary" :disabled="!stripeReady || enviandoPagamento" @click="confirmarPagamento">
+                  {{ enviandoPagamento ? 'Processando...' : 'Pagar' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
         <p v-else class="text-gray-500">Nenhum plano ativo. Entre em contato com o administrador.</p>
       </div>
 
@@ -87,8 +109,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
+import { loadStripe } from '@stripe/stripe-js'
 import { useToast } from '../../composables/useToast'
 import faturaApi from '../../api/faturaApi'
 import { formatCurrency, formatDate } from '../../utils/formatters'
@@ -101,9 +124,21 @@ const isCliente = computed(() => route.path.startsWith('/cliente'))
 
 const loading = ref(true)
 const loadingCheckout = ref(false)
+const loadingEmbedded = ref(false)
 const faturas = ref([])
 const proxima = ref(null)
 const acessoPermitido = ref(true)
+
+const showModalPagamento = ref(false)
+const publishableKey = ref('')
+const clientSecret = ref('')
+const stripeReady = ref(false)
+const enviandoPagamento = ref(false)
+const erroModal = ref('')
+const paymentElementRef = ref(null)
+let stripeInstance = null
+let elementsInstance = null
+let paymentElementInstance = null
 
 const acessoBloqueado = computed(() => !acessoPermitido.value)
 
@@ -119,6 +154,86 @@ async function carregar() {
     toast.error('Erro ao carregar faturas.')
   } finally {
     loading.value = false
+  }
+}
+
+async function abrirPagamentoEmbutido() {
+  if (isCliente.value) return
+  loadingEmbedded.value = true
+  erroModal.value = ''
+  stripeReady.value = false
+  try {
+    const res = await faturaApi.checkoutEmbedded()
+    const data = res.data || res
+    clientSecret.value = data.clientSecret || ''
+    publishableKey.value = (data.publishableKey || '').trim()
+    if (!clientSecret.value) {
+      erroModal.value = 'Não foi possível iniciar o pagamento.'
+      return
+    }
+    showModalPagamento.value = true
+    if (!publishableKey.value) return
+    await nextTick()
+    const stripe = await loadStripe(publishableKey.value)
+    if (!stripe) {
+      erroModal.value = 'Stripe não carregou. Tente "Abrir em outra página".'
+      return
+    }
+    const elements = stripe.elements({ clientSecret: clientSecret.value })
+    const paymentElement = elements.create('payment')
+    await nextTick()
+    const el = document.getElementById('payment-element')
+    if (el) {
+      paymentElement.mount('#payment-element')
+      stripeInstance = stripe
+      elementsInstance = elements
+      paymentElementInstance = paymentElement
+      stripeReady.value = true
+    }
+  } catch (e) {
+    toast.error(e.response?.data?.erro || e.response?.data?.mensagem || 'Erro ao abrir pagamento.')
+    showModalPagamento.value = false
+  } finally {
+    loadingEmbedded.value = false
+  }
+}
+
+function fecharModalPagamento() {
+  if (paymentElementInstance && paymentElementRef.value) {
+    try {
+      paymentElementInstance.unmount()
+    } catch (_) {}
+  }
+  paymentElementInstance = null
+  elementsInstance = null
+  stripeInstance = null
+  stripeReady.value = false
+  clientSecret.value = ''
+  erroModal.value = ''
+  showModalPagamento.value = false
+}
+
+async function confirmarPagamento() {
+  if (!stripeInstance || !elementsInstance || !clientSecret.value) return
+  enviandoPagamento.value = true
+  erroModal.value = ''
+  try {
+    const returnUrl = `${window.location.origin}${route.path}?stripe_return=1`
+    const { error } = await stripeInstance.confirmPayment({
+      elements: elementsInstance,
+      confirmParams: { return_url: returnUrl }
+    })
+    if (error) {
+      erroModal.value = error.message || 'Erro no pagamento.'
+      return
+    }
+    fecharModalPagamento()
+    toast.success('Pagamento realizado. A fatura será registrada em instantes.')
+    await carregar()
+  } catch (e) {
+    erroModal.value = e.message || 'Erro ao processar.'
+  } finally {
+    enviandoPagamento.value = false
   }
 }
 
@@ -146,6 +261,8 @@ function badgeStatus(status) {
 
 onMounted(async () => {
   const sessionId = route.query.session_id
+  const stripeReturn = route.query.stripe_return || route.query.redirect_status
+  const paymentIntent = route.query.payment_intent
   if (sessionId) {
     try {
       const res = isCliente.value
@@ -159,7 +276,7 @@ onMounted(async () => {
       toast.error('Não foi possível confirmar o pagamento. Tente recarregar a página.')
     }
     window.history.replaceState({}, '', route.path)
-  } else if (route.query.pagamento === 'ok') {
+  } else if (route.query.pagamento === 'ok' || stripeReturn === 'succeeded' || (stripeReturn === '1' && paymentIntent)) {
     toast.success('Pagamento realizado. O acesso será liberado em instantes.')
     window.history.replaceState({}, '', route.path)
   }

@@ -30,9 +30,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             "/api/consultor/faturas",
             "/api/consultor/checkout-pix",
             "/api/consultor/checkout-cartao-boleto",
+            "/api/consultor/checkout-embedded",
             "/api/cliente/faturas",
             "/api/cliente/checkout-pix",
-            "/api/cliente/checkout-cartao-boleto"
+            "/api/cliente/checkout-cartao-boleto",
+            "/api/cliente/checkout-embedded"
     };
 
     private final JwtService jwtService;

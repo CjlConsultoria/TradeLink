@@ -34,6 +34,9 @@ public class StripePaymentService {
     @Value("${stripe.api-key:}")
     private String stripeApiKey;
 
+    @Value("${stripe.publishable-key:}")
+    private String stripePublishableKey;
+
     @Value("${stripe.webhook-secret:}")
     private String webhookSecret;
 
@@ -76,6 +79,10 @@ public class StripePaymentService {
 
     public boolean isConfigured() {
         return stripeApiKey != null && !stripeApiKey.isBlank();
+    }
+
+    public String getPublishableKey() {
+        return stripePublishableKey != null ? stripePublishableKey : "";
     }
 
     public String getSuccessUrlPagamentoConsultor() { return successUrlPagamentoConsultor; }
@@ -225,6 +232,56 @@ public class StripePaymentService {
             return session.getUrl();
         } catch (Exception e) {
             log.error("Erro ao criar Checkout pagamento único", e);
+            throw new BusinessException("Erro ao iniciar pagamento: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Cria um PaymentIntent para pagamento embutido (cartão + PIX + boleto) na tela do sistema.
+     * Retorna clientSecret e paymentIntentId para o frontend montar o Payment Element do Stripe.
+     */
+    public Map<String, String> createPaymentIntentPagamentoUnicoPorUsuarioId(Long usuarioId) {
+        User user = userRepository.findByIdWithEmpresa(usuarioId).orElseThrow(() -> new BusinessException("Usuário não encontrado"));
+        if (user.getEmpresa() == null) {
+            throw new BusinessException("Usuário sem empresa vinculada.");
+        }
+        return createPaymentIntentPagamentoUnico(user.getEmpresa().getId());
+    }
+
+    /**
+     * Cria um PaymentIntent com cartão, PIX e boleto para a empresa (pagamento único, exibido no Payment Element).
+     */
+    public Map<String, String> createPaymentIntentPagamentoUnico(Long empresaId) {
+        if (!isConfigured()) {
+            throw new BusinessException("Pagamentos não estão configurados. Defina stripe.api-key.");
+        }
+        Empresa empresa = empresaRepository.findById(empresaId)
+                .orElseThrow(() -> new BusinessException("Empresa não encontrada"));
+        Plano plano = empresa.getPlano();
+        if (plano == null) {
+            throw new BusinessException("Empresa não possui plano atribuído.");
+        }
+        long amountCentavos = plano.getPreco().multiply(BigDecimal.valueOf(100)).longValue();
+        if (amountCentavos < 100) amountCentavos = 100;
+        try {
+            PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
+                    .setAmount(amountCentavos)
+                    .setCurrency("brl")
+                    .putMetadata("empresa_id", empresaId.toString())
+                    .putMetadata("plano_id", plano.getId().toString())
+                    .setAutomaticPaymentMethods(
+                            PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
+                                    .setEnabled(true)
+                                    .build())
+                    .build();
+            PaymentIntent pi = PaymentIntent.create(params);
+            Map<String, String> result = new HashMap<>();
+            result.put("clientSecret", pi.getClientSecret());
+            result.put("paymentIntentId", pi.getId());
+            result.put("publishableKey", getPublishableKey());
+            return result;
+        } catch (Exception e) {
+            log.error("Erro ao criar PaymentIntent (pagamento embutido)", e);
             throw new BusinessException("Erro ao iniciar pagamento: " + e.getMessage());
         }
     }

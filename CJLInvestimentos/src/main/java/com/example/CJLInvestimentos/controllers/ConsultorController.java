@@ -313,6 +313,13 @@ public class ConsultorController {
         return ResponseEntity.ok(Map.of("checkoutUrl", url));
     }
 
+    /** Pagamento embutido (cartão, PIX, boleto) na própria tela, sem redirecionar ao Stripe. */
+    @PostMapping("/checkout-embedded")
+    public ResponseEntity<Map<String, String>> criarCheckoutEmbedded(@AuthenticationPrincipal UserDetails userDetails) {
+        User user = getUser(userDetails);
+        return ResponseEntity.ok(stripePaymentService.createPaymentIntentPagamentoUnicoPorUsuarioId(user.getId()));
+    }
+
     @PostMapping("/faturas/confirmar-stripe")
     public ResponseEntity<Map<String, Object>> confirmarPagamentoStripe(
             @AuthenticationPrincipal UserDetails userDetails,
