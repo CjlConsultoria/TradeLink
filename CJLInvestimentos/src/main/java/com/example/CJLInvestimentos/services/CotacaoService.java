@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import jakarta.persistence.criteria.Predicate;
 import java.math.BigDecimal;
@@ -112,8 +113,14 @@ public class CotacaoService {
             cotacaoRepository.deleteByFonte("AWESOME_API");
             cotacaoRepository.saveAll(cotacoes);
             log.info("AwesomeAPI: {} cotações salvas (substituídas)", cotacoes.size());
+        } catch (WebClientResponseException e) {
+            if (e.getStatusCode() != null && e.getStatusCode().value() == 429) {
+                log.warn("AwesomeAPI retornou 429 (limite de requisições). Próxima tentativa no próximo ciclo. Aumente app.cotacao.awesome-api.interval se persistir.");
+            } else {
+                log.error("Erro ao buscar cotações da AwesomeAPI: {}", e.getMessage());
+            }
         } catch (Exception e) {
-            log.error("Erro ao buscar cotações da AwesomeAPI", e);
+            log.error("Erro ao buscar cotações da AwesomeAPI: {}", e.getMessage());
         }
     }
 
@@ -158,8 +165,14 @@ public class CotacaoService {
             cotacaoRepository.deleteByFonte("COINGECKO");
             cotacaoRepository.saveAll(cotacoes);
             log.info("CoinGecko: {} cotações salvas (substituídas)", cotacoes.size());
+        } catch (WebClientResponseException e) {
+            if (e.getStatusCode() != null && e.getStatusCode().value() == 429) {
+                log.warn("CoinGecko retornou 429 (limite de requisições). Próxima tentativa no próximo ciclo. Aumente app.cotacao.coingecko.interval se persistir.");
+            } else {
+                log.error("Erro ao buscar cotações do CoinGecko: {}", e.getMessage());
+            }
         } catch (Exception e) {
-            log.error("Erro ao buscar cotações do CoinGecko", e);
+            log.error("Erro ao buscar cotações do CoinGecko: {}", e.getMessage());
         }
     }
 

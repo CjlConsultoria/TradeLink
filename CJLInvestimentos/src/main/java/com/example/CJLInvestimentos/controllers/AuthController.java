@@ -9,7 +9,7 @@ import com.example.CJLInvestimentos.entities.enums.Role;
 import com.example.CJLInvestimentos.repositories.EmpresaRepository;
 import com.example.CJLInvestimentos.repositories.UserRepository;
 import com.example.CJLInvestimentos.services.JwtService;
-import com.example.CJLInvestimentos.services.NotificationService;
+import com.example.CJLInvestimentos.services.NotificationAsyncRunner;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -36,7 +36,7 @@ public class AuthController {
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
     private final AuthenticationManager authenticationManager;
-    private final NotificationService notificationService;
+    private final NotificationAsyncRunner notificationAsyncRunner;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
@@ -62,9 +62,7 @@ public class AuthController {
         }
 
         User user = userRepository.save(userBuilder.build());
-        try {
-            notificationService.enviarEmailNovoUsuario(user.getEmail(), user.getNome(), user.getRole());
-        } catch (Exception ignored) { }
+        notificationAsyncRunner.enviarEmailNovoUsuarioAsync(user.getEmail(), user.getNome(), user.getRole());
         String token = jwtService.generateToken(user);
 
         return ResponseEntity.status(HttpStatus.CREATED)

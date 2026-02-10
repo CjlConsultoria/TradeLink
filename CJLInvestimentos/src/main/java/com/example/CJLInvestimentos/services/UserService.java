@@ -28,7 +28,7 @@ public class UserService {
     private final EmpresaRepository empresaRepository;
     private final PushSubscriptionRepository pushSubscriptionRepository;
     private final PasswordEncoder passwordEncoder;
-    private final NotificationService notificationService;
+    private final NotificationAsyncRunner notificationAsyncRunner;
 
     public UserResponse criarConsultor(RegisterRequest request, Long empresaId) {
         return criarUsuario(request, empresaId, Role.Admin);
@@ -62,9 +62,7 @@ public class UserService {
                         .empresa(empresa)
                         .build()
         );
-        try {
-            notificationService.enviarEmailNovoUsuario(user.getEmail(), user.getNome(), user.getRole());
-        } catch (Exception ignored) { }
+        notificationAsyncRunner.enviarEmailNovoUsuarioAsync(user.getEmail(), user.getNome(), user.getRole());
         return toResponse(user);
     }
 
@@ -97,6 +95,21 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
         user.setAtivo(false);
         userRepository.save(user);
+    }
+
+    /** Consultor inativa um cliente da própria empresa. */
+    public void inativarClientePorConsultor(Long clienteId, User consultor) {
+        User cliente = userRepository.findById(clienteId)
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado"));
+        if (cliente.getRole() != Role.Cliente) {
+            throw new BusinessException("Usuário não é um cliente");
+        }
+        if (consultor.getEmpresa() == null || cliente.getEmpresa() == null
+                || !cliente.getEmpresa().getId().equals(consultor.getEmpresa().getId())) {
+            throw new BusinessException("Cliente não pertence à sua empresa");
+        }
+        cliente.setAtivo(false);
+        userRepository.save(cliente);
     }
 
     public void ativar(Long id) {

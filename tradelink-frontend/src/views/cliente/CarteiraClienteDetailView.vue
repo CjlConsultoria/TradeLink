@@ -105,13 +105,16 @@ const togglingResolvido = ref(null)
 
 async function toggleResolvido(r) {
   if (togglingResolvido.value === r.id) return
+  const novoResolvido = !(r.resolvido === true)
   togglingResolvido.value = r.id
   try {
-    const res = await recomendacaoApi.marcarResolvido(r.id, !r.resolvido)
-    const updated = res.data
+    const res = await recomendacaoApi.marcarResolvido(r.id, novoResolvido)
+    const updated = res?.data ?? res
+    if (updated == null) throw new Error('Resposta inválida')
     const idx = recomendacoes.value.findIndex(x => x.id === r.id)
     if (idx !== -1) {
-      recomendacoes.value[idx] = { ...recomendacoes.value[idx], resolvido: updated.resolvido, resolvidoEm: updated.resolvidoEm }
+      recomendacoes.value = recomendacoes.value.map((item, i) =>
+        i === idx ? { ...item, resolvido: !!updated.resolvido, resolvidoEm: updated.resolvidoEm } : item)
     }
     toast.success(updated.resolvido ? 'Marcada como resolvida.' : 'Desmarcada como resolvida.')
   } catch (e) {

@@ -8,7 +8,7 @@ import com.example.CJLInvestimentos.entities.User;
 import com.example.CJLInvestimentos.exceptions.BusinessException;
 import com.example.CJLInvestimentos.repositories.UserRepository;
 import com.example.CJLInvestimentos.services.EmpresaService;
-import com.example.CJLInvestimentos.services.NotificationService;
+import com.example.CJLInvestimentos.services.NotificationAsyncRunner;
 import com.example.CJLInvestimentos.services.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -30,7 +30,7 @@ public class MeController {
     private final UserService userService;
     private final EmpresaService empresaService;
     private final PasswordEncoder passwordEncoder;
-    private final NotificationService notificationService;
+    private final NotificationAsyncRunner notificationAsyncRunner;
 
     @Value("${app.notificacao.push.vapid-public:}")
     private String vapidPublicKey;
@@ -67,9 +67,7 @@ public class MeController {
         }
         user.setSenha(passwordEncoder.encode(request.getNovaSenha()));
         userRepository.save(user);
-        try {
-            notificationService.enviarEmailSenhaAlterada(user.getEmail(), user.getNome());
-        } catch (Exception ignored) { }
+        notificationAsyncRunner.enviarEmailSenhaAlteradaAsync(user.getEmail(), user.getNome());
         return ResponseEntity.noContent().build();
     }
 

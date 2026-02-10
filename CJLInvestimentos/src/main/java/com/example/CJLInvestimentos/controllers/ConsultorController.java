@@ -13,6 +13,7 @@ import com.example.CJLInvestimentos.dtos.response.FaturasComProximaResponse;
 import com.example.CJLInvestimentos.dtos.response.UserResponse;
 import com.example.CJLInvestimentos.entities.User;
 import com.example.CJLInvestimentos.exceptions.BusinessException;
+import com.example.CJLInvestimentos.exceptions.ResourceNotFoundException;
 import com.example.CJLInvestimentos.repositories.UserRepository;
 import com.example.CJLInvestimentos.services.CarteiraService;
 import com.example.CJLInvestimentos.services.FaturaService;
@@ -72,6 +73,32 @@ public class ConsultorController {
             @AuthenticationPrincipal UserDetails userDetails) {
         User consultor = getUser(userDetails);
         return ResponseEntity.ok(userService.listarClientesDaEmpresa(consultor.getEmpresa().getId()));
+    }
+
+    @PutMapping("/clientes/{id}/inativar")
+    public ResponseEntity<Void> inativarCliente(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long id) {
+        User consultor = getUser(userDetails);
+        userService.inativarClientePorConsultor(id, consultor);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/clientes/{id}")
+    public ResponseEntity<Void> excluirCliente(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long id) {
+        User consultor = getUser(userDetails);
+        List<CarteiraResponse> carteiras = carteiraService.listarPorConsultor(consultor);
+        for (CarteiraResponse c : carteiras) {
+            try {
+                carteiraService.removerCliente(c.getId(), id, consultor);
+            } catch (ResourceNotFoundException ignored) {
+                // Cliente não estava nesta carteira
+            }
+        }
+        userService.inativarClientePorConsultor(id, consultor);
+        return ResponseEntity.noContent().build();
     }
 
     // === CARTEIRAS ===

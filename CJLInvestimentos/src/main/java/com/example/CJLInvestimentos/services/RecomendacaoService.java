@@ -40,7 +40,7 @@ public class RecomendacaoService {
     private final CotacaoRepository cotacaoRepository;
     private final OperacaoClienteRepository operacaoClienteRepository;
     private final RecomendacaoResolvidaClienteRepository resolvidaClienteRepository;
-    private final NotificationService notificationService;
+    private final NotificationAsyncRunner notificationAsyncRunner;
 
     public RecomendacaoResponse criar(Long carteiraId, RecomendacaoRequest request, User consultor) {
         Carteira carteira = getCarteiraDoConsultor(carteiraId, consultor);
@@ -59,7 +59,7 @@ public class RecomendacaoService {
                         .build()
         );
 
-        notificarClientesNovaRecomendacao(recomendacao);
+        notificationAsyncRunner.notificarClientesNovaRecomendacaoAsync(recomendacao.getId());
         return toResponse(recomendacao);
     }
 
@@ -197,42 +197,12 @@ public class RecomendacaoService {
                         .recomendacao(rec)
                         .cliente(cliente)
                         .build());
-                notificarConsultorClienteResolveu(rec, cliente);
+                notificationAsyncRunner.notificarConsultorClienteResolveuAsync(rec.getId(), cliente.getId());
             }
         } else {
             resolvidaClienteRepository.deleteByRecomendacaoIdAndClienteId(recomendacaoId, cliente.getId());
         }
         return toResponse(rec, cliente.getId());
-    }
-
-    private void notificarClientesNovaRecomendacao(Recomendacao rec) {
-        try {
-            Carteira c = rec.getCarteira();
-            if (c == null || c.getEmpresa() == null) return;
-            Empresa empresa = c.getEmpresa();
-            List<User> clientes = carteiraClienteRepository.findByCarteiraId(c.getId()).stream()
-                    .map(cc -> cc.getCliente())
-                    .filter(u -> u != null && Boolean.TRUE.equals(u.getAtivo()))
-                    .collect(Collectors.toList());
-            org.slf4j.LoggerFactory.getLogger(RecomendacaoService.class).info(
-                    "Nova recomendação criada (carteira id={}); notificando {} cliente(s). Empresa notificacao_email={}",
-                    c.getId(), clientes.size(), Boolean.TRUE.equals(empresa.getNotificacaoEmail()));
-            if (!clientes.isEmpty()) {
-                notificationService.notificarNovaRecomendacaoParaClientes(empresa, clientes, rec);
-            }
-        } catch (Exception e) {
-            org.slf4j.LoggerFactory.getLogger(RecomendacaoService.class).warn("Falha ao notificar clientes da nova recomendação: {}", e.getMessage());
-        }
-    }
-
-    private void notificarConsultorClienteResolveu(Recomendacao rec, User cliente) {
-        try {
-            Carteira c = rec.getCarteira();
-            if (c == null || c.getConsultor() == null || c.getEmpresa() == null) return;
-            notificationService.notificarClienteResolveuParaConsultor(c.getEmpresa(), c.getConsultor(), cliente, rec);
-        } catch (Exception e) {
-            org.slf4j.LoggerFactory.getLogger(RecomendacaoService.class).warn("Falha ao notificar consultor: {}", e.getMessage());
-        }
     }
 
     private RecomendacaoResponse toResponse(Recomendacao r) {

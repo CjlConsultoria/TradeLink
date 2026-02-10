@@ -24,10 +24,16 @@
     <div v-else class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
       <div class="overflow-x-auto">
       <table class="w-full text-sm table-responsive min-w-[320px]">
-        <thead><tr class="border-b border-gray-200"><th class="text-left py-3 px-4 font-medium text-gray-500">Nome</th><th class="text-left py-3 px-4 font-medium text-gray-500">E-mail</th><th class="text-center py-3 px-4 font-medium text-gray-500">Status</th></tr></thead>
+        <thead><tr class="border-b border-gray-200"><th class="text-left py-3 px-4 font-medium text-gray-500">Nome</th><th class="text-left py-3 px-4 font-medium text-gray-500">E-mail</th><th class="text-center py-3 px-4 font-medium text-gray-500">Status</th><th class="text-right py-3 px-4 font-medium text-gray-500">Ações</th></tr></thead>
         <tbody><tr v-for="c in clientes" :key="c.id" class="border-b border-gray-100 hover:bg-gray-50">
           <td class="py-3 px-4 font-medium">{{ c.nome }}</td><td class="py-3 px-4 text-gray-600">{{ c.email }}</td>
           <td class="py-3 px-4 text-center"><span class="px-2 py-0.5 rounded-full text-xs" :class="c.ativo !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">{{ c.ativo !== false ? 'Ativo' : 'Inativo' }}</span></td>
+          <td class="py-3 px-4 text-right">
+            <button v-if="c.ativo !== false" type="button" :disabled="acaoClienteId === c.id"
+              @click="inativar(c)" class="text-amber-600 hover:underline text-xs font-medium mr-2 disabled:opacity-50">Inativar</button>
+            <button type="button" :disabled="acaoClienteId === c.id"
+              @click="excluir(c)" class="text-red-600 hover:underline text-xs font-medium disabled:opacity-50">Excluir</button>
+          </td>
         </tr></tbody>
       </table>
       </div>
@@ -39,16 +45,33 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import userApi from '../../api/userApi'
+import { useToast } from '../../composables/useToast'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import EmptyState from '../../components/common/EmptyState.vue'
 
+const toast = useToast()
 const clientes = ref([])
 const loading = ref(true)
 const showForm = ref(false)
 const form = ref({ nome: '', email: '', senha: '' })
 const formError = ref('')
+const acaoClienteId = ref(null)
+
 function closeForm() { showForm.value = false; form.value = { nome: '', email: '', senha: '' }; formError.value = '' }
 async function loadClientes() { loading.value = true; try { clientes.value = (await userApi.listarClientes()).data } finally { loading.value = false } }
-async function salvar() { formError.value = ''; try { await userApi.criarCliente(form.value); closeForm(); loadClientes() } catch (e) { formError.value = e.response?.data?.erro || 'Erro' } }
+async function salvar() { formError.value = ''; try { await userApi.criarCliente(form.value); closeForm(); loadClientes(); toast.success('Cliente criado.') } catch (e) { formError.value = e.response?.data?.erro || 'Erro' } }
+
+function inativar(c) {
+  if (!confirm(`Inativar o cliente "${c.nome}"? Ele não poderá mais acessar o sistema.`)) return
+  acaoClienteId.value = c.id
+  userApi.inativarCliente(c.id).then(() => { loadClientes(); toast.success('Cliente inativado.') }).catch(e => { toast.error(e.response?.data?.erro || e.response?.data?.mensagem || 'Erro ao inativar.') }).finally(() => { acaoClienteId.value = null })
+}
+
+function excluir(c) {
+  if (!confirm(`Excluir o cliente "${c.nome}"? Ele será removido de todas as suas carteiras e inativado (não poderá mais acessar).`)) return
+  acaoClienteId.value = c.id
+  userApi.excluirCliente(c.id).then(() => { loadClientes(); toast.success('Cliente excluído.') }).catch(e => { toast.error(e.response?.data?.erro || e.response?.data?.mensagem || 'Erro ao excluir.') }).finally(() => { acaoClienteId.value = null })
+}
+
 onMounted(loadClientes)
 </script>

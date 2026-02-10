@@ -235,10 +235,13 @@ async function toggleResolvido(r) {
   togglingResolvido.value = r.id
   try {
     const res = await recomendacaoApi.marcarResolvido(r.id, novoResolvido)
-    const updated = res.data
+    const updated = res?.data ?? res
+    if (updated == null) throw new Error('Resposta inválida')
     const idx = page.value.content.findIndex(x => x.id === r.id)
     if (idx !== -1) {
-      page.value.content[idx] = { ...page.value.content[idx], resolvido: updated.resolvido, resolvidoEm: updated.resolvidoEm }
+      const newContent = page.value.content.map((item, i) =>
+        i === idx ? { ...item, resolvido: !!updated.resolvido, resolvidoEm: updated.resolvidoEm } : item)
+      page.value = { ...page.value, content: newContent }
     }
     if (dashboard.value != null) {
       if (updated.resolvido) {

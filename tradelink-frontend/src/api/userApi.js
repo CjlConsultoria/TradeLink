@@ -25,6 +25,12 @@ export default {
   criarCliente(data) {
     return api.post('/consultor/clientes', data)
   },
+  inativarCliente(id) {
+    return api.put(`/consultor/clientes/${id}/inativar`)
+  },
+  excluirCliente(id) {
+    return api.delete(`/consultor/clientes/${id}`)
+  },
   dashboard() {
     return api.get('/cliente/dashboard')
   },
