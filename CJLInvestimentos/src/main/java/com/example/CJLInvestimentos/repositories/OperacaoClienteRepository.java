@@ -18,6 +18,7 @@ public interface OperacaoClienteRepository extends JpaRepository<OperacaoCliente
                                                                  @Param("de") LocalDateTime de,
                                                                  @Param("ate") LocalDateTime ate);
     long countByRecomendacaoId(Long recomendacaoId);
+    void deleteByRecomendacaoId(Long recomendacaoId);
 
     @Query("SELECT op FROM OperacaoCliente op WHERE op.recomendacao.carteira.consultor.id = :consultorId")
     List<OperacaoCliente> findByConsultorId(@Param("consultorId") Long consultorId);

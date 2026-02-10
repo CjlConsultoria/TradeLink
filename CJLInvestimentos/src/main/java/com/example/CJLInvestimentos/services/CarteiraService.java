@@ -5,13 +5,16 @@ import com.example.CJLInvestimentos.dtos.response.CarteiraResponse;
 import com.example.CJLInvestimentos.dtos.response.UserResponse;
 import com.example.CJLInvestimentos.entities.Carteira;
 import com.example.CJLInvestimentos.entities.CarteiraCliente;
+import com.example.CJLInvestimentos.entities.Recomendacao;
 import com.example.CJLInvestimentos.entities.User;
 import com.example.CJLInvestimentos.entities.enums.Role;
 import com.example.CJLInvestimentos.exceptions.BusinessException;
 import com.example.CJLInvestimentos.exceptions.ResourceNotFoundException;
 import com.example.CJLInvestimentos.repositories.CarteiraClienteRepository;
 import com.example.CJLInvestimentos.repositories.CarteiraRepository;
+import com.example.CJLInvestimentos.repositories.OperacaoClienteRepository;
 import com.example.CJLInvestimentos.repositories.RecomendacaoRepository;
+import com.example.CJLInvestimentos.repositories.RecomendacaoResolvidaClienteRepository;
 import com.example.CJLInvestimentos.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
@@ -27,6 +30,8 @@ public class CarteiraService {
     private final CarteiraRepository carteiraRepository;
     private final CarteiraClienteRepository carteiraClienteRepository;
     private final RecomendacaoRepository recomendacaoRepository;
+    private final RecomendacaoResolvidaClienteRepository resolvidaClienteRepository;
+    private final OperacaoClienteRepository operacaoClienteRepository;
     private final UserRepository userRepository;
 
     public CarteiraResponse criar(CarteiraRequest request, User consultor) {
@@ -53,6 +58,22 @@ public class CarteiraService {
         Carteira carteira = getCarteiraDoConsultor(id, consultor);
         carteira.setAtiva(false);
         carteiraRepository.save(carteira);
+    }
+
+    /** Exclui permanentemente a carteira. Só permite se não houver cliente associado. */
+    public void excluir(Long id, User consultor) {
+        Carteira carteira = getCarteiraDoConsultor(id, consultor);
+        long totalClientes = carteiraClienteRepository.countByCarteiraId(id);
+        if (totalClientes > 0) {
+            throw new BusinessException("Não é possível excluir carteira com clientes associados. Remova os clientes antes.");
+        }
+        List<Recomendacao> recomendacoes = recomendacaoRepository.findByCarteiraId(id);
+        for (Recomendacao rec : recomendacoes) {
+            resolvidaClienteRepository.deleteByRecomendacaoId(rec.getId());
+            operacaoClienteRepository.deleteByRecomendacaoId(rec.getId());
+        }
+        recomendacaoRepository.deleteAll(recomendacoes);
+        carteiraRepository.delete(carteira);
     }
 
     public List<CarteiraResponse> listarPorConsultor(User consultor) {

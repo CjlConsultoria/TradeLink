@@ -16,6 +16,9 @@ export default {
   desativar(id) {
     return api.delete(`/consultor/carteiras/${id}`)
   },
+  excluir(id) {
+    return api.delete(`/consultor/carteiras/${id}`, { params: { excluir: true } })
+  },
   listarClientes(carteiraId) {
     return api.get(`/consultor/carteiras/${carteiraId}/clientes`)
   },

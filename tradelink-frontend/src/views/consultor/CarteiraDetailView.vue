@@ -10,9 +10,14 @@
       <router-link to="/consultor/carteiras" class="inline-block mt-2 text-sm text-indigo-600 hover:underline">Voltar às carteiras</router-link>
     </div>
     <template v-else-if="carteira">
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-        <p v-if="carteira.descricao" class="text-gray-600 mb-3">{{ carteira.descricao }}</p>
-        <div class="flex gap-6 text-sm text-gray-500"><span>{{ carteira.totalClientes }} clientes</span><span>{{ carteira.totalRecomendacoes }} recomendacoes</span></div>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p v-if="carteira.descricao" class="text-gray-600 mb-3">{{ carteira.descricao }}</p>
+          <div class="flex gap-6 text-sm text-gray-500"><span>{{ carteira.totalClientes }} clientes</span><span>{{ carteira.totalRecomendacoes }} recomendacoes</span></div>
+        </div>
+        <button v-if="carteira.totalClientes === 0" @click="excluirCarteira" class="px-4 py-2 text-sm text-red-600 border border-red-300 rounded-lg hover:bg-red-50">
+          Excluir carteira
+        </button>
       </div>
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
         <div class="flex items-center justify-between mb-4">
@@ -78,7 +83,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import carteiraApi from '../../api/carteiraApi'
 import recomendacaoApi from '../../api/recomendacaoApi'
 import userApi from '../../api/userApi'
@@ -92,6 +97,7 @@ import OperacaoList from '../../components/operacao/OperacaoList.vue'
 import operacaoApi from '../../api/operacaoApi'
 
 const route = useRoute()
+const router = useRouter()
 const recomModalRef = ref(null)
 const carteirasParaModal = ref([])
 const operacoesAbertas = ref({})
@@ -158,5 +164,15 @@ async function removerCliente(id) { await carteiraApi.removerCliente(carteiraId,
 async function onRecomSaved(payload) { try { await recomendacaoApi.criar(payload.carteiraId, { tipo: payload.tipo, moeda: payload.moeda, parMoeda: payload.parMoeda, precoEntrada: payload.precoEntrada, precoAlvo: payload.precoAlvo, stopLoss: payload.stopLoss, quantidade: payload.quantidade, observacao: payload.observacao }); showRecomForm.value = false; loadData() } catch (e) { console.error(e) } }
 async function executarRecom(id) { await recomendacaoApi.executar(id); loadData() }
 async function cancelarRecom(id) { await recomendacaoApi.cancelar(id); loadData() }
+
+async function excluirCarteira() {
+  if (!confirm('Excluir esta carteira? Esta ação não pode ser desfeita.')) return
+  try {
+    await carteiraApi.excluir(carteiraId)
+    router.push('/consultor/carteiras')
+  } catch (e) {
+    alert(e.response?.data?.erro || e.response?.data?.mensagem || 'Erro ao excluir.')
+  }
+}
 onMounted(loadData)
 </script>

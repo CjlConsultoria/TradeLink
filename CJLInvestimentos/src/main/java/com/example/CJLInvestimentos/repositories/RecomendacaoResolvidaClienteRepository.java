@@ -16,6 +16,7 @@ public interface RecomendacaoResolvidaClienteRepository extends JpaRepository<Re
     boolean existsByRecomendacaoIdAndClienteId(Long recomendacaoId, Long clienteId);
 
     void deleteByRecomendacaoIdAndClienteId(Long recomendacaoId, Long clienteId);
+    void deleteByRecomendacaoId(Long recomendacaoId);
 
     /** de e ate devem ser sempre não-nulos (use 1970 e 9999 no service se sem filtro). */
     @Query("SELECT rrc FROM RecomendacaoResolvidaCliente rrc WHERE rrc.recomendacao.carteira.consultor.id = :consultorId " +

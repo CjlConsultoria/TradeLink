@@ -22,6 +22,7 @@ import CarteiraClienteDetailView from '../views/cliente/CarteiraClienteDetailVie
 import CotacoesClienteView from '../views/cliente/CotacoesClienteView.vue'
 import RelatoriosClienteView from '../views/cliente/RelatoriosClienteView.vue'
 import ConfiguracoesNotificacaoView from '../views/ConfiguracoesNotificacaoView.vue'
+import CotacaoDetailView from '../views/CotacaoDetailView.vue'
 
 const routes = [
   { path: '/login', name: 'Login', component: LoginView, meta: { public: true } },
@@ -48,6 +49,7 @@ const routes = [
       { path: 'carteiras/:id', name: 'CarteiraDetail', component: CarteiraDetailView },
       { path: 'clientes', name: 'Clientes', component: ClientesView },
       { path: 'cotacoes', name: 'CotacoesConsultor', component: CotacoesView },
+      { path: 'cotacoes/:moeda/:parMoeda', name: 'CotacaoDetailConsultor', component: CotacaoDetailView },
       { path: 'relatorios', name: 'RelatoriosConsultor', component: RelatoriosView },
       { path: 'faturas', name: 'FaturasConsultor', component: () => import('../views/consultor/FaturasView.vue') },
       { path: 'configuracoes', name: 'ConfiguracoesConsultor', component: ConfiguracoesNotificacaoView }
@@ -62,6 +64,7 @@ const routes = [
       { path: 'carteiras', name: 'CarteirasCliente', component: CarteirasClienteView },
       { path: 'carteiras/:id', name: 'CarteiraClienteDetail', component: CarteiraClienteDetailView },
       { path: 'cotacoes', name: 'CotacoesCliente', component: CotacoesClienteView },
+      { path: 'cotacoes/:moeda/:parMoeda', name: 'CotacaoDetailCliente', component: CotacaoDetailView },
       { path: 'relatorios', name: 'RelatoriosCliente', component: RelatoriosClienteView },
       { path: 'faturas', name: 'FaturasCliente', component: () => import('../views/cliente/FaturasClienteView.vue') },
       { path: 'configuracoes', name: 'ConfiguracoesCliente', component: ConfiguracoesNotificacaoView }

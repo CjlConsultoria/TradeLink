@@ -28,9 +28,10 @@
         </div>
         <p v-if="c.descricao" class="text-sm text-gray-500 mb-3">{{ c.descricao }}</p>
         <div class="flex gap-4 text-sm text-gray-600 mb-4"><span>{{ c.totalClientes }} clientes</span><span>{{ c.totalRecomendacoes }} recomendacoes</span></div>
-        <div class="flex gap-3">
+        <div class="flex flex-wrap gap-3 items-center">
           <router-link :to="'/consultor/carteiras/' + c.id" class="text-sm text-indigo-600 hover:underline">Detalhes</router-link>
           <button @click="editar(c)" class="text-sm text-blue-600 hover:underline">Editar</button>
+          <button v-if="c.totalClientes === 0" @click="excluirCarteira(c)" class="text-sm text-red-600 hover:underline">Excluir</button>
         </div>
       </div>
     </div>
@@ -63,6 +64,16 @@ async function salvar() {
     else await carteiraApi.criar(form.value)
     closeForm(); carteiraStore.listar()
   } catch (e) { formError.value = e.response?.data?.erro || 'Erro ao salvar' }
+}
+
+async function excluirCarteira(c) {
+  if (!confirm(`Excluir a carteira "${c.nome}"? Esta ação não pode ser desfeita.`)) return
+  try {
+    await carteiraApi.excluir(c.id)
+    carteiraStore.listar()
+  } catch (e) {
+    alert(e.response?.data?.erro || e.response?.data?.mensagem || 'Erro ao excluir.')
+  }
 }
 onMounted(() => carteiraStore.listar())
 </script>

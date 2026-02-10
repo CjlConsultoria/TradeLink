@@ -137,7 +137,9 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="c in page.content" :key="c.id" class="border-b border-gray-100 hover:bg-gray-50">
+              <tr v-for="c in page.content" :key="c.id"
+                class="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
+                @click="abrirDetalhe(c)">
                 <td class="py-2 px-3 font-medium">{{ c.moeda }}</td>
                 <td class="py-2 px-3">{{ c.parMoeda }}</td>
                 <td class="py-2 px-3 text-right">{{ formatCurrency(c.precoCompra, c.parMoeda) }}</td>
@@ -149,7 +151,7 @@
                 <td class="py-2 px-3 text-right text-gray-600">{{ c.minimo != null ? formatCurrency(c.minimo, c.parMoeda) : '-' }}</td>
                 <td class="py-2 px-3 text-gray-600">{{ formatDate(c.dataHora) }}</td>
                 <td class="py-2 px-3 text-gray-500">{{ c.fonte }}</td>
-                <td class="py-2 px-1">
+                <td class="py-2 px-1" @click.stop>
                   <button type="button" @click="refreshUma(c)" class="text-gray-400 hover:text-indigo-600 p-0.5 rounded" title="Atualizar">↻</button>
                 </td>
               </tr>
@@ -183,13 +185,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import cotacaoApi from '../../api/cotacaoApi'
 import { useCotacaoStore } from '../../stores/cotacao'
 import { formatCurrency, formatPercent, formatDate } from '../../utils/formatters'
 import LoadingSpinner from '../common/LoadingSpinner.vue'
 
+const route = useRoute()
+const router = useRouter()
 const cotacaoStore = useCotacaoStore()
+const basePath = computed(() => route.path.includes('/consultor') ? '/consultor' : '/cliente')
 const loading = ref(false)
 const mostrarFiltros = ref(true)
 const page = ref({
@@ -294,12 +300,22 @@ function limparFiltros() {
   }
 }
 
+function abrirDetalhe(c) {
+  router.push(`${basePath.value}/cotacoes/${encodeURIComponent(c.moeda)}/${encodeURIComponent(c.parMoeda)}`)
+}
 async function refreshUma(cotacao) {
   try {
     await cotacaoStore.refreshSingle(cotacao.moeda, cotacao.parMoeda)
     carregar(page.value.number)
   } catch (_) {}
 }
-
-onMounted(() => carregar())
+const INTERVALO_ATUALIZACAO_MS = 3 * 60 * 1000
+let intervalId = null
+onMounted(() => {
+  carregar()
+  intervalId = setInterval(() => carregar(page.value.number), INTERVALO_ATUALIZACAO_MS)
+})
+onUnmounted(() => {
+  if (intervalId) clearInterval(intervalId)
+})
 </script>

@@ -55,7 +55,7 @@ const menuItems = computed(() => {
       { to: '/consultor/cotacoes', label: 'Cotações', icon: '💹' },
       { to: '/consultor/faturas', label: 'Faturas', icon: '🧾' },
       { to: '/consultor/relatorios', label: 'Histórico e Relatórios', icon: '📈' },
-      { to: '/consultor/configuracoes', label: 'Notificações', icon: '🔔' }
+      { to: '/consultor/configuracoes', label: 'Configurações', icon: '⚙️' }
       ]
     case 'Cliente':
       return [
@@ -63,7 +63,7 @@ const menuItems = computed(() => {
         { to: '/cliente/carteiras', label: 'Carteiras', icon: '💼' },
         { to: '/cliente/cotacoes', label: 'Cotações', icon: '💹' },
         { to: '/cliente/relatorios', label: 'Relatórios', icon: '📈' },
-        { to: '/cliente/configuracoes', label: 'Notificações', icon: '🔔' }
+        { to: '/cliente/configuracoes', label: 'Configurações', icon: '⚙️' }
       ]
     default:
       return []

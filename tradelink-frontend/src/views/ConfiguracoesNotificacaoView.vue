@@ -1,22 +1,22 @@
 <template>
   <div>
-    <h2 class="page-title">Notificações</h2>
-    <p class="text-gray-600 mb-6">Configure como você deseja receber avisos (nova recomendação, cliente resolveu, etc.).</p>
+    <h2 class="page-title">Configurações</h2>
+    <p class="text-gray-600 mb-6">Notificações e alteração de senha.</p>
+
+    <div class="flex gap-2 mb-6 border-b border-gray-200">
+      <button type="button" @click="abaAtiva = 'notificacoes'"
+        :class="abaAtiva === 'notificacoes' ? 'border-b-2 border-indigo-600 text-indigo-600 font-medium' : 'text-gray-500 hover:text-gray-700'"
+        class="pb-2 px-1 text-sm">Notificações</button>
+      <button type="button" @click="abaAtiva = 'senha'"
+        :class="abaAtiva === 'senha' ? 'border-b-2 border-indigo-600 text-indigo-600 font-medium' : 'text-gray-500 hover:text-gray-700'"
+        class="pb-2 px-1 text-sm">Alterar senha</button>
+    </div>
 
     <LoadingSpinner v-if="loading" />
 
     <template v-else>
-      <div v-if="empresaNotif" class="mb-6 p-4 card bg-gray-50/50">
-        <p class="text-sm font-medium text-gray-700">Canais habilitados pela sua empresa</p>
-        <p class="text-sm text-gray-500 mt-1">
-          E-mail: {{ empresaNotif.notificacaoEmail ? 'Sim' : 'Não' }} ·
-          Telegram: {{ empresaNotif.notificacaoTelegram ? 'Sim' : 'Não' }} ·
-          Push: {{ empresaNotif.notificacaoPush ? 'Sim' : 'Não' }}
-        </p>
-      </div>
-
-      <div class="space-y-6 max-w-xl">
-        <!-- Alterar senha -->
+      <!-- Aba Senha -->
+      <div v-show="abaAtiva === 'senha'" class="space-y-6 max-w-xl">
         <div class="card p-6">
           <h3 class="section-title">Alterar senha</h3>
           <p class="text-sm text-gray-500 mb-3">Troque a senha do seu acesso (recomendado após o primeiro login).</p>
@@ -38,6 +38,18 @@
             <p v-if="erroSenha" class="text-sm text-red-500">{{ erroSenha }}</p>
           </div>
         </div>
+      </div>
+
+      <!-- Aba Notificações -->
+      <div v-show="abaAtiva === 'notificacoes'" class="space-y-6 max-w-xl">
+      <div v-if="empresaNotif" class="mb-6 p-4 card bg-gray-50/50">
+        <p class="text-sm font-medium text-gray-700">Canais habilitados pela sua empresa</p>
+        <p class="text-sm text-gray-500 mt-1">
+          E-mail: {{ empresaNotif.notificacaoEmail ? 'Sim' : 'Não' }} ·
+          Telegram: {{ empresaNotif.notificacaoTelegram ? 'Sim' : 'Não' }} ·
+          Push: {{ empresaNotif.notificacaoPush ? 'Sim' : 'Não' }}
+        </p>
+      </div>
 
         <!-- Telegram -->
         <div class="card p-6">
@@ -71,6 +83,7 @@
           </template>
         </div>
       </div>
+      </div>
     </template>
   </div>
 </template>
@@ -92,6 +105,7 @@ const telegramChatId = ref('')
 const salvandoTelegram = ref(false)
 const salvandoPush = ref(false)
 const erroPush = ref('')
+const abaAtiva = ref('notificacoes')
 const senhaAtual = ref('')
 const novaSenha = ref('')
 const salvandoSenha = ref(false)

@@ -109,11 +109,16 @@ public class ConsultorController {
     }
 
     @DeleteMapping("/carteiras/{id}")
-    public ResponseEntity<Void> desativarCarteira(
+    public ResponseEntity<Void> excluirOuDesativarCarteira(
             @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            @RequestParam(required = false, defaultValue = "false") boolean excluir) {
         User consultor = getUser(userDetails);
-        carteiraService.desativar(id, consultor);
+        if (excluir) {
+            carteiraService.excluir(id, consultor);
+        } else {
+            carteiraService.desativar(id, consultor);
+        }
         return ResponseEntity.noContent().build();
     }
 
