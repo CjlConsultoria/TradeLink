@@ -27,6 +27,7 @@ public class UserService {
     private final EmpresaRepository empresaRepository;
     private final PushSubscriptionRepository pushSubscriptionRepository;
     private final PasswordEncoder passwordEncoder;
+    private final NotificationService notificationService;
 
     public UserResponse criarConsultor(RegisterRequest request, Long empresaId) {
         return criarUsuario(request, empresaId, Role.Admin);
@@ -60,7 +61,9 @@ public class UserService {
                         .empresa(empresa)
                         .build()
         );
-
+        try {
+            notificationService.enviarEmailNovoUsuario(user.getEmail(), user.getNome(), user.getRole());
+        } catch (Exception ignored) { }
         return toResponse(user);
     }
 
