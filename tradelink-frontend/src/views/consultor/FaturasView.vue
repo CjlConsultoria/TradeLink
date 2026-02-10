@@ -58,7 +58,7 @@
               <div v-if="!publishableKey" class="mb-4 p-3 rounded-lg bg-amber-50 text-amber-800 text-sm">
                 Configure <code class="text-xs">STRIPE_PUBLISHABLE_KEY</code> no servidor para pagar aqui. Use "Abrir em outra página" como alternativa.
               </div>
-              <div id="payment-element" ref="paymentElementRef" class="min-h-[200px] mb-4"></div>
+              <div id="payment-element" ref="paymentElementRef" class="min-h-[220px] w-full mb-4"></div>
               <div class="flex gap-3">
                 <button type="button" class="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50" :disabled="enviandoPagamento" @click="fecharModalPagamento">Cancelar</button>
                 <button type="button" class="flex-1 btn-primary" :disabled="!stripeReady || enviandoPagamento" @click="confirmarPagamento">
@@ -179,16 +179,23 @@ async function abrirPagamentoEmbutido() {
       erroModal.value = 'Stripe não carregou. Tente "Abrir em outra página".'
       return
     }
-    const elements = stripe.elements({ clientSecret: clientSecret.value })
-    const paymentElement = elements.create('payment')
+    const elements = stripe.elements({
+      clientSecret: clientSecret.value,
+      locale: 'pt-BR',
+      appearance: { theme: 'stripe', variables: { borderRadius: '8px' } }
+    })
+    const paymentElement = elements.create('payment', { layout: 'tabs' })
     await nextTick()
     const el = document.getElementById('payment-element')
     if (el) {
+      await new Promise(r => setTimeout(r, 100))
       paymentElement.mount('#payment-element')
       stripeInstance = stripe
       elementsInstance = elements
       paymentElementInstance = paymentElement
       stripeReady.value = true
+    } else {
+      erroModal.value = 'Erro ao carregar formulário de pagamento. Tente novamente.'
     }
   } catch (e) {
     toast.error(e.response?.data?.erro || e.response?.data?.mensagem || 'Erro ao abrir pagamento.')

@@ -271,10 +271,9 @@ public class StripePaymentService {
                     .setCurrency("brl")
                     .putMetadata("empresa_id", empresaId.toString())
                     .putMetadata("plano_id", plano.getId().toString())
-                    .setAutomaticPaymentMethods(
-                            PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
-                                    .setEnabled(true)
-                                    .build())
+                    .addPaymentMethodType("card")
+                    .addPaymentMethodType("pix")
+                    .addPaymentMethodType("boleto")
                     .build();
             PaymentIntent pi = PaymentIntent.create(params);
             Map<String, String> result = new HashMap<>();
