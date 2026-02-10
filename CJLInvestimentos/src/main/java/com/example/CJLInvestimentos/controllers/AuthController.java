@@ -89,6 +89,10 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(AuthResponse.builder().mensagem("Senha inválida").build());
         }
+        if (!Boolean.TRUE.equals(user.getAtivo())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(AuthResponse.builder().mensagem("Conta inativa. Entre em contato com o administrador.").build());
+        }
 
         String token = jwtService.generateToken(user);
 

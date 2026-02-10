@@ -85,6 +85,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             User user = userRepository.findByEmail(userEmail).orElse(null);
 
             if (user != null) {
+                if (!Boolean.TRUE.equals(user.getAtivo())) {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.getWriter().write(objectMapper.writeValueAsString(Map.of(
+                            "mensagem", "Conta inativa. Entre em contato com o administrador."
+                    )));
+                    return;
+                }
                 UserDetailsImpl userDetails = new UserDetailsImpl(user);
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(

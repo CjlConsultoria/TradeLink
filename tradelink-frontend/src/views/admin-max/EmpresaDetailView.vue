@@ -191,12 +191,34 @@
         <!-- Modal Editar fatura -->
         <div v-if="showEditarFatura" class="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div class="absolute inset-0 bg-black/50" @click="showEditarFatura = false"></div>
-          <div class="card p-6 max-w-md w-full relative z-10">
+          <div class="card p-6 max-w-md w-full relative z-10 max-h-[90vh] overflow-y-auto">
             <h3 class="section-title">Editar fatura</h3>
             <form @submit.prevent="salvarEdicaoFatura" class="space-y-3">
               <div>
+                <label class="block text-sm text-gray-600 mb-1">Status</label>
+                <select v-model="editFaturaForm.status" class="input-base w-full">
+                  <option value="PENDENTE">Pendente</option>
+                  <option value="PAGA">Paga</option>
+                  <option value="VENCIDA">Vencida</option>
+                </select>
+              </div>
+              <div>
                 <label class="block text-sm text-gray-600 mb-1">Vencimento</label>
                 <input v-model="editFaturaForm.dataVencimento" type="date" class="input-base w-full" />
+              </div>
+              <div v-if="editFaturaForm.status === 'PAGA'">
+                <label class="block text-sm text-gray-600 mb-1">Data pagamento</label>
+                <input v-model="editFaturaForm.dataPagamento" type="date" class="input-base w-full" />
+              </div>
+              <div v-if="editFaturaForm.status === 'PAGA'">
+                <label class="block text-sm text-gray-600 mb-1">Forma de pagamento</label>
+                <select v-model="editFaturaForm.formaPagamento" class="input-base w-full">
+                  <option value="">—</option>
+                  <option value="PIX">PIX</option>
+                  <option value="CARTAO">Cartão</option>
+                  <option value="BOLETO">Boleto</option>
+                  <option value="MANUAL">Manual</option>
+                </select>
               </div>
               <div>
                 <label class="block text-sm text-gray-600 mb-1">Valor (R$)</label>
@@ -288,7 +310,7 @@ const showNovaFatura = ref(false)
 const showEditarFatura = ref(false)
 const salvandoFatura = ref(false)
 const faturaForm = ref({ dataVencimento: '', valor: '', descricaoServico: '', observacao: '' })
-const editFaturaForm = ref({ dataVencimento: '', valor: '', descricaoServico: '', observacao: '' })
+const editFaturaForm = ref({ status: 'PENDENTE', dataVencimento: '', dataPagamento: '', formaPagamento: '', valor: '', descricaoServico: '', observacao: '' })
 const editFaturaId = ref(null)
 const faturaAExcluir = ref(null)
 
@@ -400,7 +422,10 @@ async function criarFatura() {
 function abrirModalEditarFatura(f) {
   editFaturaId.value = f.id
   editFaturaForm.value = {
+    status: f.status || 'PENDENTE',
     dataVencimento: isoToDateInput(f.dataVencimento),
+    dataPagamento: isoToDateInput(f.dataPagamento),
+    formaPagamento: f.formaPagamento || '',
     valor: f.valor,
     descricaoServico: f.descricaoServico || '',
     observacao: f.observacao || ''
@@ -412,11 +437,15 @@ async function salvarEdicaoFatura() {
   if (!editFaturaId.value) return
   salvandoFatura.value = true
   try {
+    const f = editFaturaForm.value
     const data = {
-      dataVencimento: editFaturaForm.value.dataVencimento ? new Date(editFaturaForm.value.dataVencimento + 'T12:00:00').toISOString() : undefined,
-      valor: editFaturaForm.value.valor,
-      descricaoServico: editFaturaForm.value.descricaoServico || null,
-      observacao: editFaturaForm.value.observacao || null
+      status: f.status || undefined,
+      dataVencimento: f.dataVencimento ? new Date(f.dataVencimento + 'T12:00:00').toISOString() : undefined,
+      dataPagamento: f.dataPagamento ? new Date(f.dataPagamento + 'T12:00:00').toISOString() : undefined,
+      formaPagamento: f.formaPagamento || undefined,
+      valor: f.valor,
+      descricaoServico: f.descricaoServico || null,
+      observacao: f.observacao || null
     }
     await faturaApi.atualizarFatura(route.params.id, editFaturaId.value, data)
     toast.success('Fatura atualizada.')

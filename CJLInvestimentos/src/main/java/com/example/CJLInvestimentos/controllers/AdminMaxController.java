@@ -1,5 +1,6 @@
 package com.example.CJLInvestimentos.controllers;
 
+import com.example.CJLInvestimentos.dtos.request.AlterarSenhaAdminRequest;
 import com.example.CJLInvestimentos.dtos.request.AtualizarFaturaRequest;
 import com.example.CJLInvestimentos.dtos.request.AtualizarUsuarioAdminRequest;
 import com.example.CJLInvestimentos.dtos.request.CriarFaturaRequest;
@@ -187,6 +188,13 @@ public class AdminMaxController {
     @PostMapping("/usuarios/{id}/ativar")
     public ResponseEntity<Void> ativarUsuario(@PathVariable Long id) {
         userService.ativar(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/usuarios/{id}/senha")
+    public ResponseEntity<Void> alterarSenhaUsuario(
+            @PathVariable Long id, @Valid @RequestBody AlterarSenhaAdminRequest request) {
+        userService.alterarSenhaPorAdminMax(id, request.getNovaSenha());
         return ResponseEntity.noContent().build();
     }
 

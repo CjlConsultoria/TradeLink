@@ -144,6 +144,17 @@ public class UserService {
         return toResponse(user);
     }
 
+    /** Super Admin: altera a senha de qualquer usuário. */
+    public void alterarSenhaPorAdminMax(Long id, String novaSenha) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
+        if (novaSenha == null || novaSenha.length() < 6) {
+            throw new BusinessException("Senha deve ter no mínimo 6 caracteres");
+        }
+        user.setSenha(passwordEncoder.encode(novaSenha));
+        userRepository.save(user);
+    }
+
     public UserResponse atualizarTelegramChatId(User user, String telegramChatId) {
         user.setTelegramChatId(telegramChatId == null || telegramChatId.isBlank() ? null : telegramChatId.trim());
         userRepository.save(user);

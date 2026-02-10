@@ -47,6 +47,7 @@
               <td class="py-3 px-4">
                 <div class="flex flex-wrap gap-2">
                   <button type="button" @click="abrirEdicao(u)" class="text-sm text-indigo-600 hover:underline">Editar</button>
+                  <button type="button" @click="abrirModalSenha(u)" class="text-sm text-amber-600 hover:underline">Alterar senha</button>
                   <button v-if="!u.ativo" type="button" @click="ativarUsuario(u)" class="text-sm text-green-600 hover:underline">Ativar</button>
                   <button v-if="u.ativo" type="button" @click="inativarUsuario(u)" class="text-sm text-red-600 hover:underline">Inativar</button>
                 </div>
@@ -100,6 +101,33 @@
                 {{ modal.salvando ? 'Salvando...' : 'Salvar' }}
               </button>
               <button type="button" @click="fecharModal" class="px-4 py-2 bg-gray-100 rounded-lg text-sm hover:bg-gray-200">Cancelar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Modal Alterar senha -->
+    <Teleport to="body">
+      <div v-if="modalSenha.visivel" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="fecharModalSenha">
+        <div class="bg-white rounded-xl shadow-xl max-w-sm w-full p-6">
+          <h3 class="text-lg font-semibold mb-2">Alterar senha</h3>
+          <p class="text-sm text-gray-500 mb-4">{{ modalSenha.nome }} ({{ modalSenha.email }})</p>
+          <form @submit.prevent="salvarSenha" class="space-y-3">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Nova senha (mín. 6 caracteres)</label>
+              <input v-model="modalSenha.novaSenha" type="password" required minlength="6" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Nova senha" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Confirmar senha</label>
+              <input v-model="modalSenha.confirmarSenha" type="password" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Repita a senha" />
+            </div>
+            <p v-if="modalSenha.erro" class="text-sm text-red-500">{{ modalSenha.erro }}</p>
+            <div class="flex gap-2 pt-2">
+              <button type="submit" :disabled="modalSenha.salvando" class="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm hover:bg-amber-700 disabled:opacity-50">
+                {{ modalSenha.salvando ? 'Salvando...' : 'Alterar senha' }}
+              </button>
+              <button type="button" @click="fecharModalSenha" class="px-4 py-2 bg-gray-100 rounded-lg text-sm hover:bg-gray-200">Cancelar</button>
             </div>
           </form>
         </div>
@@ -225,9 +253,58 @@ async function inativarUsuario(u) {
     await userApi.desativar(u.id)
     const idx = usuarios.value.findIndex(x => x.id === u.id)
     if (idx !== -1) usuarios.value[idx] = { ...usuarios.value[idx], ativo: false }
-    toast.success('Usuário inativado.')
+    toast.success('Usuário inativado. O usuário será deslogado na próxima requisição.')
   } catch (e) {
     toast.error(e.response?.data?.mensagem || 'Erro ao inativar.')
+  }
+}
+
+const modalSenha = ref({
+  visivel: false,
+  id: null,
+  nome: '',
+  email: '',
+  novaSenha: '',
+  confirmarSenha: '',
+  salvando: false,
+  erro: ''
+})
+function abrirModalSenha(u) {
+  modalSenha.value = {
+    visivel: true,
+    id: u.id,
+    nome: u.nome || '',
+    email: u.email || '',
+    novaSenha: '',
+    confirmarSenha: '',
+    salvando: false,
+    erro: ''
+  }
+}
+function fecharModalSenha() {
+  modalSenha.value.visivel = false
+}
+async function salvarSenha() {
+  const m = modalSenha.value
+  m.erro = ''
+  if (m.novaSenha.length < 6) {
+    m.erro = 'Senha deve ter no mínimo 6 caracteres.'
+    return
+  }
+  if (m.novaSenha !== m.confirmarSenha) {
+    m.erro = 'As senhas não coincidem.'
+    return
+  }
+  m.salvando = true
+  try {
+    await userApi.alterarSenhaAdmin(m.id, { novaSenha: m.novaSenha })
+    toast.success('Senha alterada.')
+    fecharModalSenha()
+  } catch (e) {
+    m.erro = e.response?.data?.mensagem || e.response?.data?.erro || 'Erro ao alterar senha.'
+    toast.error(m.erro)
+  } finally {
+    m.salvando = false
   }
 }
 

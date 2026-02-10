@@ -53,7 +53,7 @@ public class NotificationService {
     /** Envia e-mail em texto simples (se configurado). */
     public void enviarEmail(String para, String assunto, String corpo) {
         if (mailSender == null || emailFrom == null || emailFrom.isBlank()) {
-            log.debug("E-mail não configurado, ignorando envio.");
+            log.info("E-mail não configurado (MAIL_PASSWORD ou app.notificacao.email.from vazio), ignorando envio.");
             return;
         }
         try {
@@ -63,7 +63,7 @@ public class NotificationService {
             msg.setSubject(assunto);
             msg.setText(corpo);
             mailSender.send(msg);
-            log.debug("E-mail enviado para {}", para);
+            log.info("E-mail enviado para {}", para);
         } catch (Exception e) {
             log.warn("Falha ao enviar e-mail para {}: {}", para, e.getMessage());
         }
@@ -72,7 +72,7 @@ public class NotificationService {
     /** Envia e-mail em HTML (template responsivo). */
     public void enviarEmailHtml(String para, String assunto, String htmlBody) {
         if (mailSender == null || emailFrom == null || emailFrom.isBlank()) {
-            log.debug("E-mail não configurado, ignorando envio.");
+            log.info("E-mail não configurado (MAIL_PASSWORD ou app.notificacao.email.from vazio), ignorando envio.");
             return;
         }
         try {
@@ -82,7 +82,7 @@ public class NotificationService {
             msg.setSubject(assunto);
             msg.setContent(htmlBody, "text/html; charset=UTF-8");
             mailSender.send(msg);
-            log.debug("E-mail HTML enviado para {}", para);
+            log.info("E-mail HTML enviado para {}", para);
         } catch (Exception e) {
             log.warn("Falha ao enviar e-mail HTML para {}: {}", para, e.getMessage());
         }
@@ -156,6 +156,10 @@ public class NotificationService {
             } else {
                 enviarEmail(usuario.getEmail(), titulo, corpo);
             }
+        } else if (Boolean.TRUE.equals(empresa.getNotificacaoEmail()) && (usuario.getEmail() == null || usuario.getEmail().isBlank())) {
+            log.info("E-mail não enviado para usuário id={}: cliente sem e-mail cadastrado.", usuario.getId());
+        } else if (!Boolean.TRUE.equals(empresa.getNotificacaoEmail())) {
+            log.info("E-mail não enviado: notificação por e-mail desabilitada na empresa (id={}).", empresa.getId());
         }
         if (Boolean.TRUE.equals(empresa.getNotificacaoTelegram()) && usuario.getTelegramChatId() != null && !usuario.getTelegramChatId().isBlank()) {
             enviarTelegram(usuario.getTelegramChatId(), titulo + "\n\n" + corpo);

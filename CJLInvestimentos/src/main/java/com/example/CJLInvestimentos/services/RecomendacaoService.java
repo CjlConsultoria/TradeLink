@@ -214,6 +214,9 @@ public class RecomendacaoService {
                     .map(cc -> cc.getCliente())
                     .filter(u -> u != null && Boolean.TRUE.equals(u.getAtivo()))
                     .collect(Collectors.toList());
+            org.slf4j.LoggerFactory.getLogger(RecomendacaoService.class).info(
+                    "Nova recomendação criada (carteira id={}); notificando {} cliente(s). Empresa notificacao_email={}",
+                    c.getId(), clientes.size(), Boolean.TRUE.equals(empresa.getNotificacaoEmail()));
             if (!clientes.isEmpty()) {
                 notificationService.notificarNovaRecomendacaoParaClientes(empresa, clientes, rec);
             }

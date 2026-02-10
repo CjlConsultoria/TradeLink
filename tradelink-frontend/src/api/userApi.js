@@ -13,6 +13,9 @@ export default {
   ativar(id) {
     return api.post(`/admin-max/usuarios/${id}/ativar`)
   },
+  alterarSenhaAdmin(id, data) {
+    return api.put(`/admin-max/usuarios/${id}/senha`, data)
+  },
   desativar(id) {
     return api.delete(`/admin-max/usuarios/${id}`)
   },

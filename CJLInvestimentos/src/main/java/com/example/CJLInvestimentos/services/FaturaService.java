@@ -113,6 +113,20 @@ public class FaturaService {
         }
         if (request.getDataVencimento() != null) fatura.setDataVencimento(request.getDataVencimento());
         if (request.getValor() != null) fatura.setValor(request.getValor());
+        if (request.getStatus() != null) {
+            fatura.setStatus(request.getStatus());
+            if (request.getStatus() == com.example.CJLInvestimentos.entities.enums.StatusFatura.PAGA) {
+                if (request.getDataPagamento() != null) fatura.setDataPagamento(request.getDataPagamento());
+                else if (fatura.getDataPagamento() == null) fatura.setDataPagamento(java.time.Instant.now());
+                if (request.getFormaPagamento() != null) fatura.setFormaPagamento(request.getFormaPagamento());
+            } else {
+                fatura.setDataPagamento(null);
+                fatura.setFormaPagamento(null);
+            }
+        } else {
+            if (request.getDataPagamento() != null) fatura.setDataPagamento(request.getDataPagamento());
+            if (request.getFormaPagamento() != null) fatura.setFormaPagamento(request.getFormaPagamento());
+        }
         if (request.getDescricaoServico() != null) fatura.setDescricaoServico(request.getDescricaoServico());
         if (request.getObservacao() != null) fatura.setObservacao(request.getObservacao());
         return toResponse(faturaRepository.save(fatura));
