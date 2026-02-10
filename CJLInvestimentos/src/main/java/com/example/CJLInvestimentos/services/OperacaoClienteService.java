@@ -54,6 +54,7 @@ public class OperacaoClienteService {
             throw new AccessDeniedException("Sem acesso a esta recomendação");
         }
         return operacaoClienteRepository.findByRecomendacaoIdOrderByDataExecucaoDesc(recomendacaoId).stream()
+                .filter(op -> op.getCliente().getId().equals(cliente.getId()))
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
