@@ -1,5 +1,6 @@
 package com.example.CJLInvestimentos.dtos.request;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,5 +9,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MarcarResolvidoRequest {
+    @JsonProperty("resolvido")
     private boolean resolvido;
 }

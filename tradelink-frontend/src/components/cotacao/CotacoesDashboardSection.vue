@@ -29,7 +29,7 @@
     </div>
     <LoadingSpinner v-if="loading" />
     <template v-else>
-      <CotacaoGrid :cotacoes="page.content" :show-refresh="showRefresh" />
+      <CotacaoGrid :cotacoes="page.content" :show-refresh="showRefresh" :show-popup="true" />
       <div v-if="page.totalPages > 1" class="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
         <p class="text-sm text-gray-500">{{ page.totalElements }} resultado(s) · página {{ page.number + 1 }} de {{ page.totalPages }}</p>
         <div class="flex gap-1">

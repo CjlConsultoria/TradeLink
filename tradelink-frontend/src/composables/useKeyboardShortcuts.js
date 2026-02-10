@@ -14,6 +14,7 @@ export function useKeyboardShortcuts(opts = {}) {
   const defaultShortcuts = {
     AdminMax: {
       e: () => router.push('/admin-max/empresas'),
+      u: () => router.push('/admin-max/usuarios'),
       p: () => router.push('/admin-max/planos')
     },
     Admin: {

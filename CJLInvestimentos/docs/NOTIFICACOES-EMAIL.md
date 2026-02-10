@@ -20,6 +20,19 @@ Defina no **Render** → Backend → **Environment**:
   - Se a conta tiver **verificação em duas etapas**, use uma **senha de app**:  
     [Google – Senhas de app](https://myaccount.google.com/apppasswords)
 
+### Rancher / Kubernetes (produção)
+
+O perfil **production** (`application-production.properties`) usa variáveis de ambiente para e-mail.  
+Defina no **Deployment** (e use um **Secret** para a senha):
+
+- **`MAIL_PASSWORD`** → do Secret (senha ou senha de app do Gmail)
+- **`MAIL_FROM`** → e-mail remetente (ex.: `noreply@seudominio.com` ou `seu@gmail.com`)
+- **`SPRING_MAIL_USERNAME`** → mesmo e-mail (obrigatório para Gmail)
+- **`SPRING_MAIL_HOST`** (opcional, default: `smtp.gmail.com`)
+- **`SPRING_MAIL_PORT`** (opcional, default: `587`)
+
+Detalhes e exemplo de Secret + Deployment em **`DEPLOY-RANCHER.md`** (seção 6. E-mail).
+
 ### Local
 
 Copie o trecho de e-mail do `application-local.properties.example` para `application-local.properties` e preencha:

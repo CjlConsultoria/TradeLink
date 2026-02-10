@@ -1,5 +1,6 @@
 package com.example.CJLInvestimentos.services;
 
+import com.example.CJLInvestimentos.dtos.request.AtualizarUsuarioAdminRequest;
 import com.example.CJLInvestimentos.dtos.request.PushSubscriptionRequest;
 import com.example.CJLInvestimentos.dtos.request.RegisterRequest;
 import com.example.CJLInvestimentos.dtos.response.UserResponse;
@@ -96,6 +97,51 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
         user.setAtivo(false);
         userRepository.save(user);
+    }
+
+    public void ativar(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
+        user.setAtivo(true);
+        userRepository.save(user);
+    }
+
+    /** Super Admin: atualiza qualquer usuário (nome, email, ativo, role, empresa). */
+    public UserResponse atualizarPorAdminMax(Long id, AtualizarUsuarioAdminRequest request) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
+        if (request.getNome() != null && !request.getNome().isBlank()) {
+            user.setNome(request.getNome().trim());
+        }
+        if (request.getEmail() != null && !request.getEmail().isBlank()) {
+            String email = request.getEmail().trim().toLowerCase();
+            userRepository.findByEmail(email).ifPresent(outro -> {
+                if (!outro.getId().equals(id)) {
+                    throw new BusinessException("E-mail já cadastrado para outro usuário");
+                }
+            });
+            user.setEmail(email);
+        }
+        if (request.getAtivo() != null) {
+            user.setAtivo(request.getAtivo());
+        }
+        if (request.getRole() != null) {
+            user.setRole(request.getRole());
+            if (request.getRole() == Role.AdminMax) {
+                user.setEmpresa(null);
+            }
+        }
+        if (request.getEmpresaId() != null) {
+            if (request.getEmpresaId() <= 0) {
+                user.setEmpresa(null);
+            } else {
+                Empresa empresa = empresaRepository.findById(request.getEmpresaId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Empresa não encontrada"));
+                user.setEmpresa(empresa);
+            }
+        }
+        userRepository.save(user);
+        return toResponse(user);
     }
 
     public UserResponse atualizarTelegramChatId(User user, String telegramChatId) {

@@ -8,6 +8,7 @@ import DashboardAdminMax from '../views/admin-max/DashboardAdminMax.vue'
 import EmpresasView from '../views/admin-max/EmpresasView.vue'
 import EmpresaDetailView from '../views/admin-max/EmpresaDetailView.vue'
 import PlanosView from '../views/admin-max/PlanosView.vue'
+import UsuariosView from '../views/admin-max/UsuariosView.vue'
 
 import DashboardConsultor from '../views/consultor/DashboardConsultor.vue'
 import CarteirasView from '../views/consultor/CarteirasView.vue'
@@ -35,6 +36,7 @@ const routes = [
       { path: '', name: 'AdminMaxDashboard', component: DashboardAdminMax },
       { path: 'empresas', name: 'Empresas', component: EmpresasView },
       { path: 'empresas/:id', name: 'EmpresaDetail', component: EmpresaDetailView },
+      { path: 'usuarios', name: 'UsuariosAdminMax', component: UsuariosView },
       { path: 'planos', name: 'Planos', component: PlanosView },
       { path: 'configuracoes', name: 'ConfiguracoesAdminMax', component: ConfiguracoesNotificacaoView }
     ]

@@ -23,6 +23,6 @@ export default {
     return api.get('/cliente/recomendacoes', { params })
   },
   marcarResolvido(recomendacaoId, resolvido) {
-    return api.put(`/cliente/recomendacoes/${recomendacaoId}/resolvido`, { resolvido })
+    return api.put(`/cliente/recomendacoes/${recomendacaoId}/resolvido`, { resolvido: Boolean(resolvido) })
   }
 }

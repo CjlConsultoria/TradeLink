@@ -79,6 +79,11 @@
               <div><span class="text-gray-500">Atual:</span> <span class="font-medium text-indigo-600">{{ r.cotacaoAtual ? formatCurrency(r.cotacaoAtual) : '-' }}</span></div>
               <div><span class="text-gray-500">Qtd:</span> {{ r.quantidade || '-' }}</div>
             </div>
+            <div class="mt-3 flex gap-2">
+              <button type="button" @click="abrirModalOperacao(r)" class="text-sm px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200">
+                Registrar operação
+              </button>
+            </div>
           </div>
         </div>
         <EmptyState v-if="!loadingRec && page.content.length === 0" :message="abaRec === 'resolvidas' ? 'Nenhuma recomendação resolvida.' : abaRec === 'pendentes' ? 'Nenhuma recomendação pendente.' : 'Nenhuma recomendação.'" />
@@ -93,6 +98,47 @@
 
       <!-- Cotações depois -->
       <CotacoesDashboardSection titulo="Cotações" />
+
+      <!-- Modal Registrar operação -->
+      <Teleport to="body">
+        <div v-if="modalOperacao.visivel" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="fecharModalOperacao">
+          <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6">
+            <h3 class="text-lg font-semibold mb-4">Registrar operação — {{ modalOperacao.rec?.moeda }}/{{ modalOperacao.rec?.parMoeda }}</h3>
+            <form @submit.prevent="enviarOperacao" class="space-y-3">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
+                <select v-model="modalOperacao.tipo" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                  <option value="COMPRA">Compra</option>
+                  <option value="VENDA">Venda</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Preço executado</label>
+                <input v-model.number="modalOperacao.precoExecutado" type="number" step="any" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Quantidade</label>
+                <input v-model.number="modalOperacao.quantidade" type="number" step="any" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Data execução</label>
+                <input v-model="modalOperacao.dataExecucao" type="date" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Observação</label>
+                <input v-model="modalOperacao.observacao" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Opcional" />
+              </div>
+              <p v-if="modalOperacao.erro" class="text-sm text-red-500">{{ modalOperacao.erro }}</p>
+              <div class="flex gap-2 pt-2">
+                <button type="submit" :disabled="modalOperacao.salvando" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-50">
+                  {{ modalOperacao.salvando ? 'Salvando...' : 'Salvar' }}
+                </button>
+                <button type="button" @click="fecharModalOperacao" class="px-4 py-2 bg-gray-100 rounded-lg text-sm hover:bg-gray-200">Cancelar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </Teleport>
     </template>
   </div>
 </template>
@@ -109,6 +155,7 @@ import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import EmptyState from '../../components/common/EmptyState.vue'
 import StatusBadge from '../../components/common/StatusBadge.vue'
 import TipoBadge from '../../components/common/TipoBadge.vue'
+import operacaoApi from '../../api/operacaoApi'
 
 const toast = useToast()
 
@@ -127,11 +174,67 @@ const page = ref({ content: [], totalElements: 0, totalPages: 0, number: 0, firs
 const TAMANHO_PAGINA = 10
 const togglingResolvido = ref(null)
 
+const modalOperacao = ref({
+  visivel: false,
+  rec: null,
+  tipo: 'COMPRA',
+  precoExecutado: null,
+  quantidade: null,
+  dataExecucao: '',
+  observacao: '',
+  salvando: false,
+  erro: ''
+})
+
+function abrirModalOperacao(r) {
+  const hoje = new Date().toISOString().slice(0, 10)
+  modalOperacao.value = {
+    visivel: true,
+    rec: r,
+    tipo: 'COMPRA',
+    precoExecutado: r.precoEntrada || null,
+    quantidade: r.quantidade || null,
+    dataExecucao: hoje,
+    observacao: '',
+    salvando: false,
+    erro: ''
+  }
+}
+function fecharModalOperacao() {
+  modalOperacao.value.visivel = false
+  modalOperacao.value.rec = null
+}
+async function enviarOperacao() {
+  const m = modalOperacao.value
+  if (!m.rec) return
+  m.erro = ''
+  m.salvando = true
+  try {
+    await operacaoApi.registrar(m.rec.id, {
+      tipo: m.tipo,
+      precoExecutado: m.precoExecutado,
+      quantidade: m.quantidade,
+      dataExecucao: m.dataExecucao,
+      observacao: m.observacao || null
+    })
+    toast.success('Operação registrada.')
+    fecharModalOperacao()
+    carregar(page.value.number)
+    if (dashboard.value != null) dashboard.value.totalPendentes = (dashboard.value.totalPendentes ?? 0) - 1
+  } catch (e) {
+    m.erro = e.response?.data?.mensagem || e.response?.data?.erro || 'Erro ao registrar.'
+    toast.error(m.erro)
+  } finally {
+    m.salvando = false
+  }
+}
+
 async function toggleResolvido(r) {
   if (togglingResolvido.value === r.id) return
+  const novoResolvido = !(r.resolvido === true)
   togglingResolvido.value = r.id
   try {
-    const res = await recomendacaoApi.marcarResolvido(r.id, !r.resolvido)
+    const res = await recomendacaoApi.marcarResolvido(r.id, novoResolvido)
     const updated = res.data
     const idx = page.value.content.findIndex(x => x.id === r.id)
     if (idx !== -1) {

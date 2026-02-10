@@ -67,7 +67,69 @@ No deployment do **backend** no Rancher, configure as variáveis de ambiente:
    - Cria o **primeiro usuário AdminMax** (com o e-mail/senha definidos ou com os valores logados).
 5. Acessar o frontend e fazer login com o usuário admin criado.
 
-## 6. Stripe (opcional)
+## 6. E-mail (opcional)
+
+Para o envio de e-mails (boas-vindas, senha alterada, nova recomendação, etc.) funcionar no Rancher, defina as variáveis abaixo. **Se não definir, o app sobe normalmente e apenas não envia e-mails.**
+
+### Variáveis de ambiente
+
+| Variável | Obrigatório | Exemplo | Descrição |
+|----------|-------------|---------|-----------|
+| `MAIL_PASSWORD` | Sim (se quiser e-mail) | (senha ou senha de app) | Senha do SMTP. **Use um Secret no Rancher.** |
+| `MAIL_FROM` | Sim (se quiser e-mail) | `noreply@seudominio.com` | Remetente (From) dos e-mails. |
+| `SPRING_MAIL_USERNAME` | Sim (se quiser e-mail) | Igual a `MAIL_FROM` no Gmail | Usuário do SMTP. |
+| `SPRING_MAIL_HOST` | Não | `smtp.gmail.com` | Host SMTP (default: Gmail). |
+| `SPRING_MAIL_PORT` | Não | `587` | Porta SMTP (default: 587). |
+
+### O que criar no Rancher
+
+1. **Secret** (recomendado para a senha):
+
+   ```yaml
+   apiVersion: v1
+   kind: Secret
+   metadata:
+     name: tradelink-mail-secret
+     namespace: default   # ou o namespace do seu app
+   type: Opaque
+   stringData:
+     MAIL_PASSWORD: "sua-senha-ou-senha-de-app"
+   ```
+
+2. **No Deployment do backend**, inclua as variáveis de ambiente (e use o Secret para a senha):
+
+   - **De ConfigMap ou env “normal”** (não sensíveis):
+     - `MAIL_FROM` = e-mail remetente (ex.: `noreply@seudominio.com` ou `seu@gmail.com`)
+     - `SPRING_MAIL_USERNAME` = mesmo e-mail (obrigatório para Gmail)
+     - `SPRING_MAIL_HOST` = `smtp.gmail.com` (ou outro SMTP)
+     - `SPRING_MAIL_PORT` = `587`
+   - **Do Secret** (sensível):
+     - `MAIL_PASSWORD` → `secretKeyRef` apontando para `tradelink-mail-secret` e a chave `MAIL_PASSWORD`
+
+Exemplo no Deployment (trecho):
+
+```yaml
+env:
+  - name: MAIL_FROM
+    value: "seu@gmail.com"
+  - name: SPRING_MAIL_USERNAME
+    value: "seu@gmail.com"
+  - name: SPRING_MAIL_HOST
+    value: "smtp.gmail.com"
+  - name: SPRING_MAIL_PORT
+    value: "587"
+  - name: MAIL_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: tradelink-mail-secret
+        key: MAIL_PASSWORD
+```
+
+**Gmail com verificação em duas etapas:** use uma [senha de app](https://myaccount.google.com/apppasswords) em `MAIL_PASSWORD`.
+
+Consulte `NOTIFICACOES-EMAIL.md` para detalhes dos e-mails enviados.
+
+## 7. Stripe (opcional)
 
 Para pagamentos em produção, configure no ambiente (ou em um ConfigMap/Secret) as variáveis Stripe, por exemplo:
 

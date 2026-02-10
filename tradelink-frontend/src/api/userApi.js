@@ -4,6 +4,15 @@ export default {
   listarTodos() {
     return api.get('/admin-max/usuarios')
   },
+  getById(id) {
+    return api.get(`/admin-max/usuarios/${id}`)
+  },
+  atualizarAdmin(id, data) {
+    return api.put(`/admin-max/usuarios/${id}`, data)
+  },
+  ativar(id) {
+    return api.post(`/admin-max/usuarios/${id}/ativar`)
+  },
   desativar(id) {
     return api.delete(`/admin-max/usuarios/${id}`)
   },

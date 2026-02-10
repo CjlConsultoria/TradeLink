@@ -1,6 +1,7 @@
 package com.example.CJLInvestimentos.controllers;
 
 import com.example.CJLInvestimentos.dtos.request.AtualizarFaturaRequest;
+import com.example.CJLInvestimentos.dtos.request.AtualizarUsuarioAdminRequest;
 import com.example.CJLInvestimentos.dtos.request.CriarFaturaRequest;
 import com.example.CJLInvestimentos.dtos.request.EmpresaRequest;
 import com.example.CJLInvestimentos.dtos.request.PlanoRequest;
@@ -170,6 +171,23 @@ public class AdminMaxController {
     @GetMapping("/usuarios")
     public ResponseEntity<List<UserResponse>> listarTodosUsuarios() {
         return ResponseEntity.ok(userService.listarTodos());
+    }
+
+    @GetMapping("/usuarios/{id}")
+    public ResponseEntity<UserResponse> buscarUsuario(@PathVariable Long id) {
+        return ResponseEntity.ok(userService.buscarPorId(id));
+    }
+
+    @PutMapping("/usuarios/{id}")
+    public ResponseEntity<UserResponse> atualizarUsuario(
+            @PathVariable Long id, @RequestBody AtualizarUsuarioAdminRequest request) {
+        return ResponseEntity.ok(userService.atualizarPorAdminMax(id, request));
+    }
+
+    @PostMapping("/usuarios/{id}/ativar")
+    public ResponseEntity<Void> ativarUsuario(@PathVariable Long id) {
+        userService.ativar(id);
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/usuarios/{id}")
