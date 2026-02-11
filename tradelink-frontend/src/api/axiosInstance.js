@@ -41,6 +41,15 @@ api.interceptors.response.use(
       return Promise.reject(error)
     }
     if (error.response && error.response.status === 403 && error.response.data?.bloqueado === true) {
+      const data = error.response.data || {}
+      const motivo = data.motivo || 'Acesso bloqueado.'
+      if (data.bloqueadoPorAdmin === true) {
+        try {
+          sessionStorage.setItem('motivoBloqueio', motivo)
+        } catch (_) {}
+        window.location.href = '/acesso-bloqueado'
+        return Promise.reject(error)
+      }
       const path = typeof window !== 'undefined' ? window.location.pathname : ''
       const jaNaPaginaFaturas = path === '/consultor/faturas' || path === '/cliente/faturas'
       if (!jaNaPaginaFaturas) {

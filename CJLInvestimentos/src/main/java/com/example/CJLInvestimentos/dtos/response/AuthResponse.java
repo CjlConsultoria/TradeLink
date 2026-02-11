@@ -16,4 +16,6 @@ public class AuthResponse {
     private Long empresaId;
     private Long userId;
     private String nome;
+    private Boolean bloqueado;
+    private String motivoBloqueio;
 }

@@ -107,23 +107,32 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 );
                 SecurityContextHolder.getContext().setAuthentication(authToken);
 
-                // Bloqueio: 5 dias após vencimento, bloqueia acesso de consultor e cliente da empresa (AdminMax não tem empresa)
+                // Bloqueio: por admin (qualquer acesso) ou por pagamento vencido (só faturas/checkout liberados)
                 if (user.getRole() != Role.AdminMax && user.getEmpresa() != null) {
                     if (!faturaService.acessoPermitidoPorUsuarioId(user.getId())) {
-                        boolean allowedPath = false;
-                        for (String prefix : ALLOWED_WHEN_BLOCKED) {
-                            if (path.startsWith(prefix)) {
-                                allowedPath = true;
-                                break;
+                        boolean allowedPath;
+                        if (faturaService.isBloqueadoPorAdmin(user.getId())) {
+                            // Bloqueio por admin: só pode acessar /api/me para carregar dados e exibir a mensagem
+                            allowedPath = path.startsWith("/api/me");
+                        } else {
+                            // Bloqueio por pagamento: permite faturas e checkout para regularizar
+                            allowedPath = false;
+                            for (String prefix : ALLOWED_WHEN_BLOCKED) {
+                                if (path.startsWith(prefix)) {
+                                    allowedPath = true;
+                                    break;
+                                }
                             }
                         }
                         if (!allowedPath) {
                             String motivo = faturaService.getMotivoBloqueioPorUsuarioId(user.getId());
                             if (motivo == null) motivo = "Acesso bloqueado.";
+                            boolean bloqueadoPorAdmin = faturaService.isBloqueadoPorAdmin(user.getId());
                             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                             response.setContentType("application/json;charset=UTF-8");
                             response.getWriter().write(objectMapper.writeValueAsString(Map.of(
                                     "bloqueado", true,
+                                    "bloqueadoPorAdmin", bloqueadoPorAdmin,
                                     "motivo", motivo
                             )));
                             return;

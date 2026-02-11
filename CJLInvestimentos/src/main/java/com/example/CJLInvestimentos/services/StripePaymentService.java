@@ -15,6 +15,7 @@ import com.stripe.exception.InvalidRequestException;
 import com.stripe.model.Customer;
 import com.stripe.model.Event;
 import com.stripe.model.PaymentIntent;
+import com.stripe.model.PaymentMethod;
 import com.stripe.model.checkout.Session;
 import com.stripe.model.Subscription;
 import com.stripe.net.Webhook;
@@ -118,11 +119,7 @@ public class StripePaymentService {
                 return false;
             }
             BigDecimal amount = BigDecimal.valueOf(pi.getAmount()).divide(BigDecimal.valueOf(100));
-            FormaPagamento forma = FormaPagamento.CARTAO;
-            if (pi.getPaymentMethodTypes() != null) {
-                if (pi.getPaymentMethodTypes().stream().anyMatch(t -> "boleto".equalsIgnoreCase(t))) forma = FormaPagamento.BOLETO;
-                else if (pi.getPaymentMethodTypes().stream().anyMatch(t -> "pix".equalsIgnoreCase(t))) forma = FormaPagamento.PIX;
-            }
+            FormaPagamento forma = obterFormaPagamentoDoPaymentIntent(pi);
             faturaService.registrarPagamentoExterno(empresaId, amount, forma, pi.getId());
             log.info("Fatura registrada via confirmar-pagamento-embutido: empresa={}, forma={}", empresaId, forma);
             return true;
@@ -449,13 +446,31 @@ public class StripePaymentService {
         }
         Long empresaId = Long.parseLong(meta.get("empresa_id"));
         BigDecimal amount = BigDecimal.valueOf(pi.getAmount()).divide(BigDecimal.valueOf(100));
-        FormaPagamento forma = FormaPagamento.CARTAO;
-        if (pi.getPaymentMethodTypes() != null) {
-            if (pi.getPaymentMethodTypes().stream().anyMatch(t -> "boleto".equalsIgnoreCase(t))) forma = FormaPagamento.BOLETO;
-            else if (pi.getPaymentMethodTypes().stream().anyMatch(t -> "pix".equalsIgnoreCase(t))) forma = FormaPagamento.PIX;
-        }
+        FormaPagamento forma = obterFormaPagamentoDoPaymentIntent(pi);
         faturaService.registrarPagamentoExterno(empresaId, amount, forma, pi.getId());
         log.info("Fatura registrada via payment_intent.succeeded: empresa={}, forma={}, valor={}", empresaId, forma, amount);
+    }
+
+    /**
+     * Obtém a forma de pagamento realmente utilizada (cartão, boleto ou PIX) consultando o PaymentMethod do PaymentIntent.
+     * Não usa payment_method_types do PI (que lista os métodos disponíveis, não o usado).
+     */
+    private FormaPagamento obterFormaPagamentoDoPaymentIntent(PaymentIntent pi) {
+        String pmId = pi.getPaymentMethod();
+        if (pmId != null && !pmId.isBlank()) {
+            try {
+                PaymentMethod pm = PaymentMethod.retrieve(pmId);
+                String type = pm.getType();
+                if (type != null) {
+                    if ("boleto".equalsIgnoreCase(type)) return FormaPagamento.BOLETO;
+                    if ("pix".equalsIgnoreCase(type)) return FormaPagamento.PIX;
+                    if ("card".equalsIgnoreCase(type)) return FormaPagamento.CARTAO;
+                }
+            } catch (Exception e) {
+                log.debug("Não foi possível obter PaymentMethod {} para forma de pagamento: {}", pmId, e.getMessage());
+            }
+        }
+        return FormaPagamento.CARTAO;
     }
 
     private void handleCheckoutSessionCompleted(Event event) {

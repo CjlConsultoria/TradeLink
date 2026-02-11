@@ -8,6 +8,7 @@ import com.example.CJLInvestimentos.entities.User;
 import com.example.CJLInvestimentos.exceptions.BusinessException;
 import com.example.CJLInvestimentos.repositories.UserRepository;
 import com.example.CJLInvestimentos.services.EmpresaService;
+import com.example.CJLInvestimentos.services.FaturaService;
 import com.example.CJLInvestimentos.services.NotificationAsyncRunner;
 import com.example.CJLInvestimentos.services.UserService;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,7 @@ public class MeController {
     private final UserRepository userRepository;
     private final UserService userService;
     private final EmpresaService empresaService;
+    private final FaturaService faturaService;
     private final PasswordEncoder passwordEncoder;
     private final NotificationAsyncRunner notificationAsyncRunner;
 
@@ -43,7 +45,13 @@ public class MeController {
     @GetMapping
     public ResponseEntity<UserResponse> me(@AuthenticationPrincipal UserDetails userDetails) {
         User user = getUser(userDetails);
-        return ResponseEntity.ok(userService.toResponse(user));
+        UserResponse res = userService.toResponse(user);
+        if (user.getEmpresa() != null && !faturaService.acessoPermitidoPorUsuarioId(user.getId())) {
+            res.setBloqueado(true);
+            res.setMotivoBloqueio(faturaService.getMotivoBloqueioPorUsuarioId(user.getId()));
+            if (res.getMotivoBloqueio() == null) res.setMotivoBloqueio("Acesso bloqueado.");
+        }
+        return ResponseEntity.ok(res);
     }
 
     /** Retorna as configurações de notificação da empresa do usuário (para exibir no front quais canais estão habilitados). */

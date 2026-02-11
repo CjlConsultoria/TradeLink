@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
 import LoginView from '../views/auth/LoginView.vue'
+import AcessoBloqueadoView from '../views/auth/AcessoBloqueadoView.vue'
 import AppLayout from '../components/layout/AppLayout.vue'
 
 import DashboardAdminMax from '../views/admin-max/DashboardAdminMax.vue'
@@ -27,6 +28,7 @@ import CotacaoDetailView from '../views/CotacaoDetailView.vue'
 
 const routes = [
   { path: '/login', name: 'Login', component: LoginView, meta: { public: true } },
+  { path: '/acesso-bloqueado', name: 'AcessoBloqueado', component: AcessoBloqueadoView, meta: { requiresAuth: true } },
   { path: '/', redirect: '/login' },
   {
     path: '/admin-max',
@@ -84,6 +86,7 @@ router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
   if (to.meta.public) return next()
   if (to.meta.requiresAuth && !authStore.isAuthenticated) return next('/login')
+  if (to.name === 'AcessoBloqueado') return next()
   if (to.meta.role && authStore.user?.role !== to.meta.role) return next(authStore.dashboardRoute)
   next()
 })

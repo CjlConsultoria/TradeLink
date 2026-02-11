@@ -8,6 +8,7 @@ import com.example.CJLInvestimentos.entities.User;
 import com.example.CJLInvestimentos.entities.enums.Role;
 import com.example.CJLInvestimentos.repositories.EmpresaRepository;
 import com.example.CJLInvestimentos.repositories.UserRepository;
+import com.example.CJLInvestimentos.services.FaturaService;
 import com.example.CJLInvestimentos.services.JwtService;
 import com.example.CJLInvestimentos.services.NotificationAsyncRunner;
 import jakarta.validation.Valid;
@@ -32,6 +33,7 @@ public class AuthController {
 
     private final UserRepository userRepository;
     private final EmpresaRepository empresaRepository;
+    private final FaturaService faturaService;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
@@ -94,12 +96,15 @@ public class AuthController {
 
         String token = jwtService.generateToken(user);
 
-        return ResponseEntity.ok(AuthResponse.builder()
+        AuthResponse.AuthResponseBuilder response = AuthResponse.builder()
                 .token(token)
                 .role(user.getRole().name())
                 .userId(user.getId())
                 .nome(user.getNome())
-                .empresaId(user.getEmpresa() != null ? user.getEmpresa().getId() : null)
-                .build());
+                .empresaId(user.getEmpresa() != null ? user.getEmpresa().getId() : null);
+        if (user.getEmpresa() != null && !faturaService.acessoPermitidoPorUsuarioId(user.getId())) {
+            response.bloqueado(true).motivoBloqueio(faturaService.getMotivoBloqueioPorUsuarioId(user.getId()));
+        }
+        return ResponseEntity.ok(response.build());
     }
 }

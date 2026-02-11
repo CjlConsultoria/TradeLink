@@ -87,7 +87,14 @@ async function handleLogin() {
   error.value = ''
   loading.value = true
   try {
-    await authStore.login(email.value, senha.value)
+    const data = await authStore.login(email.value, senha.value)
+    if (data.bloqueado === true) {
+      try {
+        sessionStorage.setItem('motivoBloqueio', data.motivoBloqueio || 'Acesso bloqueado.')
+      } catch (_) {}
+      router.push('/acesso-bloqueado')
+      return
+    }
     toast.success(`Bem-vindo(a), ${authStore.user?.nome || 'usuário'}!`)
     router.push(authStore.dashboardRoute)
   } catch (e) {

@@ -75,7 +75,11 @@ public class FaturaService {
         if (user == null || user.getEmpresa() == null) return null;
         Empresa empresa = user.getEmpresa();
         if (Boolean.TRUE.equals(empresa.getAcessoBloqueadoPorAdmin())) {
-            return "Acesso bloqueado pelo administrador. Entre em contato com o suporte.";
+            // Consultor: contato com responsável do sistema. Cliente: contato com a empresa (consultor).
+            if (user.getRole() == com.example.CJLInvestimentos.entities.enums.Role.Cliente) {
+                return "Acesso bloqueado. Entre em contato com sua empresa (consultor).";
+            }
+            return "Acesso bloqueado. Entre em contato com o responsável pelo sistema.";
         }
         if (empresa.getCurrentPeriodEnd() == null) return null;
         Instant limite = empresa.getCurrentPeriodEnd().plus(DIAS_TOLERANCIA_VENCIMENTO, ChronoUnit.DAYS);
@@ -83,6 +87,14 @@ public class FaturaService {
             return "Assinatura vencida. Regularize o pagamento para continuar acessando.";
         }
         return null;
+    }
+
+    /** Indica se o bloqueio é por decisão do admin (não por pagamento). Usado para restringir totalmente o acesso. */
+    @Transactional(readOnly = true)
+    public boolean isBloqueadoPorAdmin(Long usuarioId) {
+        User user = userRepository.findByIdWithEmpresa(usuarioId).orElse(null);
+        if (user == null || user.getEmpresa() == null) return false;
+        return Boolean.TRUE.equals(user.getEmpresa().getAcessoBloqueadoPorAdmin());
     }
 
     /**

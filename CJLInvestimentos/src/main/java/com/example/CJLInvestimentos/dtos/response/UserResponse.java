@@ -21,4 +21,8 @@ public class UserResponse {
     private String telegramChatId;
     /** Se o usuário tem pelo menos uma inscrição de push ativa. */
     private Boolean pushInscrito;
+    /** Quando true, o acesso à plataforma está bloqueado (ex.: por admin ou pagamento). */
+    private Boolean bloqueado;
+    /** Mensagem a exibir na tela de bloqueio (consultor: responsável pelo sistema; cliente: sua empresa). */
+    private String motivoBloqueio;
 }
