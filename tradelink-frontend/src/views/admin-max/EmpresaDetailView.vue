@@ -12,7 +12,7 @@
     <template v-else-if="empresa">
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div><p class="text-sm text-gray-500">CNPJ</p><p class="font-medium">{{ empresa.cnpj }}</p></div>
+          <div><p class="text-sm text-gray-500">CNPJ</p><p class="font-medium">{{ formatarCnpj(empresa.cnpj) }}</p></div>
           <div><p class="text-sm text-gray-500">Consultores</p><p class="font-medium">{{ empresa.totalConsultores }}</p></div>
           <div><p class="text-sm text-gray-500">Clientes</p><p class="font-medium">{{ empresa.totalClientes }}</p></div>
           <div>
@@ -303,6 +303,7 @@ import empresaApi from '../../api/empresaApi'
 import planoApi from '../../api/planoApi'
 import faturaApi from '../../api/faturaApi'
 import { formatCurrency, formatDate } from '../../utils/formatters'
+import { formatarCnpj } from '../../utils/validadores'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import EmptyState from '../../components/common/EmptyState.vue'
 import ToggleSwitch from '../../components/common/ToggleSwitch.vue'

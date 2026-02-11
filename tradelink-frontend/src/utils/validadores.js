@@ -51,13 +51,15 @@ export function isValidTelefone (tel) {
 }
 
 export function formatarCnpj (cnpj) {
+  if (cnpj == null || cnpj === '') return ''
   const s = apenasDigitos(cnpj)
-  if (s.length !== 14) return cnpj
+  if (s.length !== 14) return String(cnpj).trim()
   return `${s.slice(0, 2)}.${s.slice(2, 5)}.${s.slice(5, 8)}/${s.slice(8, 12)}-${s.slice(12)}`
 }
 
 export function formatarCpf (cpf) {
+  if (cpf == null || cpf === '') return ''
   const s = apenasDigitos(cpf)
-  if (s.length !== 11) return cpf
+  if (s.length !== 11) return String(cpf).trim()
   return `${s.slice(0, 3)}.${s.slice(3, 6)}.${s.slice(6, 9)}-${s.slice(9)}`
 }

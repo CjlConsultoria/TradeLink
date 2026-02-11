@@ -48,7 +48,7 @@
               <td class="py-3 px-2 font-medium">
                 <router-link :to="`/admin-max/empresas/${e.id}`" class="text-indigo-600 hover:underline">{{ e.nome }}</router-link>
               </td>
-              <td class="py-3 px-2 text-gray-600">{{ e.cnpj }}</td>
+              <td class="py-3 px-2 text-gray-600">{{ formatarCnpj(e.cnpj) }}</td>
               <td class="py-3 px-2 text-center">{{ e.totalConsultores }}</td>
               <td class="py-3 px-2 text-center">{{ e.totalClientes }}</td>
               <td class="py-3 px-2 text-center">
@@ -75,6 +75,7 @@
 import { computed, ref, onMounted } from 'vue'
 import { useEmpresaStore } from '../../stores/empresa'
 import planoApi from '../../api/planoApi'
+import { formatarCnpj } from '../../utils/validadores'
 import CotacoesDashboardSection from '../../components/cotacao/CotacoesDashboardSection.vue'
 
 const empresaStore = useEmpresaStore()

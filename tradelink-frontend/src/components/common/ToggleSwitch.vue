@@ -9,13 +9,13 @@
     @click="$emit('update:modelValue', !modelValue); $emit('change', !modelValue)"
   >
     <span
-      class="relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 transition-colors"
+      class="relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 transition-colors"
       :class="modelValue ? trackOnClass : trackOffClass"
       aria-hidden="true"
     >
       <span
-        class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition translate-y-0.5"
-        :class="modelValue ? 'translate-x-4' : 'translate-x-0.5'"
+        class="pointer-events-none absolute top-0.5 h-5 w-5 rounded-full bg-white shadow ring-0 transition-all duration-200"
+        :class="modelValue ? 'left-5' : 'left-0.5'"
       />
     </span>
     <span>{{ modelValue ? labelOn : labelOff }}</span>

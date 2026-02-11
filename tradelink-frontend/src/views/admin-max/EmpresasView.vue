@@ -40,7 +40,17 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
                 <label class="block text-sm text-gray-600 mb-1">CEP</label>
-                <input v-model="form.cep" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="00000-000" maxlength="10" />
+                <div class="relative">
+                  <input
+                    v-model="form.cep"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    placeholder="00000-000"
+                    maxlength="10"
+                    @blur="buscarCep"
+                  />
+                  <span v-if="loadingCep" class="absolute right-3 top-1/2 -translate-y-1/2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" aria-hidden="true" />
+                </div>
+                <p class="text-xs text-gray-500 mt-0.5">Digite o CEP e saia do campo para preencher automaticamente (ViaCEP).</p>
               </div>
               <div class="md:col-span-2">
                 <label class="block text-sm text-gray-600 mb-1">Logradouro</label>
@@ -114,11 +124,11 @@
             </span>
           </div>
         </div>
-        <p class="text-sm text-gray-500 mb-3">{{ e.cnpj }}</p>
+        <p class="text-sm text-gray-500 mb-3">{{ formatarCnpj(e.cnpj) }}</p>
         <div v-if="e.planoNome" class="mb-2">
           <p class="text-xs text-gray-500">Plano: {{ e.planoNome }}</p>
-          <span v-if="e.subscriptionStatus" class="ml-2 text-xs px-2 py-0.5 rounded-full" :class="badgeAssinatura(e.subscriptionStatus)">
-            {{ labelAssinatura(e.subscriptionStatus) }}
+          <span class="ml-2 text-xs px-2 py-0.5 rounded-full" :class="badgeAssinatura(e.subscriptionStatus || 'NONE')">
+            {{ labelAssinatura(e.subscriptionStatus || 'NONE') }}
           </span>
           <p v-if="e.currentPeriodEnd" class="text-xs text-gray-500 mt-0.5">Próxima cobrança: {{ formatDate(e.currentPeriodEnd) }}</p>
           <div class="mt-1 h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -176,7 +186,7 @@ import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import EmptyState from '../../components/common/EmptyState.vue'
 import ToggleSwitch from '../../components/common/ToggleSwitch.vue'
 import { formatDate } from '../../utils/formatters'
-import { isValidCnpj, isValidCpf } from '../../utils/validadores'
+import { isValidCnpj, isValidCpf, formatarCnpj, apenasDigitos } from '../../utils/validadores'
 
 const toast = useToast()
 const empresaStore = useEmpresaStore()
@@ -190,6 +200,7 @@ const showForm = ref(false)
 const editingId = ref(null)
 const form = ref(getFormInicial())
 const formError = ref('')
+const loadingCep = ref(false)
 const loadingBloqueio = ref({})
 const loadingAtivo = ref({})
 
@@ -259,6 +270,31 @@ function editar(empresa) {
     notificacaoSms: empresa.notificacaoSms === true
   }
   showForm.value = true
+}
+
+async function buscarCep() {
+  const cep = apenasDigitos(form.value.cep)
+  if (cep.length !== 8) return
+  loadingCep.value = true
+  formError.value = ''
+  try {
+    const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
+    const data = await res.json()
+    if (data.erro) {
+      toast.error('CEP não encontrado.')
+      return
+    }
+    form.value.logradouro = data.logradouro || form.value.logradouro
+    form.value.bairro = data.bairro || form.value.bairro
+    form.value.cidade = data.localidade || form.value.cidade
+    form.value.uf = data.uf || form.value.uf
+    if (data.cep) form.value.cep = data.cep
+    toast.success('Endereço preenchido pelo CEP.')
+  } catch (e) {
+    toast.error('Não foi possível buscar o CEP. Tente novamente.')
+  } finally {
+    loadingCep.value = false
+  }
 }
 
 async function salvar() {
@@ -347,12 +383,32 @@ async function irParaCheckout(empresa) {
 }
 
 function labelStatusPagamento(status) {
-  const map = { EM_DIA: 'Em dia', VENCIDO: 'Venceu', EM_ATRASO: 'Em atraso', SEM_ASSINATURA: 'Sem assinatura' }
-  return map[status] || status
+  const map = {
+    NONE: 'Sem assinatura',
+    ACTIVE: 'Ativo',
+    PAST_DUE: 'Em atraso',
+    CANCELLED: 'Cancelado',
+    TRIAL: 'Trial',
+    EM_DIA: 'Em dia',
+    VENCIDO: 'Venceu',
+    EM_ATRASO: 'Em atraso',
+    SEM_ASSINATURA: 'Sem assinatura'
+  }
+  return map[status] || status || 'Sem assinatura'
 }
 
 function badgeStatusPagamento(status) {
-  const map = { EM_DIA: 'bg-green-100 text-green-800', VENCIDO: 'bg-amber-100 text-amber-800', EM_ATRASO: 'bg-red-100 text-red-800', SEM_ASSINATURA: 'bg-gray-100 text-gray-600' }
+  const map = {
+    NONE: 'bg-gray-100 text-gray-600',
+    ACTIVE: 'bg-green-100 text-green-800',
+    PAST_DUE: 'bg-red-100 text-red-800',
+    CANCELLED: 'bg-gray-100 text-gray-600',
+    TRIAL: 'bg-blue-100 text-blue-800',
+    EM_DIA: 'bg-green-100 text-green-800',
+    VENCIDO: 'bg-amber-100 text-amber-800',
+    EM_ATRASO: 'bg-red-100 text-red-800',
+    SEM_ASSINATURA: 'bg-gray-100 text-gray-600'
+  }
   return map[status] || 'bg-gray-100 text-gray-700'
 }
 
