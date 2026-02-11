@@ -77,7 +77,10 @@
               <div v-if="!publishableKey" class="mb-4 p-3 rounded-lg bg-amber-50 text-amber-800 text-sm">
                 Configure <code class="text-xs">STRIPE_PUBLISHABLE_KEY</code> no servidor. Como alternativa, use o botão "Abrir no site do Stripe" na tela anterior.
               </div>
-              <div id="payment-element" ref="paymentElementRef" class="min-h-[220px] w-full mb-4"></div>
+              <div class="min-h-[220px] w-full mb-4 relative">
+                <div v-if="!stripeReady && showModalPagamento" class="absolute inset-0 flex items-center justify-center bg-gray-50 rounded-lg text-gray-500 text-sm">Carregando opções de pagamento...</div>
+                <div id="payment-element" ref="paymentElementRef" class="w-full min-h-[200px]"></div>
+              </div>
               <div class="flex gap-3">
                 <button type="button" class="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-50" :disabled="enviandoPagamento" @click="fecharModalPagamento">Cancelar</button>
                 <button type="button" class="flex-1 px-4 py-2.5 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:pointer-events-none" :disabled="!stripeReady || enviandoPagamento" @click="confirmarPagamento">
@@ -210,16 +213,22 @@ async function abrirPagamentoEmbutido() {
     const paymentElement = elements.create('payment', { layout: 'tabs' })
     await nextTick()
     const el = document.getElementById('payment-element')
-    if (el) {
-      await new Promise(r => setTimeout(r, 100))
-      paymentElement.mount('#payment-element')
-      stripeInstance = stripe
-      elementsInstance = elements
-      paymentElementInstance = paymentElement
-      stripeReady.value = true
-    } else {
+    if (!el) {
       erroModal.value = 'Erro ao carregar formulário de pagamento. Tente novamente.'
+      return
     }
+    el.innerHTML = ''
+    await new Promise(r => setTimeout(r, 150))
+    paymentElement.mount('#payment-element')
+    stripeInstance = stripe
+    elementsInstance = elements
+    paymentElementInstance = paymentElement
+    paymentElement.on('ready', () => {
+      stripeReady.value = true
+    })
+    paymentElement.on('loaderror', (e) => {
+      erroModal.value = e?.error?.message || 'Erro ao carregar opções de pagamento.'
+    })
   } catch (e) {
     toast.error(e.response?.data?.erro || e.response?.data?.mensagem || 'Erro ao abrir pagamento.')
     showModalPagamento.value = false
