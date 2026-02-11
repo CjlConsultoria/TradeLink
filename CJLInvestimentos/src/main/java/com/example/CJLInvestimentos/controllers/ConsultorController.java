@@ -16,6 +16,7 @@ import com.example.CJLInvestimentos.exceptions.BusinessException;
 import com.example.CJLInvestimentos.exceptions.ResourceNotFoundException;
 import com.example.CJLInvestimentos.repositories.UserRepository;
 import com.example.CJLInvestimentos.services.CarteiraService;
+import com.example.CJLInvestimentos.services.FaturaPdfService;
 import com.example.CJLInvestimentos.services.FaturaService;
 import com.example.CJLInvestimentos.services.OperacaoClienteService;
 import com.example.CJLInvestimentos.services.RelatorioConsultorService;
@@ -50,6 +51,7 @@ public class ConsultorController {
     private final UserService userService;
     private final UserRepository userRepository;
     private final FaturaService faturaService;
+    private final FaturaPdfService faturaPdfService;
     private final StripePaymentService stripePaymentService;
 
     private User getUser(UserDetails userDetails) {
@@ -295,6 +297,20 @@ public class ConsultorController {
     public ResponseEntity<FaturasComProximaResponse> listarFaturas(@AuthenticationPrincipal UserDetails userDetails) {
         User user = getUser(userDetails);
         return ResponseEntity.ok(faturaService.getFaturasComProximaParaUsuario(user.getId()));
+    }
+
+    @GetMapping(value = "/faturas/{faturaId}/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> baixarFaturaPdf(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long faturaId) {
+        User user = getUser(userDetails);
+        if (user.getEmpresa() == null) {
+            throw new BusinessException("Usuário sem empresa vinculada.");
+        }
+        byte[] pdf = faturaPdfService.gerarPdf(user.getEmpresa().getId(), faturaId);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentDispositionFormData("attachment", "fatura-" + faturaId + ".pdf");
+        return ResponseEntity.ok().headers(headers).body(pdf);
     }
 
     @PostMapping("/checkout-pix")

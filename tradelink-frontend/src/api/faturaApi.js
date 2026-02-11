@@ -41,6 +41,10 @@ export default {
   confirmarStripeCliente(sessionId) {
     return api.post('/cliente/faturas/confirmar-stripe', { sessionId })
   },
+  /** Consultor: baixar PDF da fatura (retorna blob) */
+  getPdfBlobConsultor(faturaId) {
+    return api.get(`/consultor/faturas/${faturaId}/pdf`, { responseType: 'blob' })
+  },
   /** AdminMax: lista faturas de uma empresa */
   listarPorEmpresa(empresaId) {
     return api.get(`/admin-max/empresas/${empresaId}/faturas`)

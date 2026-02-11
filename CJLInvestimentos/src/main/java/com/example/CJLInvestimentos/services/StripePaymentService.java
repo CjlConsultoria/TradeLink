@@ -272,7 +272,6 @@ public class StripePaymentService {
                     .putMetadata("empresa_id", empresaId.toString())
                     .putMetadata("plano_id", plano.getId().toString())
                     .addPaymentMethodType("card")
-                    .addPaymentMethodType("pix")
                     .addPaymentMethodType("boleto")
                     .build();
             PaymentIntent pi = PaymentIntent.create(params);

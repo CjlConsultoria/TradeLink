@@ -27,42 +27,61 @@
           <p class="text-gray-600">Vencimento: <strong>{{ formatDate(proxima?.dataVencimento) }}</strong></p>
           <p class="text-xl font-semibold text-indigo-600 mt-1">{{ formatCurrency(proxima?.valor) }}</p>
           <p v-if="proxima?.planoNome" class="text-sm text-gray-500">{{ proxima.planoNome }}</p>
-          <div class="flex flex-wrap gap-3 mt-4">
-            <button
-              type="button"
-              class="btn-primary"
-              :disabled="loadingCheckout || loadingEmbedded"
-              @click="abrirPagamentoEmbutido"
-            >
-              {{ loadingEmbedded ? 'Abrindo...' : 'Pagar (cartão, PIX ou boleto)' }}
-            </button>
-            <button
-              type="button"
-              class="px-4 py-2 rounded-lg text-sm font-medium border border-gray-300 text-gray-600 hover:bg-gray-50"
-              :disabled="loadingCheckout || loadingEmbedded"
-              @click="abrirCheckoutCartaoBoleto"
-            >
-              Abrir em outra página
-            </button>
+          <div class="mt-4 space-y-3">
+            <div class="flex flex-col sm:flex-row gap-3">
+              <button
+                type="button"
+                class="flex-1 inline-flex flex-col items-center justify-center px-5 py-3 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none transition-colors"
+                :disabled="loadingCheckout || loadingEmbedded"
+                @click.stop.prevent="abrirPagamentoEmbutido"
+              >
+                <span>{{ loadingEmbedded ? 'Abrindo...' : 'Pagar aqui (cartão ou boleto)' }}</span>
+                <span class="text-xs font-normal text-indigo-100 mt-0.5">Pagamento seguro nesta tela, você não sai do sistema</span>
+              </button>
+              <button
+                type="button"
+                class="flex-1 inline-flex flex-col items-center justify-center px-5 py-3 rounded-xl border-2 border-gray-300 text-gray-700 font-medium hover:bg-gray-50 hover:border-gray-400 focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none transition-colors"
+                :disabled="loadingCheckout || loadingEmbedded"
+                @click.stop.prevent="abrirCheckoutCartaoBoleto"
+              >
+                <span>Abrir no site do Stripe</span>
+                <span class="text-xs font-normal text-gray-500 mt-0.5">Será redirecionado para outra página</span>
+              </button>
+            </div>
           </div>
         </template>
 
         <!-- Modal: pagamento embutido (Stripe Payment Element) -->
         <div v-if="showModalPagamento" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div class="fixed inset-0 bg-black/50" @click="fecharModalPagamento"></div>
-          <div class="bg-white rounded-xl shadow-xl max-w-md w-full relative z-10 max-h-[90vh] overflow-y-auto">
+          <div class="fixed inset-0 bg-black/50" aria-hidden="true" @click="fecharModalPagamento"></div>
+          <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full relative z-10 max-h-[90vh] overflow-y-auto" role="dialog" aria-labelledby="modal-title" @click.stop>
             <div class="p-6">
-              <h3 class="text-lg font-semibold text-gray-900 mb-2">Pagamento</h3>
-              <p class="text-sm text-gray-600 mb-4">Escolha a forma de pagamento abaixo. Você não sai do sistema.</p>
+              <h3 id="modal-title" class="text-xl font-semibold text-gray-900 mb-1">Pagamento da fatura</h3>
+              <p class="text-sm text-gray-500 mb-4">Preencha os dados abaixo. O pagamento é processado de forma segura pelo Stripe.</p>
+              <!-- Resumo da fatura -->
+              <div class="mb-4 p-4 rounded-xl bg-gray-50 border border-gray-200">
+                <div class="flex justify-between text-sm">
+                  <span class="text-gray-600">Valor a pagar</span>
+                  <span class="font-semibold text-gray-900">{{ formatCurrency(proxima?.valor) }}</span>
+                </div>
+                <div v-if="proxima?.dataVencimento" class="flex justify-between text-sm mt-1">
+                  <span class="text-gray-600">Vencimento</span>
+                  <span class="text-gray-800">{{ formatDate(proxima.dataVencimento) }}</span>
+                </div>
+                <div v-if="proxima?.planoNome" class="flex justify-between text-sm mt-1">
+                  <span class="text-gray-600">Plano</span>
+                  <span class="text-gray-800">{{ proxima.planoNome }}</span>
+                </div>
+              </div>
               <div v-if="erroModal" class="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">{{ erroModal }}</div>
               <div v-if="!publishableKey" class="mb-4 p-3 rounded-lg bg-amber-50 text-amber-800 text-sm">
-                Configure <code class="text-xs">STRIPE_PUBLISHABLE_KEY</code> no servidor para pagar aqui. Use "Abrir em outra página" como alternativa.
+                Configure <code class="text-xs">STRIPE_PUBLISHABLE_KEY</code> no servidor. Como alternativa, use o botão "Abrir no site do Stripe" na tela anterior.
               </div>
               <div id="payment-element" ref="paymentElementRef" class="min-h-[220px] w-full mb-4"></div>
               <div class="flex gap-3">
-                <button type="button" class="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50" :disabled="enviandoPagamento" @click="fecharModalPagamento">Cancelar</button>
-                <button type="button" class="flex-1 btn-primary" :disabled="!stripeReady || enviandoPagamento" @click="confirmarPagamento">
-                  {{ enviandoPagamento ? 'Processando...' : 'Pagar' }}
+                <button type="button" class="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-50" :disabled="enviandoPagamento" @click="fecharModalPagamento">Cancelar</button>
+                <button type="button" class="flex-1 px-4 py-2.5 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:pointer-events-none" :disabled="!stripeReady || enviandoPagamento" @click="confirmarPagamento">
+                  {{ enviandoPagamento ? 'Processando...' : 'Confirmar pagamento' }}
                 </button>
               </div>
             </div>
@@ -84,6 +103,7 @@
                   <th class="text-left py-3 px-2 font-medium text-gray-500">Valor</th>
                   <th class="text-left py-3 px-2 font-medium text-gray-500">Status</th>
                   <th class="text-left py-3 px-2 font-medium text-gray-500">Forma</th>
+                  <th class="text-right py-3 px-2 font-medium text-gray-500">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -97,6 +117,9 @@
                     </span>
                   </td>
                   <td class="py-3 px-2 text-gray-600">{{ f.formaPagamento || '-' }}</td>
+                  <td class="py-3 px-2 text-right">
+                    <button type="button" class="text-indigo-600 hover:underline text-xs font-medium" @click="baixarPdf(f.id)">Baixar PDF</button>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -258,6 +281,19 @@ async function abrirCheckoutCartaoBoleto() {
     toast.error(e.response?.data?.erro || e.response?.data?.mensagem || 'Erro ao abrir pagamento.')
   } finally {
     loadingCheckout.value = false
+  }
+}
+
+async function baixarPdf(faturaId) {
+  if (isCliente.value) return
+  try {
+    const res = await faturaApi.getPdfBlobConsultor(faturaId)
+    const url = URL.createObjectURL(res.data)
+    window.open(url, '_blank')
+    setTimeout(() => URL.revokeObjectURL(url), 60000)
+    toast.success('PDF aberto em nova aba.')
+  } catch (e) {
+    toast.error(e.response?.data?.mensagem || 'Erro ao baixar PDF.')
   }
 }
 
