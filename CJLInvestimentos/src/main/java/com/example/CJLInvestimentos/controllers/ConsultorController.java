@@ -353,6 +353,24 @@ public class ConsultorController {
         return ResponseEntity.ok(Map.of("confirmado", ok));
     }
 
+    /** Confirma pagamento feito na tela (Payment Element) por payment_intent_id. Registra fatura e avança período. */
+    @PostMapping("/faturas/confirmar-pagamento-embutido")
+    public ResponseEntity<Map<String, Object>> confirmarPagamentoEmbutido(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody Map<String, String> body) {
+        User user = userRepository.findByIdWithEmpresa(getUser(userDetails).getId())
+                .orElseThrow(() -> new BusinessException("Usuário não encontrado"));
+        if (user.getEmpresa() == null) {
+            return ResponseEntity.badRequest().body(Map.of("confirmado", false, "erro", "Usuário sem empresa vinculada."));
+        }
+        String paymentIntentId = body != null ? body.get("paymentIntentId") : null;
+        if (paymentIntentId == null || paymentIntentId.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("confirmado", false, "erro", "paymentIntentId obrigatório."));
+        }
+        boolean ok = stripePaymentService.confirmarPagamentoPorPaymentIntentId(paymentIntentId.trim(), user.getEmpresa().getId());
+        return ResponseEntity.ok(Map.of("confirmado", ok));
+    }
+
     private static LocalDate parseLocalDate(String value) {
         if (value == null || value.isBlank()) return null;
         try {

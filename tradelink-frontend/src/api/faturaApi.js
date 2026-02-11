@@ -41,6 +41,14 @@ export default {
   confirmarStripeCliente(sessionId) {
     return api.post('/cliente/faturas/confirmar-stripe', { sessionId })
   },
+  /** Consultor: confirma pagamento embutido (Payment Element) por payment_intent_id — registra fatura e avança período */
+  confirmarPagamentoEmbutidoConsultor(paymentIntentId) {
+    return api.post('/consultor/faturas/confirmar-pagamento-embutido', { paymentIntentId })
+  },
+  /** Cliente: confirma pagamento embutido por payment_intent_id */
+  confirmarPagamentoEmbutidoCliente(paymentIntentId) {
+    return api.post('/cliente/faturas/confirmar-pagamento-embutido', { paymentIntentId })
+  },
   /** Consultor: baixar PDF da fatura (retorna blob) */
   getPdfBlobConsultor(faturaId) {
     return api.get(`/consultor/faturas/${faturaId}/pdf`, { responseType: 'blob' })

@@ -12,11 +12,13 @@ import com.example.CJLInvestimentos.repositories.UserRepository;
 import com.stripe.Stripe;
 import com.stripe.exception.AuthenticationException;
 import com.stripe.exception.InvalidRequestException;
+import com.stripe.model.Customer;
 import com.stripe.model.Event;
 import com.stripe.model.PaymentIntent;
 import com.stripe.model.checkout.Session;
 import com.stripe.model.Subscription;
 import com.stripe.net.Webhook;
+import com.stripe.param.CustomerCreateParams;
 import com.stripe.param.PaymentIntentCreateParams;
 import com.stripe.param.checkout.SessionCreateParams;
 import lombok.extern.slf4j.Slf4j;
@@ -91,6 +93,44 @@ public class StripePaymentService {
     public String getCancelUrlPagamentoConsultor() { return cancelUrlPagamentoConsultor; }
     public String getSuccessUrlPagamentoCliente() { return successUrlPagamentoCliente; }
     public String getCancelUrlPagamentoCliente() { return cancelUrlPagamentoCliente; }
+
+    /**
+     * Confirma o pagamento embutido a partir do payment_intent_id (retorno do Payment Element).
+     * Consulta o Stripe; se status = succeeded e empresa_id confere, registra a fatura e avança o período.
+     * Idempotente. Use quando o webhook não for recebido ou logo após confirmPayment no front.
+     */
+    public boolean confirmarPagamentoPorPaymentIntentId(String paymentIntentId, Long empresaIdDoUsuario) {
+        if (!isConfigured() || paymentIntentId == null || paymentIntentId.isBlank()) return false;
+        try {
+            PaymentIntent pi = PaymentIntent.retrieve(paymentIntentId);
+            if (!"succeeded".equals(pi.getStatus())) {
+                log.debug("confirmarPagamentoPorPaymentIntentId: PI {} status {} (não succeeded)", paymentIntentId, pi.getStatus());
+                return false;
+            }
+            Map<String, String> meta = pi.getMetadata();
+            if (meta == null || !meta.containsKey("empresa_id")) {
+                log.warn("confirmarPagamentoPorPaymentIntentId: PI {} sem metadata empresa_id", paymentIntentId);
+                return false;
+            }
+            Long empresaId = Long.parseLong(meta.get("empresa_id"));
+            if (!empresaId.equals(empresaIdDoUsuario)) {
+                log.warn("confirmarPagamentoPorPaymentIntentId: empresa da PI não coincide com o usuário");
+                return false;
+            }
+            BigDecimal amount = BigDecimal.valueOf(pi.getAmount()).divide(BigDecimal.valueOf(100));
+            FormaPagamento forma = FormaPagamento.CARTAO;
+            if (pi.getPaymentMethodTypes() != null) {
+                if (pi.getPaymentMethodTypes().stream().anyMatch(t -> "boleto".equalsIgnoreCase(t))) forma = FormaPagamento.BOLETO;
+                else if (pi.getPaymentMethodTypes().stream().anyMatch(t -> "pix".equalsIgnoreCase(t))) forma = FormaPagamento.PIX;
+            }
+            faturaService.registrarPagamentoExterno(empresaId, amount, forma, pi.getId());
+            log.info("Fatura registrada via confirmar-pagamento-embutido: empresa={}, forma={}", empresaId, forma);
+            return true;
+        } catch (Exception e) {
+            log.error("Erro ao confirmar pagamento por payment_intent_id", e);
+            return false;
+        }
+    }
 
     /**
      * Confirma o pagamento a partir do session_id (retorno do Stripe Checkout).
@@ -238,22 +278,17 @@ public class StripePaymentService {
         }
     }
 
-    /**
-     * Cria um PaymentIntent para pagamento embutido (cartão + PIX + boleto) na tela do sistema.
-     * Retorna clientSecret e paymentIntentId para o frontend montar o Payment Element do Stripe.
-     */
+    /** Cria PaymentIntent para pagamento embutido (cartao + boleto). Retorna clientSecret, paymentIntentId e billingDetails. */
     public Map<String, String> createPaymentIntentPagamentoUnicoPorUsuarioId(Long usuarioId) {
         User user = userRepository.findByIdWithEmpresa(usuarioId).orElseThrow(() -> new BusinessException("Usuário não encontrado"));
         if (user.getEmpresa() == null) {
             throw new BusinessException("Usuário sem empresa vinculada.");
         }
-        return createPaymentIntentPagamentoUnico(user.getEmpresa().getId());
+        return createPaymentIntentPagamentoUnico(user.getEmpresa().getId(), user);
     }
 
-    /**
-     * Cria um PaymentIntent com cartão, PIX e boleto para a empresa (pagamento único, exibido no Payment Element).
-     */
-    public Map<String, String> createPaymentIntentPagamentoUnico(Long empresaId) {
+    /** Cria PaymentIntent cartao + boleto para a empresa. Usa/cria Stripe Customer para pre-preencher boleto. */
+    public Map<String, String> createPaymentIntentPagamentoUnico(Long empresaId, User user) {
         if (!isConfigured()) {
             throw new BusinessException("Pagamentos não estão configurados. Defina stripe.api-key.");
         }
@@ -265,20 +300,54 @@ public class StripePaymentService {
         }
         long amountCentavos = plano.getPreco().multiply(BigDecimal.valueOf(100)).longValue();
         if (amountCentavos < 100) amountCentavos = 100;
+        String customerId = empresa.getStripeCustomerId();
+        if (customerId == null || customerId.isBlank()) {
+            String name = (user != null && user.getNome() != null && !user.getNome().isBlank())
+                    ? user.getNome() : empresa.getNome();
+            String email = (user != null && user.getEmail() != null) ? user.getEmail() : null;
+            if (email != null && !email.isBlank()) {
+                try {
+                    CustomerCreateParams paramsCustomer = CustomerCreateParams.builder()
+                            .setName(name)
+                            .setEmail(email)
+                            .putMetadata("empresa_id", empresaId.toString())
+                            .build();
+                    Customer customer = Customer.create(paramsCustomer);
+                    customerId = customer.getId();
+                    empresa.setStripeCustomerId(customerId);
+                    empresaRepository.save(empresa);
+                } catch (Exception e) {
+                    log.warn("Erro ao criar Stripe Customer para empresa {}: {}", empresaId, e.getMessage());
+                }
+            }
+        }
         try {
-            PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
+            PaymentIntentCreateParams.Builder paramsBuilder = PaymentIntentCreateParams.builder()
                     .setAmount(amountCentavos)
                     .setCurrency("brl")
                     .putMetadata("empresa_id", empresaId.toString())
                     .putMetadata("plano_id", plano.getId().toString())
                     .addPaymentMethodType("card")
-                    .addPaymentMethodType("boleto")
-                    .build();
-            PaymentIntent pi = PaymentIntent.create(params);
+                    .addPaymentMethodType("boleto");
+            if (customerId != null && !customerId.isBlank()) {
+                paramsBuilder.setCustomer(customerId);
+            }
+            PaymentIntent pi = PaymentIntent.create(paramsBuilder.build());
             Map<String, String> result = new HashMap<>();
             result.put("clientSecret", pi.getClientSecret());
             result.put("paymentIntentId", pi.getId());
             result.put("publishableKey", getPublishableKey());
+            if (user != null) {
+                if (user.getNome() != null && !user.getNome().isBlank()) {
+                    result.put("billingDetailsName", user.getNome());
+                }
+                if (user.getEmail() != null && !user.getEmail().isBlank()) {
+                    result.put("billingDetailsEmail", user.getEmail());
+                }
+            }
+            if (!result.containsKey("billingDetailsName") && empresa.getNome() != null) {
+                result.put("billingDetailsName", empresa.getNome());
+            }
             return result;
         } catch (AuthenticationException e) {
             log.warn("Stripe: chave de API inválida ou expirada (pagamento embutido)");

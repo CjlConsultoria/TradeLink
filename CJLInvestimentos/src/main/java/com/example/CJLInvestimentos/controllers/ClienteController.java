@@ -232,6 +232,23 @@ public class ClienteController {
         return ResponseEntity.ok(Map.of("confirmado", ok));
     }
 
+    @PostMapping("/faturas/confirmar-pagamento-embutido")
+    public ResponseEntity<Map<String, Object>> confirmarPagamentoEmbutido(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody Map<String, String> body) {
+        User user = userRepository.findByIdWithEmpresa(getUser(userDetails).getId())
+                .orElseThrow(() -> new BusinessException("Usuário não encontrado"));
+        if (user.getEmpresa() == null) {
+            return ResponseEntity.badRequest().body(Map.of("confirmado", false, "erro", "Usuário sem empresa vinculada."));
+        }
+        String paymentIntentId = body != null ? body.get("paymentIntentId") : null;
+        if (paymentIntentId == null || paymentIntentId.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("confirmado", false, "erro", "paymentIntentId obrigatório."));
+        }
+        boolean ok = stripePaymentService.confirmarPagamentoPorPaymentIntentId(paymentIntentId.trim(), user.getEmpresa().getId());
+        return ResponseEntity.ok(Map.of("confirmado", ok));
+    }
+
     @GetMapping("/relatorios/operacoes")
     public ResponseEntity<List<RelatorioClienteOperacaoResponse>> relatorioOperacoes(
             @AuthenticationPrincipal UserDetails userDetails,

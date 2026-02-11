@@ -50,6 +50,7 @@
             </div>
           </div>
         </template>
+        <p v-else class="text-gray-500">Nenhum plano ativo. Entre em contato com o administrador.</p>
 
         <!-- Modal: pagamento embutido (Stripe Payment Element) -->
         <div v-if="showModalPagamento" class="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -90,7 +91,6 @@
             </div>
           </div>
         </div>
-        <p v-else class="text-gray-500">Nenhum plano ativo. Entre em contato com o administrador.</p>
       </div>
 
       <div class="card p-6">
@@ -158,6 +158,7 @@ const acessoPermitido = ref(true)
 const showModalPagamento = ref(false)
 const publishableKey = ref('')
 const clientSecret = ref('')
+const currentPaymentIntentId = ref('')
 const stripeReady = ref(false)
 const enviandoPagamento = ref(false)
 const erroModal = ref('')
@@ -192,6 +193,7 @@ async function abrirPagamentoEmbutido() {
     const res = await faturaApi.checkoutEmbedded()
     const data = res.data || res
     clientSecret.value = data.clientSecret || ''
+    currentPaymentIntentId.value = data.paymentIntentId || ''
     publishableKey.value = (data.publishableKey || '').trim()
     if (!clientSecret.value) {
       erroModal.value = 'Não foi possível iniciar o pagamento.'
@@ -205,11 +207,22 @@ async function abrirPagamentoEmbutido() {
       erroModal.value = 'Stripe não carregou. Tente "Abrir em outra página".'
       return
     }
-    const elements = stripe.elements({
+    const elementsOptions = {
       clientSecret: clientSecret.value,
       locale: 'pt-BR',
       appearance: { theme: 'stripe', variables: { borderRadius: '8px' } }
-    })
+    }
+    const name = (data.billingDetailsName || '').trim()
+    const email = (data.billingDetailsEmail || '').trim()
+    if (name || email) {
+      elementsOptions.defaultValues = {
+        billingDetails: {
+          ...(name && { name }),
+          ...(email && { email })
+        }
+      }
+    }
+    const elements = stripe.elements(elementsOptions)
     const paymentElement = elements.create('payment', { layout: 'tabs' })
     await nextTick()
     const el = document.getElementById('payment-element')
@@ -248,6 +261,7 @@ function fecharModalPagamento() {
   stripeInstance = null
   stripeReady.value = false
   clientSecret.value = ''
+  currentPaymentIntentId.value = ''
   erroModal.value = ''
   showModalPagamento.value = false
 }
@@ -266,8 +280,22 @@ async function confirmarPagamento() {
       erroModal.value = error.message || 'Erro no pagamento.'
       return
     }
+    const piId = currentPaymentIntentId.value
     fecharModalPagamento()
-    toast.success('Pagamento realizado. A fatura será registrada em instantes.')
+    if (piId) {
+      try {
+        const confirmRes = isCliente.value
+          ? await faturaApi.confirmarPagamentoEmbutidoCliente(piId)
+          : await faturaApi.confirmarPagamentoEmbutidoConsultor(piId)
+        if (confirmRes.data?.confirmado) {
+          toast.success('Pagamento confirmado. Fatura registrada e próxima fatura atualizada.')
+        }
+      } catch (_) {
+        toast.success('Pagamento realizado. Se a fatura não aparecer, recarregue a página.')
+      }
+    } else {
+      toast.success('Pagamento realizado. A fatura será registrada em instantes.')
+    }
     await carregar()
   } catch (e) {
     erroModal.value = e.message || 'Erro ao processar.'
@@ -328,7 +356,22 @@ onMounted(async () => {
       toast.error('Não foi possível confirmar o pagamento. Tente recarregar a página.')
     }
     window.history.replaceState({}, '', route.path)
-  } else if (route.query.pagamento === 'ok' || stripeReturn === 'succeeded' || (stripeReturn === '1' && paymentIntent)) {
+  } else if (paymentIntent && (route.query.pagamento === 'ok' || stripeReturn === 'succeeded' || stripeReturn === '1')) {
+    try {
+      const confirmRes = isCliente.value
+        ? await faturaApi.confirmarPagamentoEmbutidoCliente(paymentIntent)
+        : await faturaApi.confirmarPagamentoEmbutidoConsultor(paymentIntent)
+      if (confirmRes.data?.confirmado) {
+        toast.success('Pagamento confirmado. Fatura registrada e próxima fatura atualizada.')
+      } else {
+        toast.success('Pagamento realizado. O acesso será liberado em instantes.')
+      }
+    } catch (e) {
+      console.error(e)
+      toast.success('Pagamento realizado. Se a fatura não aparecer, recarregue a página.')
+    }
+    window.history.replaceState({}, '', route.path)
+  } else if (route.query.pagamento === 'ok' || stripeReturn === 'succeeded') {
     toast.success('Pagamento realizado. O acesso será liberado em instantes.')
     window.history.replaceState({}, '', route.path)
   }
