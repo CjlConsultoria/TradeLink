@@ -9,9 +9,10 @@
       <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4 relative z-10">
         <h3 class="text-lg font-semibold mb-4">Novo Cliente</h3>
         <form @submit.prevent="salvar" class="space-y-4">
-          <div><label class="block text-sm font-medium text-gray-700 mb-1">Nome</label><input v-model="form.nome" required class="w-full px-3 py-2 border border-gray-300 rounded-lg" /></div>
-          <div><label class="block text-sm font-medium text-gray-700 mb-1">E-mail</label><input v-model="form.email" type="email" required class="w-full px-3 py-2 border border-gray-300 rounded-lg" /></div>
-          <div><label class="block text-sm font-medium text-gray-700 mb-1">Senha</label><input v-model="form.senha" type="password" required class="w-full px-3 py-2 border border-gray-300 rounded-lg" /></div>
+          <div><label class="block text-sm font-medium text-gray-700 mb-1">Nome *</label><input v-model="form.nome" required class="w-full px-3 py-2 border border-gray-300 rounded-lg" /></div>
+          <div><label class="block text-sm font-medium text-gray-700 mb-1">E-mail *</label><input v-model="form.email" type="email" required class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="exemplo@email.com" /></div>
+          <div><label class="block text-sm font-medium text-gray-700 mb-1">Senha *</label><input v-model="form.senha" type="password" required minlength="6" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Mín. 6 caracteres" /></div>
+          <div><label class="block text-sm font-medium text-gray-700 mb-1">Telefone / WhatsApp</label><input v-model="form.telefone" type="tel" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="(11) 99999-9999" /></div>
           <p v-if="formError" class="text-red-500 text-sm">{{ formError }}</p>
           <div class="flex justify-end gap-3">
             <button type="button" @click="closeForm" class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg">Cancelar</button>
@@ -29,10 +30,16 @@
           <td class="py-3 px-4 font-medium">{{ c.nome }}</td><td class="py-3 px-4 text-gray-600">{{ c.email }}</td>
           <td class="py-3 px-4 text-center"><span class="px-2 py-0.5 rounded-full text-xs" :class="c.ativo !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">{{ c.ativo !== false ? 'Ativo' : 'Inativo' }}</span></td>
           <td class="py-3 px-4 text-right">
-            <button v-if="c.ativo !== false" type="button" :disabled="acaoClienteId === c.id"
-              @click="inativar(c)" class="text-amber-600 hover:underline text-xs font-medium mr-2 disabled:opacity-50">Inativar</button>
+            <ToggleSwitch
+              :model-value="c.ativo !== false"
+              label-on="Ativo"
+              label-off="Inativo"
+              variant="success"
+              :loading="loadingAtivo[c.id]"
+              @change="(val) => onAtivoChange(c, val)"
+            />
             <button type="button" :disabled="acaoClienteId === c.id"
-              @click="excluir(c)" class="text-red-600 hover:underline text-xs font-medium disabled:opacity-50">Excluir</button>
+              @click="excluir(c)" class="text-red-600 hover:underline text-xs font-medium disabled:opacity-50 ml-2">Excluir</button>
           </td>
         </tr></tbody>
       </table>
@@ -48,23 +55,39 @@ import userApi from '../../api/userApi'
 import { useToast } from '../../composables/useToast'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import EmptyState from '../../components/common/EmptyState.vue'
+import ToggleSwitch from '../../components/common/ToggleSwitch.vue'
 
 const toast = useToast()
+const loadingAtivo = ref({})
 const clientes = ref([])
 const loading = ref(true)
 const showForm = ref(false)
-const form = ref({ nome: '', email: '', senha: '' })
+const form = ref({ nome: '', email: '', senha: '', telefone: '' })
 const formError = ref('')
 const acaoClienteId = ref(null)
 
-function closeForm() { showForm.value = false; form.value = { nome: '', email: '', senha: '' }; formError.value = '' }
+function closeForm() { showForm.value = false; form.value = { nome: '', email: '', senha: '', telefone: '' }; formError.value = '' }
 async function loadClientes() { loading.value = true; try { clientes.value = (await userApi.listarClientes()).data } finally { loading.value = false } }
 async function salvar() { formError.value = ''; try { await userApi.criarCliente(form.value); closeForm(); loadClientes(); toast.success('Cliente criado.') } catch (e) { formError.value = e.response?.data?.erro || 'Erro' } }
 
-function inativar(c) {
-  if (!confirm(`Inativar o cliente "${c.nome}"? Ele não poderá mais acessar o sistema.`)) return
-  acaoClienteId.value = c.id
-  userApi.inativarCliente(c.id).then(() => { loadClientes(); toast.success('Cliente inativado.') }).catch(e => { toast.error(e.response?.data?.erro || e.response?.data?.mensagem || 'Erro ao inativar.') }).finally(() => { acaoClienteId.value = null })
+async function onAtivoChange(c, ativo) {
+  if (!ativo && !confirm(`Inativar o cliente "${c.nome}"? Ele não poderá mais acessar o sistema.`)) return
+  loadingAtivo.value[c.id] = true
+  try {
+    if (ativo) {
+      await userApi.ativarCliente(c.id)
+      loadClientes()
+      toast.success('Cliente reativado.')
+    } else {
+      await userApi.inativarCliente(c.id)
+      loadClientes()
+      toast.success('Cliente inativado.')
+    }
+  } catch (e) {
+    toast.error(e.response?.data?.erro || e.response?.data?.mensagem || 'Erro ao alterar status.')
+  } finally {
+    loadingAtivo.value[c.id] = false
+  }
 }
 
 function excluir(c) {

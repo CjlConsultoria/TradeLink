@@ -76,6 +76,12 @@ public class AdminMaxController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/planos/{id}/ativar")
+    public ResponseEntity<Void> ativarPlano(@PathVariable Long id) {
+        planoService.ativar(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @PutMapping("/empresas/{id}/plano")
     public ResponseEntity<EmpresaResponse> atribuirPlano(
             @PathVariable Long id, @RequestBody Map<String, Long> body) {
@@ -112,6 +118,12 @@ public class AdminMaxController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/empresas/{id}/ativar")
+    public ResponseEntity<Void> ativarEmpresa(@PathVariable Long id) {
+        empresaService.ativar(id);
+        return ResponseEntity.noContent().build();
+    }
+
     /** Bloqueia ou desbloqueia o acesso à plataforma da empresa (todos os consultores e clientes). Body: { "bloqueado": true/false }. */
     @PutMapping("/empresas/{id}/bloquear-acesso")
     public ResponseEntity<EmpresaResponse> bloquearAcessoEmpresa(
@@ -122,7 +134,7 @@ public class AdminMaxController {
 
     @PostMapping("/empresas/{empresaId}/consultores")
     public ResponseEntity<UserResponse> criarConsultor(
-            @PathVariable Long empresaId, @RequestBody RegisterRequest request) {
+            @PathVariable Long empresaId, @Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(userService.criarConsultor(request, empresaId));
     }

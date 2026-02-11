@@ -28,6 +28,9 @@ export default {
   inativarCliente(id) {
     return api.put(`/consultor/clientes/${id}/inativar`)
   },
+  ativarCliente(id) {
+    return api.put(`/consultor/clientes/${id}/ativar`)
+  },
   excluirCliente(id) {
     return api.delete(`/consultor/clientes/${id}`)
   },

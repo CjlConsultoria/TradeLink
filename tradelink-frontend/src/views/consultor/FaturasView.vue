@@ -166,6 +166,8 @@ const paymentElementRef = ref(null)
 let stripeInstance = null
 let elementsInstance = null
 let paymentElementInstance = null
+let stripeBadgeObserver = null
+let stripeBadgeInterval = null
 
 const acessoBloqueado = computed(() => !acessoPermitido.value)
 
@@ -248,6 +250,7 @@ async function abrirPagamentoEmbutido() {
     paymentElement.on('loaderror', (e) => {
       erroModal.value = e?.error?.message || 'Erro ao carregar opções de pagamento.'
     })
+    iniciarRemocaoBadgeStripe()
   } catch (e) {
     toast.error(e.response?.data?.erro || e.response?.data?.mensagem || 'Erro ao abrir pagamento.')
     showModalPagamento.value = false
@@ -260,15 +263,38 @@ function removerWidgetStripe() {
   try {
     const links = document.querySelectorAll('a[href*="stripe.com"]')
     links.forEach((el) => {
-      const parent = el.parentElement
-      if (parent && (parent.tagName === 'BODY' || parent.childElementCount === 1)) {
-        parent.removeChild(el)
-        if (parent.tagName !== 'BODY' && parent.childElementCount === 0) parent.remove()
+      let node = el
+      while (node && node.parentElement && node.parentElement !== document.body) {
+        node = node.parentElement
+      }
+      if (node && node.parentElement === document.body) {
+        node.remove()
       } else {
-        el.remove()
+        el.remove?.()
       }
     })
   } catch (_) {}
+}
+
+function iniciarRemocaoBadgeStripe() {
+  removerWidgetStripe()
+  stripeBadgeInterval = setInterval(removerWidgetStripe, 400)
+  if (typeof MutationObserver !== 'undefined') {
+    stripeBadgeObserver = new MutationObserver(removerWidgetStripe)
+    stripeBadgeObserver.observe(document.body, { childList: true, subtree: true })
+  }
+}
+
+function pararRemocaoBadgeStripe() {
+  if (stripeBadgeInterval) {
+    clearInterval(stripeBadgeInterval)
+    stripeBadgeInterval = null
+  }
+  if (stripeBadgeObserver) {
+    stripeBadgeObserver.disconnect()
+    stripeBadgeObserver = null
+  }
+  removerWidgetStripe()
 }
 
 function fecharModalPagamento() {
@@ -285,7 +311,7 @@ function fecharModalPagamento() {
   currentPaymentIntentId.value = ''
   erroModal.value = ''
   showModalPagamento.value = false
-  removerWidgetStripe()
+  pararRemocaoBadgeStripe()
 }
 
 async function confirmarPagamento() {

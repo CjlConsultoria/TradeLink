@@ -25,6 +25,32 @@ public class Empresa {
     @Column(nullable = false, unique = true, length = 18)
     private String cnpj;
 
+    /** Endereço */
+    @Column(length = 10)
+    private String cep;
+    @Column(length = 200)
+    private String logradouro;
+    @Column(length = 20)
+    private String numero;
+    @Column(length = 100)
+    private String complemento;
+    @Column(length = 100)
+    private String bairro;
+    @Column(length = 100)
+    private String cidade;
+    @Column(length = 2)
+    private String uf;
+
+    /** Responsável legal / contato principal */
+    @Column(name = "nome_responsavel", length = 150)
+    private String nomeResponsavel;
+    @Column(name = "cpf_responsavel", length = 14)
+    private String cpfResponsavel;
+    @Column(name = "email_alternativo", length = 150)
+    private String emailAlternativo;
+    @Column(length = 30)
+    private String telefone;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "plano_id")
     private Plano plano;

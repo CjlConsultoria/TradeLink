@@ -13,6 +13,7 @@ import com.example.CJLInvestimentos.dtos.response.FaturasComProximaResponse;
 import com.example.CJLInvestimentos.dtos.response.UserResponse;
 import com.example.CJLInvestimentos.entities.User;
 import com.example.CJLInvestimentos.exceptions.BusinessException;
+import jakarta.validation.Valid;
 import com.example.CJLInvestimentos.exceptions.ResourceNotFoundException;
 import com.example.CJLInvestimentos.repositories.UserRepository;
 import com.example.CJLInvestimentos.services.CarteiraService;
@@ -64,7 +65,7 @@ public class ConsultorController {
     @PostMapping("/clientes")
     public ResponseEntity<UserResponse> criarCliente(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody RegisterRequest request) {
+            @Valid @RequestBody RegisterRequest request) {
         User consultor = getUser(userDetails);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(userService.criarCliente(request, consultor.getEmpresa().getId()));
@@ -83,6 +84,15 @@ public class ConsultorController {
             @PathVariable Long id) {
         User consultor = getUser(userDetails);
         userService.inativarClientePorConsultor(id, consultor);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/clientes/{id}/ativar")
+    public ResponseEntity<Void> ativarCliente(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long id) {
+        User consultor = getUser(userDetails);
+        userService.ativarClientePorConsultor(id, consultor);
         return ResponseEntity.ok().build();
     }
 

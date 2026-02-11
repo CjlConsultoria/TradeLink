@@ -19,6 +19,9 @@ export default {
   desativar(id) {
     return api.delete(`/admin-max/planos/${id}`)
   },
+  ativar(id) {
+    return api.post(`/admin-max/planos/${id}/ativar`)
+  },
   atribuirEmpresa(empresaId, planoId) {
     return api.put(`/admin-max/empresas/${empresaId}/plano`, { planoId })
   }

@@ -45,11 +45,17 @@
                 </span>
               </td>
               <td class="py-3 px-4">
-                <div class="flex flex-wrap gap-2">
+                <div class="flex flex-wrap items-center gap-2">
                   <button type="button" @click="abrirEdicao(u)" class="text-sm text-indigo-600 hover:underline">Editar</button>
                   <button type="button" @click="abrirModalSenha(u)" class="text-sm text-amber-600 hover:underline">Alterar senha</button>
-                  <button v-if="!u.ativo" type="button" @click="ativarUsuario(u)" class="text-sm text-green-600 hover:underline">Ativar</button>
-                  <button v-if="u.ativo" type="button" @click="inativarUsuario(u)" class="text-sm text-red-600 hover:underline">Inativar</button>
+                  <ToggleSwitch
+                    :model-value="!!u.ativo"
+                    label-on="Ativo"
+                    label-off="Inativo"
+                    variant="success"
+                    :loading="loadingAtivo[u.id]"
+                    @change="(val) => onAtivoChange(u, val)"
+                  />
                 </div>
               </td>
             </tr>
@@ -71,7 +77,11 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
-              <input v-model="modal.email" type="email" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+              <input v-model="modal.email" type="email" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="exemplo@email.com" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Telefone / WhatsApp</label>
+              <input v-model="modal.telefone" type="tel" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="(11) 99999-9999" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Perfil</label>
@@ -142,8 +152,10 @@ import userApi from '../../api/userApi'
 import empresaApi from '../../api/empresaApi'
 import { useToast } from '../../composables/useToast'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
+import ToggleSwitch from '../../components/common/ToggleSwitch.vue'
 
 const toast = useToast()
+const loadingAtivo = ref({})
 const loading = ref(true)
 const usuarios = ref([])
 const empresas = ref([])
@@ -155,6 +167,7 @@ const modal = ref({
   id: null,
   nome: '',
   email: '',
+  telefone: '',
   role: 'Cliente',
   empresaId: null,
   ativo: true,
@@ -201,6 +214,7 @@ function abrirEdicao(u) {
     id: u.id,
     nome: u.nome || '',
     email: u.email || '',
+    telefone: u.telefone || '',
     role: u.role || 'Cliente',
     empresaId: u.empresaId ?? null,
     ativo: u.ativo !== false,
@@ -219,6 +233,7 @@ async function salvarEdicao() {
     const data = {
       nome: m.nome.trim(),
       email: m.email.trim(),
+      telefone: m.telefone != null ? String(m.telefone).trim() || null : null,
       ativo: m.ativo,
       role: m.role,
       empresaId: m.role === 'AdminMax' ? null : (m.empresaId || null)
@@ -237,25 +252,25 @@ async function salvarEdicao() {
   }
 }
 
-async function ativarUsuario(u) {
+async function onAtivoChange(u, ativo) {
+  if (!ativo && !confirm(`Inativar o usuário ${u.nome}? Ele não poderá mais acessar o sistema.`)) return
+  loadingAtivo.value[u.id] = true
   try {
-    await userApi.ativar(u.id)
-    const idx = usuarios.value.findIndex(x => x.id === u.id)
-    if (idx !== -1) usuarios.value[idx] = { ...usuarios.value[idx], ativo: true }
-    toast.success('Usuário ativado.')
+    if (ativo) {
+      await userApi.ativar(u.id)
+      const idx = usuarios.value.findIndex(x => x.id === u.id)
+      if (idx !== -1) usuarios.value[idx] = { ...usuarios.value[idx], ativo: true }
+      toast.success('Usuário ativado.')
+    } else {
+      await userApi.desativar(u.id)
+      const idx = usuarios.value.findIndex(x => x.id === u.id)
+      if (idx !== -1) usuarios.value[idx] = { ...usuarios.value[idx], ativo: false }
+      toast.success('Usuário inativado.')
+    }
   } catch (e) {
-    toast.error(e.response?.data?.mensagem || 'Erro ao ativar.')
-  }
-}
-async function inativarUsuario(u) {
-  if (!confirm(`Inativar o usuário ${u.nome}? Ele não poderá mais acessar o sistema.`)) return
-  try {
-    await userApi.desativar(u.id)
-    const idx = usuarios.value.findIndex(x => x.id === u.id)
-    if (idx !== -1) usuarios.value[idx] = { ...usuarios.value[idx], ativo: false }
-    toast.success('Usuário inativado. O usuário será deslogado na próxima requisição.')
-  } catch (e) {
-    toast.error(e.response?.data?.mensagem || 'Erro ao inativar.')
+    toast.error(e.response?.data?.mensagem || 'Erro ao alterar status.')
+  } finally {
+    loadingAtivo.value[u.id] = false
   }
 }
 

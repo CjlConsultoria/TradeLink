@@ -16,6 +16,17 @@ public class EmpresaResponse {
     private Long id;
     private String nome;
     private String cnpj;
+    private String cep;
+    private String logradouro;
+    private String numero;
+    private String complemento;
+    private String bairro;
+    private String cidade;
+    private String uf;
+    private String nomeResponsavel;
+    private String cpfResponsavel;
+    private String emailAlternativo;
+    private String telefone;
     private Boolean ativo;
     private LocalDateTime createdAt;
     private Long planoId;

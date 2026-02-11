@@ -46,6 +46,12 @@ public class PlanoService {
         plano.setAtivo(false);
         planoRepository.save(plano);
     }
+    public void ativar(Long id) {
+        Plano plano = planoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Plano não encontrado"));
+        plano.setAtivo(true);
+        planoRepository.save(plano);
+    }
     public List<PlanoResponse> listarTodos() {
         return planoRepository.findAll().stream()
                 .map(this::toResponse)

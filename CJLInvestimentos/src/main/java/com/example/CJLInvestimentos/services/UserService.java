@@ -53,13 +53,15 @@ public class UserService {
             }
         }
 
+        String email = request.getEmail().trim().toLowerCase();
         User user = userRepository.save(
                 User.builder()
-                        .nome(request.getNome())
-                        .email(request.getEmail())
+                        .nome(request.getNome().trim())
+                        .email(email)
                         .senha(passwordEncoder.encode(request.getSenha()))
                         .role(role)
                         .empresa(empresa)
+                        .telefone(request.getTelefone() != null && !request.getTelefone().isBlank() ? request.getTelefone().trim() : null)
                         .build()
         );
         notificationAsyncRunner.enviarEmailNovoUsuarioAsync(user.getEmail(), user.getNome(), user.getRole());
@@ -112,6 +114,21 @@ public class UserService {
         userRepository.save(cliente);
     }
 
+    /** Consultor reativa um cliente da própria empresa. */
+    public void ativarClientePorConsultor(Long clienteId, User consultor) {
+        User cliente = userRepository.findById(clienteId)
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado"));
+        if (cliente.getRole() != Role.Cliente) {
+            throw new BusinessException("Usuário não é um cliente");
+        }
+        if (consultor.getEmpresa() == null || cliente.getEmpresa() == null
+                || !cliente.getEmpresa().getId().equals(consultor.getEmpresa().getId())) {
+            throw new BusinessException("Cliente não pertence à sua empresa");
+        }
+        cliente.setAtivo(true);
+        userRepository.save(cliente);
+    }
+
     public void ativar(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
@@ -134,6 +151,9 @@ public class UserService {
                 }
             });
             user.setEmail(email);
+        }
+        if (request.getTelefone() != null) {
+            user.setTelefone(request.getTelefone().isBlank() ? null : request.getTelefone().trim());
         }
         if (request.getAtivo() != null) {
             user.setAtivo(request.getAtivo());
@@ -214,6 +234,7 @@ public class UserService {
                 .empresaId(user.getEmpresa() != null ? user.getEmpresa().getId() : null)
                 .empresaNome(user.getEmpresa() != null ? user.getEmpresa().getNome() : null)
                 .ativo(user.getAtivo())
+                .telefone(user.getTelefone())
                 .telegramChatId(user.getTelegramChatId())
                 .pushInscrito(pushInscrito)
                 .build();

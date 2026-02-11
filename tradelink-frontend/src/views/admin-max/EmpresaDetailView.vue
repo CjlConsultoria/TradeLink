@@ -29,12 +29,29 @@
             <p v-if="empresa.planoNome" class="text-xs text-gray-500 mt-1">{{ empresa.totalUsuarios ?? 0 }} / {{ empresa.maxUsuarios ?? 0 }} usuários</p>
           </div>
           <div>
-            <p class="text-sm text-gray-500">Acesso à plataforma</p>
-            <span v-if="empresa.acessoBloqueadoPorAdmin" class="inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Bloqueado</span>
-            <span v-else class="inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Liberado</span>
-            <button type="button" @click="toggleBloqueioAcesso" class="ml-2 mt-1 text-sm text-amber-700 hover:underline">
-              {{ empresa.acessoBloqueadoPorAdmin ? 'Desbloquear acesso' : 'Bloquear acesso' }}
-            </button>
+            <p class="text-sm text-gray-500 mb-1">Acesso à plataforma</p>
+            <ToggleSwitch
+              :model-value="!!empresa.acessoBloqueadoPorAdmin"
+              label-on="Acesso bloqueado"
+              label-off="Acesso liberado"
+              variant="warning"
+              :loading="loadingBloqueio"
+              @change="onBloqueioChange"
+            />
+          </div>
+        </div>
+        <div v-if="empresa.nomeResponsavel || empresa.telefone || empresa.emailAlternativo || empresa.logradouro" class="mt-4 pt-4 border-t border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+          <div v-if="empresa.nomeResponsavel || empresa.cpfResponsavel">
+            <p class="text-gray-500">Responsável</p>
+            <p class="font-medium">{{ empresa.nomeResponsavel || '—' }} <span v-if="empresa.cpfResponsavel" class="text-gray-600">({{ empresa.cpfResponsavel }})</span></p>
+          </div>
+          <div v-if="empresa.telefone || empresa.emailAlternativo">
+            <p class="text-gray-500">Contato</p>
+            <p class="font-medium">{{ empresa.telefone || '—' }} <span v-if="empresa.emailAlternativo" class="text-gray-600">· {{ empresa.emailAlternativo }}</span></p>
+          </div>
+          <div v-if="empresa.logradouro || empresa.cidade" class="md:col-span-2">
+            <p class="text-gray-500">Endereço</p>
+            <p class="font-medium">{{ [empresa.logradouro, empresa.numero, empresa.complemento].filter(Boolean).join(', ') || '—' }} {{ empresa.bairro ? `· ${empresa.bairro}` : '' }} {{ empresa.cidade ? `· ${empresa.cidade}` : '' }} {{ empresa.uf ? `/${empresa.uf}` : '' }} {{ empresa.cep ? `· CEP ${empresa.cep}` : '' }}</p>
           </div>
         </div>
       </div>
@@ -82,11 +99,12 @@
         </div>
 
         <div v-if="showConsultorForm" class="bg-gray-50 rounded-lg p-4 mb-4">
-          <form @submit.prevent="criarConsultor" class="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <input v-model="consultorForm.nome" placeholder="Nome" required class="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
-            <input v-model="consultorForm.email" type="email" placeholder="E-mail" required class="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
-            <input v-model="consultorForm.senha" type="password" placeholder="Senha" required class="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
-            <div class="md:col-span-3 flex gap-2">
+          <form @submit.prevent="criarConsultor" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <input v-model="consultorForm.nome" placeholder="Nome *" required class="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+            <input v-model="consultorForm.email" type="email" placeholder="E-mail *" required class="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+            <input v-model="consultorForm.senha" type="password" placeholder="Senha *" required class="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+            <input v-model="consultorForm.telefone" type="tel" placeholder="Telefone / WhatsApp" class="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+            <div class="md:col-span-2 flex gap-2">
               <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700">Criar</button>
               <button type="button" @click="showConsultorForm = false" class="text-gray-600 text-sm hover:underline">Cancelar</button>
             </div>
@@ -287,6 +305,7 @@ import faturaApi from '../../api/faturaApi'
 import { formatCurrency, formatDate } from '../../utils/formatters'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import EmptyState from '../../components/common/EmptyState.vue'
+import ToggleSwitch from '../../components/common/ToggleSwitch.vue'
 
 const toast = useToast()
 
@@ -298,7 +317,7 @@ const selectedPlanoId = ref(null)
 const loading = ref(true)
 
 const showConsultorForm = ref(false)
-const consultorForm = ref({ nome: '', email: '', senha: '' })
+const consultorForm = ref({ nome: '', email: '', senha: '', telefone: '' })
 const consultorError = ref('')
 
 const notifEmail = ref(true)
@@ -309,6 +328,7 @@ const notifSalvando = ref(false)
 const notifSalvo = ref(false)
 
 const loadingFaturas = ref(false)
+const loadingBloqueio = ref(false)
 const faturasProxima = ref(null)
 const showMarcarPago = ref(false)
 const marcarPagoObs = ref('')
@@ -366,18 +386,20 @@ async function salvarNotificacoes() {
   }
 }
 
-async function toggleBloqueioAcesso() {
+async function onBloqueioChange(bloqueado) {
   if (!empresa.value) return
-  const novoEstado = !empresa.value.acessoBloqueadoPorAdmin
-  const msg = novoEstado ? 'Bloquear acesso à plataforma para todos os consultores e clientes desta empresa?' : 'Desbloquear o acesso?'
+  const msg = bloqueado ? 'Bloquear acesso à plataforma para todos os consultores e clientes desta empresa?' : 'Desbloquear o acesso?'
   if (!confirm(msg)) return
+  loadingBloqueio.value = true
   try {
-    await empresaApi.bloquearAcesso(route.params.id, novoEstado)
+    await empresaApi.bloquearAcesso(route.params.id, bloqueado)
     const empRes = await empresaApi.buscar(route.params.id)
     empresa.value = empRes.data
-    toast.success(novoEstado ? 'Acesso bloqueado.' : 'Acesso desbloqueado.')
+    toast.success(bloqueado ? 'Acesso bloqueado.' : 'Acesso desbloqueado.')
   } catch (e) {
     toast.error(e.response?.data?.mensagem || e.response?.data?.erro || 'Erro ao alterar bloqueio.')
+  } finally {
+    loadingBloqueio.value = false
   }
 }
 
@@ -541,7 +563,7 @@ async function criarConsultor() {
   consultorError.value = ''
   try {
     await empresaApi.criarConsultor(route.params.id, consultorForm.value)
-    consultorForm.value = { nome: '', email: '', senha: '' }
+    consultorForm.value = { nome: '', email: '', senha: '', telefone: '' }
     showConsultorForm.value = false
     loadData()
   } catch (e) {

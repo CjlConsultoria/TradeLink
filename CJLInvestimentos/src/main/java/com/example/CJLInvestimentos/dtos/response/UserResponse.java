@@ -17,6 +17,8 @@ public class UserResponse {
     private Long empresaId;
     private String empresaNome;
     private Boolean ativo;
+    /** Telefone para WhatsApp. */
+    private String telefone;
     /** Chat ID do Telegram (se vinculado). */
     private String telegramChatId;
     /** Se o usuário tem pelo menos uma inscrição de push ativa. */

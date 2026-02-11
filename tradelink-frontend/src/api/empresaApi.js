@@ -16,6 +16,9 @@ export default {
   desativar(id) {
     return api.delete(`/admin-max/empresas/${id}`)
   },
+  ativar(id) {
+    return api.post(`/admin-max/empresas/${id}/ativar`)
+  },
   listarUsuarios(empresaId) {
     return api.get(`/admin-max/empresas/${empresaId}/usuarios`)
   },

@@ -39,6 +39,10 @@ public class User implements UserDetails {
     @JoinColumn(name = "empresa_id")
     private Empresa empresa;
 
+    /** Telefone para WhatsApp (formato livre, ex: 11999999999). */
+    @Column(length = 30)
+    private String telefone;
+
     /** Chat ID do Telegram para notificações (usuário vincula no app). */
     @Column(name = "telegram_chat_id", length = 50)
     private String telegramChatId;

@@ -10,6 +10,7 @@ import com.example.CJLInvestimentos.exceptions.ResourceNotFoundException;
 import com.example.CJLInvestimentos.repositories.EmpresaRepository;
 import com.example.CJLInvestimentos.repositories.PlanoRepository;
 import com.example.CJLInvestimentos.repositories.UserRepository;
+import com.example.CJLInvestimentos.util.DocumentoUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,8 +32,18 @@ public class EmpresaService {
     private final FaturaService faturaService;
 
     public EmpresaResponse criar(EmpresaRequest request) {
-        if (empresaRepository.findByCnpj(request.getCnpj()).isPresent()) {
+        String cnpjNorm = DocumentoUtil.apenasDigitos(request.getCnpj());
+        if (!DocumentoUtil.isValidCnpj(cnpjNorm)) {
+            throw new BusinessException("CNPJ inválido. Verifique os dígitos.");
+        }
+        String cnpjFormatado = DocumentoUtil.formatarCnpj(cnpjNorm);
+        if (empresaRepository.findByCnpj(cnpjFormatado).isPresent()) {
             throw new BusinessException("CNPJ já cadastrado");
+        }
+        if (request.getCpfResponsavel() != null && !request.getCpfResponsavel().isBlank()) {
+            if (!DocumentoUtil.isValidCpf(DocumentoUtil.apenasDigitos(request.getCpfResponsavel()))) {
+                throw new BusinessException("CPF do responsável inválido.");
+            }
         }
 
         Plano plano = request.getPlanoId() != null
@@ -42,8 +53,19 @@ public class EmpresaService {
 
         Empresa empresa = empresaRepository.save(
                 Empresa.builder()
-                        .nome(request.getNome())
-                        .cnpj(request.getCnpj())
+                        .nome(request.getNome().trim())
+                        .cnpj(cnpjFormatado)
+                        .cep(trim(request.getCep()))
+                        .logradouro(trim(request.getLogradouro()))
+                        .numero(trim(request.getNumero()))
+                        .complemento(trim(request.getComplemento()))
+                        .bairro(trim(request.getBairro()))
+                        .cidade(trim(request.getCidade()))
+                        .uf(trim(request.getUf()) != null ? trim(request.getUf()).toUpperCase() : null)
+                        .nomeResponsavel(trim(request.getNomeResponsavel()))
+                        .cpfResponsavel(request.getCpfResponsavel() != null && !request.getCpfResponsavel().isBlank() ? DocumentoUtil.formatarCpf(DocumentoUtil.apenasDigitos(request.getCpfResponsavel())) : null)
+                        .emailAlternativo(trim(request.getEmailAlternativo()))
+                        .telefone(trim(request.getTelefone()))
                         .plano(plano)
                         .notificacaoEmail(request.getNotificacaoEmail() != null ? request.getNotificacaoEmail() : true)
                         .notificacaoTelegram(request.getNotificacaoTelegram() != null ? request.getNotificacaoTelegram() : true)
@@ -60,12 +82,33 @@ public class EmpresaService {
         Empresa empresa = empresaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Empresa não encontrada"));
 
-        empresaRepository.findByCnpj(request.getCnpj())
+        String cnpjNorm = DocumentoUtil.apenasDigitos(request.getCnpj());
+        if (!DocumentoUtil.isValidCnpj(cnpjNorm)) {
+            throw new BusinessException("CNPJ inválido. Verifique os dígitos.");
+        }
+        String cnpjFormatado = DocumentoUtil.formatarCnpj(cnpjNorm);
+        empresaRepository.findByCnpj(cnpjFormatado)
                 .filter(e -> !e.getId().equals(id))
                 .ifPresent(e -> { throw new BusinessException("CNPJ já cadastrado por outra empresa"); });
+        if (request.getCpfResponsavel() != null && !request.getCpfResponsavel().isBlank()) {
+            if (!DocumentoUtil.isValidCpf(DocumentoUtil.apenasDigitos(request.getCpfResponsavel()))) {
+                throw new BusinessException("CPF do responsável inválido.");
+            }
+        }
 
-        empresa.setNome(request.getNome());
-        empresa.setCnpj(request.getCnpj());
+        empresa.setNome(request.getNome().trim());
+        empresa.setCnpj(cnpjFormatado);
+        empresa.setCep(trim(request.getCep()));
+        empresa.setLogradouro(trim(request.getLogradouro()));
+        empresa.setNumero(trim(request.getNumero()));
+        empresa.setComplemento(trim(request.getComplemento()));
+        empresa.setBairro(trim(request.getBairro()));
+        empresa.setCidade(trim(request.getCidade()));
+        empresa.setUf(trim(request.getUf()) != null ? trim(request.getUf()).toUpperCase() : null);
+        empresa.setNomeResponsavel(trim(request.getNomeResponsavel()));
+        empresa.setCpfResponsavel(request.getCpfResponsavel() != null && !request.getCpfResponsavel().isBlank() ? DocumentoUtil.formatarCpf(DocumentoUtil.apenasDigitos(request.getCpfResponsavel())) : null);
+        empresa.setEmailAlternativo(trim(request.getEmailAlternativo()));
+        empresa.setTelefone(trim(request.getTelefone()));
         if (request.getPlanoId() != null) {
             empresa.setPlano(planoRepository.findById(request.getPlanoId())
                     .orElse(null));
@@ -86,6 +129,13 @@ public class EmpresaService {
         Empresa empresa = empresaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Empresa não encontrada"));
         empresa.setAtivo(false);
+        empresaRepository.save(empresa);
+    }
+
+    public void ativar(Long id) {
+        Empresa empresa = empresaRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Empresa não encontrada"));
+        empresa.setAtivo(true);
         empresaRepository.save(empresa);
     }
 
@@ -132,6 +182,17 @@ public class EmpresaService {
                 .id(empresa.getId())
                 .nome(empresa.getNome())
                 .cnpj(empresa.getCnpj())
+                .cep(empresa.getCep())
+                .logradouro(empresa.getLogradouro())
+                .numero(empresa.getNumero())
+                .complemento(empresa.getComplemento())
+                .bairro(empresa.getBairro())
+                .cidade(empresa.getCidade())
+                .uf(empresa.getUf())
+                .nomeResponsavel(empresa.getNomeResponsavel())
+                .cpfResponsavel(empresa.getCpfResponsavel())
+                .emailAlternativo(empresa.getEmailAlternativo())
+                .telefone(empresa.getTelefone())
                 .ativo(empresa.getAtivo())
                 .createdAt(empresa.getCreatedAt())
                 .planoId(empresa.getPlano() != null ? empresa.getPlano().getId() : null)
@@ -160,5 +221,9 @@ public class EmpresaService {
         Instant limite = empresa.getCurrentPeriodEnd().plus(DIAS_TOLERANCIA, ChronoUnit.DAYS);
         if (!now.isAfter(limite)) return "VENCIDO";
         return "EM_ATRASO";
+    }
+
+    private static String trim(String s) {
+        return s != null && !s.isBlank() ? s.trim() : null;
     }
 }

@@ -11,28 +11,89 @@
     </p>
 
     <!-- Form Modal -->
-    <div v-if="showForm" class="fixed inset-0 z-50 flex items-center justify-center">
+    <div v-if="showForm" class="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div class="fixed inset-0 bg-black/50" @click="closeForm"></div>
-      <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4 relative z-10">
+      <div class="bg-white rounded-lg shadow-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto relative z-10">
         <h3 class="text-lg font-semibold mb-4">{{ editingId ? 'Editar' : 'Nova' }} Empresa</h3>
         <form @submit.prevent="salvar" class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Nome</label>
-            <input v-model="form.nome" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" />
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="md:col-span-2">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Nome da empresa *</label>
+              <input v-model="form.nome" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="Razão social" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">CNPJ *</label>
+              <input v-model="form.cnpj" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="00.000.000/0001-00" :class="{ 'border-red-500': cnpjInvalido }" />
+              <p v-if="cnpjInvalido" class="text-red-500 text-xs mt-0.5">CNPJ inválido. Verifique os dígitos.</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Plano</label>
+              <select v-model="form.planoId" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                <option :value="null">Nenhum</option>
+                <option v-for="p in planosAtivos" :key="p.id" :value="p.id">{{ p.nome }}</option>
+              </select>
+            </div>
           </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">CNPJ</label>
-            <input v-model="form.cnpj" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="00.000.000/0000-00" />
+
+          <div class="border-t border-gray-200 pt-4">
+            <h4 class="text-sm font-medium text-gray-800 mb-3">Endereço</h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-sm text-gray-600 mb-1">CEP</label>
+                <input v-model="form.cep" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="00000-000" maxlength="10" />
+              </div>
+              <div class="md:col-span-2">
+                <label class="block text-sm text-gray-600 mb-1">Logradouro</label>
+                <input v-model="form.logradouro" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="Rua, avenida..." />
+              </div>
+              <div>
+                <label class="block text-sm text-gray-600 mb-1">Número</label>
+                <input v-model="form.numero" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="Nº" />
+              </div>
+              <div class="md:col-span-2">
+                <label class="block text-sm text-gray-600 mb-1">Complemento</label>
+                <input v-model="form.complemento" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="Sala, andar..." />
+              </div>
+              <div>
+                <label class="block text-sm text-gray-600 mb-1">Bairro</label>
+                <input v-model="form.bairro" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" />
+              </div>
+              <div>
+                <label class="block text-sm text-gray-600 mb-1">Cidade</label>
+                <input v-model="form.cidade" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" />
+              </div>
+              <div>
+                <label class="block text-sm text-gray-600 mb-1">UF</label>
+                <input v-model="form.uf" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 uppercase" placeholder="SP" maxlength="2" />
+              </div>
+            </div>
           </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Plano</label>
-            <select v-model="form.planoId" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-              <option :value="null">Nenhum</option>
-              <option v-for="p in planosAtivos" :key="p.id" :value="p.id">{{ p.nome }}</option>
-            </select>
+
+          <div class="border-t border-gray-200 pt-4">
+            <h4 class="text-sm font-medium text-gray-800 mb-3">Responsável e contato</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-sm text-gray-600 mb-1">Nome do responsável</label>
+                <input v-model="form.nomeResponsavel" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="Nome completo" />
+              </div>
+              <div>
+                <label class="block text-sm text-gray-600 mb-1">CPF do responsável</label>
+                <input v-model="form.cpfResponsavel" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500" :class="cpfInvalido ? 'border-red-500' : 'border-gray-300'" placeholder="000.000.000-00" />
+                <p v-if="cpfInvalido" class="text-red-500 text-xs mt-0.5">CPF inválido.</p>
+              </div>
+              <div>
+                <label class="block text-sm text-gray-600 mb-1">E-mail alternativo</label>
+                <input v-model="form.emailAlternativo" type="email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="contato@empresa.com" />
+              </div>
+              <div>
+                <label class="block text-sm text-gray-600 mb-1">Telefone / WhatsApp</label>
+                <input v-model="form.telefone" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="(11) 99999-9999" />
+              </div>
+            </div>
           </div>
+
           <p v-if="formError" class="text-red-500 text-sm">{{ formError }}</p>
-          <div class="flex justify-end gap-3">
+          <div class="flex justify-end gap-3 pt-2">
             <button type="button" @click="closeForm" class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">Cancelar</button>
             <button type="submit" class="px-4 py-2 text-sm text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">Salvar</button>
           </div>
@@ -70,14 +131,26 @@
           <span>{{ e.totalConsultores }} consultores</span>
           <span>{{ e.totalClientes }} clientes</span>
         </div>
-        <div class="flex flex-wrap gap-2">
+        <div class="flex flex-wrap items-center gap-3">
           <router-link :to="`/admin-max/empresas/${e.id}`" class="text-sm text-indigo-600 hover:underline">Detalhes</router-link>
           <button v-if="planoComPagamento(e)" type="button" @click="irParaCheckout(e)" class="text-sm text-green-600 hover:underline">Pagar plano</button>
-          <button type="button" @click="toggleBloqueioAcesso(e)" class="text-sm hover:underline" :class="e.acessoBloqueadoPorAdmin ? 'text-amber-600' : 'text-amber-700'">
-            {{ e.acessoBloqueadoPorAdmin ? 'Desbloquear acesso' : 'Bloquear acesso' }}
-          </button>
+          <ToggleSwitch
+            :model-value="!!e.acessoBloqueadoPorAdmin"
+            label-on="Acesso bloqueado"
+            label-off="Acesso liberado"
+            variant="warning"
+            :loading="loadingBloqueio[e.id]"
+            @change="(val) => onBloqueioChange(e, val)"
+          />
           <button @click="editar(e)" class="text-sm text-blue-600 hover:underline">Editar</button>
-          <button v-if="e.ativo" @click="desativar(e.id)" class="text-sm text-red-600 hover:underline">Desativar</button>
+          <ToggleSwitch
+            :model-value="!!e.ativo"
+            label-on="Ativa"
+            label-off="Inativa"
+            variant="success"
+            :loading="loadingAtivo[e.id]"
+            @change="(val) => onAtivoChange(e, val)"
+          />
         </div>
       </div>
     </div>
@@ -101,7 +174,9 @@ import planoApi from '../../api/planoApi'
 import paymentApi from '../../api/paymentApi'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import EmptyState from '../../components/common/EmptyState.vue'
+import ToggleSwitch from '../../components/common/ToggleSwitch.vue'
 import { formatDate } from '../../utils/formatters'
+import { isValidCnpj, isValidCpf } from '../../utils/validadores'
 
 const toast = useToast()
 const empresaStore = useEmpresaStore()
@@ -113,30 +188,99 @@ const pagamentoConfigurado = ref(false)
 
 const showForm = ref(false)
 const editingId = ref(null)
-const form = ref({ nome: '', cnpj: '', planoId: null })
+const form = ref(getFormInicial())
 const formError = ref('')
+const loadingBloqueio = ref({})
+const loadingAtivo = ref({})
+
+function getFormInicial() {
+  return {
+    nome: '',
+    cnpj: '',
+    planoId: null,
+    cep: '',
+    logradouro: '',
+    numero: '',
+    complemento: '',
+    bairro: '',
+    cidade: '',
+    uf: '',
+    nomeResponsavel: '',
+    cpfResponsavel: '',
+    emailAlternativo: '',
+    telefone: '',
+    notificacaoEmail: true,
+    notificacaoTelegram: true,
+    notificacaoPush: true,
+    notificacaoWhatsApp: false,
+    notificacaoSms: false
+  }
+}
+
+const cnpjInvalido = computed(() => {
+  const c = form.value.cnpj
+  if (!c || String(c).trim().length < 14) return false
+  return !isValidCnpj(c)
+})
+const cpfInvalido = computed(() => {
+  const c = form.value.cpfResponsavel
+  if (!c || String(c).trim().length < 11) return false
+  return !isValidCpf(c)
+})
 
 function closeForm() {
   showForm.value = false
   editingId.value = null
-  form.value = { nome: '', cnpj: '', planoId: null }
+  form.value = getFormInicial()
   formError.value = ''
 }
 
 function editar(empresa) {
   editingId.value = empresa.id
-  form.value = { nome: empresa.nome, cnpj: empresa.cnpj, planoId: empresa.planoId ?? null }
+  form.value = {
+    nome: empresa.nome ?? '',
+    cnpj: empresa.cnpj ?? '',
+    planoId: empresa.planoId ?? null,
+    cep: empresa.cep ?? '',
+    logradouro: empresa.logradouro ?? '',
+    numero: empresa.numero ?? '',
+    complemento: empresa.complemento ?? '',
+    bairro: empresa.bairro ?? '',
+    cidade: empresa.cidade ?? '',
+    uf: empresa.uf ?? '',
+    nomeResponsavel: empresa.nomeResponsavel ?? '',
+    cpfResponsavel: empresa.cpfResponsavel ?? '',
+    emailAlternativo: empresa.emailAlternativo ?? '',
+    telefone: empresa.telefone ?? '',
+    notificacaoEmail: empresa.notificacaoEmail !== false,
+    notificacaoTelegram: empresa.notificacaoTelegram !== false,
+    notificacaoPush: empresa.notificacaoPush !== false,
+    notificacaoWhatsApp: empresa.notificacaoWhatsApp === true,
+    notificacaoSms: empresa.notificacaoSms === true
+  }
   showForm.value = true
 }
 
 async function salvar() {
   formError.value = ''
+  if (cnpjInvalido.value) {
+    formError.value = 'CNPJ inválido. Verifique os dígitos.'
+    toast.error(formError.value)
+    return
+  }
+  if (cpfInvalido.value) {
+    formError.value = 'CPF do responsável inválido.'
+    toast.error(formError.value)
+    return
+  }
   const eraEdicao = !!editingId.value
   try {
+    const payload = { ...form.value }
+    if (payload.uf) payload.uf = payload.uf.toUpperCase().slice(0, 2)
     if (editingId.value) {
-      await empresaApi.atualizar(editingId.value, form.value)
+      await empresaApi.atualizar(editingId.value, payload)
     } else {
-      await empresaApi.criar(form.value)
+      await empresaApi.criar(payload)
     }
     closeForm()
     empresaStore.listar()
@@ -147,28 +291,38 @@ async function salvar() {
   }
 }
 
-async function desativar(id) {
-  if (confirm('Desativar esta empresa?')) {
-    try {
-      await empresaApi.desativar(id)
-      empresaStore.listar()
-      toast.success('Empresa desativada.')
-    } catch (e) {
-      toast.error(e.response?.data?.mensagem || 'Erro ao desativar.')
-    }
+async function onBloqueioChange(empresa, bloqueado) {
+  const msg = bloqueado ? 'Bloquear acesso à plataforma para todos os consultores e clientes desta empresa?' : 'Desbloquear o acesso à plataforma?'
+  if (!confirm(msg)) return
+  loadingBloqueio.value[empresa.id] = true
+  try {
+    await empresaApi.bloquearAcesso(empresa.id, bloqueado)
+    empresaStore.listar()
+    toast.success(bloqueado ? 'Acesso bloqueado.' : 'Acesso desbloqueado.')
+  } catch (e) {
+    toast.error(e.response?.data?.mensagem || e.response?.data?.erro || 'Erro ao alterar bloqueio.')
+  } finally {
+    loadingBloqueio.value[empresa.id] = false
   }
 }
 
-async function toggleBloqueioAcesso(empresa) {
-  const novoEstado = !empresa.acessoBloqueadoPorAdmin
-  const msg = novoEstado ? 'Bloquear acesso à plataforma para todos os consultores e clientes desta empresa?' : 'Desbloquear o acesso à plataforma?'
+async function onAtivoChange(empresa, ativo) {
+  const msg = ativo ? 'Reativar esta empresa?' : 'Desativar esta empresa?'
   if (!confirm(msg)) return
+  loadingAtivo.value[empresa.id] = true
   try {
-    await empresaApi.bloquearAcesso(empresa.id, novoEstado)
+    if (ativo) {
+      await empresaApi.ativar(empresa.id)
+      toast.success('Empresa reativada.')
+    } else {
+      await empresaApi.desativar(empresa.id)
+      toast.success('Empresa desativada.')
+    }
     empresaStore.listar()
-    toast.success(novoEstado ? 'Acesso bloqueado. Consultores e clientes não poderão acessar a plataforma.' : 'Acesso desbloqueado.')
   } catch (e) {
-    toast.error(e.response?.data?.mensagem || e.response?.data?.erro || 'Erro ao alterar bloqueio.')
+    toast.error(e.response?.data?.mensagem || e.response?.data?.erro || 'Erro ao alterar status.')
+  } finally {
+    loadingAtivo.value[empresa.id] = false
   }
 }
 

@@ -51,9 +51,16 @@
         <p class="text-lg font-semibold text-indigo-600 mb-1">R$ {{ Number(p.preco).toFixed(2) }}</p>
         <p v-if="p.stripePriceId" class="text-xs text-green-600 mb-4">Pagamento Stripe ativo</p>
         <p v-else class="text-xs text-gray-400 mb-4">Sem ID Stripe (só exibição)</p>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap items-center gap-2">
           <button @click="editar(p)" class="text-sm text-blue-600 hover:underline">Editar</button>
-          <button v-if="p.ativo" @click="desativar(p.id)" class="text-sm text-red-600 hover:underline">Desativar</button>
+          <ToggleSwitch
+            :model-value="!!p.ativo"
+            label-on="Ativo"
+            label-off="Inativo"
+            variant="success"
+            :loading="loadingAtivo[p.id]"
+            @change="(val) => onAtivoChange(p, val)"
+          />
         </div>
       </div>
     </div>
@@ -67,8 +74,10 @@ import { useToast } from '../../composables/useToast'
 import planoApi from '../../api/planoApi'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import EmptyState from '../../components/common/EmptyState.vue'
+import ToggleSwitch from '../../components/common/ToggleSwitch.vue'
 
 const toast = useToast()
+const loadingAtivo = ref({})
 const planos = ref([])
 const loading = ref(true)
 const showForm = ref(false)
@@ -107,15 +116,23 @@ async function salvar() {
   }
 }
 
-async function desativar(id) {
-  if (confirm('Desativar este plano?')) {
-    try {
-      await planoApi.desativar(id)
-      loadData()
+async function onAtivoChange(plano, ativo) {
+  const msg = ativo ? 'Reativar este plano?' : 'Desativar este plano?'
+  if (!confirm(msg)) return
+  loadingAtivo.value[plano.id] = true
+  try {
+    if (ativo) {
+      await planoApi.ativar(plano.id)
+      toast.success('Plano reativado.')
+    } else {
+      await planoApi.desativar(plano.id)
       toast.success('Plano desativado.')
-    } catch (e) {
-      toast.error(e.response?.data?.mensagem || 'Erro ao desativar.')
     }
+    loadData()
+  } catch (e) {
+    toast.error(e.response?.data?.mensagem || 'Erro ao alterar status.')
+  } finally {
+    loadingAtivo.value[plano.id] = false
   }
 }
 
