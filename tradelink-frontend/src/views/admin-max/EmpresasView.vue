@@ -46,9 +46,12 @@
       <div v-for="e in empresas" :key="e.id" class="card p-5">
         <div class="flex items-center justify-between mb-3">
           <h3 class="font-semibold text-gray-900">{{ e.nome }}</h3>
-          <span class="px-2 py-0.5 rounded-full text-xs" :class="e.ativo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
-            {{ e.ativo ? 'Ativa' : 'Inativa' }}
-          </span>
+          <div class="flex items-center gap-2">
+            <span v-if="e.acessoBloqueadoPorAdmin" class="px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-800" title="Consultores e clientes sem acesso à plataforma">Acesso bloqueado</span>
+            <span class="px-2 py-0.5 rounded-full text-xs" :class="e.ativo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
+              {{ e.ativo ? 'Ativa' : 'Inativa' }}
+            </span>
+          </div>
         </div>
         <p class="text-sm text-gray-500 mb-3">{{ e.cnpj }}</p>
         <div v-if="e.planoNome" class="mb-2">
@@ -70,6 +73,9 @@
         <div class="flex flex-wrap gap-2">
           <router-link :to="`/admin-max/empresas/${e.id}`" class="text-sm text-indigo-600 hover:underline">Detalhes</router-link>
           <button v-if="planoComPagamento(e)" type="button" @click="irParaCheckout(e)" class="text-sm text-green-600 hover:underline">Pagar plano</button>
+          <button type="button" @click="toggleBloqueioAcesso(e)" class="text-sm hover:underline" :class="e.acessoBloqueadoPorAdmin ? 'text-amber-600' : 'text-amber-700'">
+            {{ e.acessoBloqueadoPorAdmin ? 'Desbloquear acesso' : 'Bloquear acesso' }}
+          </button>
           <button @click="editar(e)" class="text-sm text-blue-600 hover:underline">Editar</button>
           <button v-if="e.ativo" @click="desativar(e.id)" class="text-sm text-red-600 hover:underline">Desativar</button>
         </div>
@@ -150,6 +156,19 @@ async function desativar(id) {
     } catch (e) {
       toast.error(e.response?.data?.mensagem || 'Erro ao desativar.')
     }
+  }
+}
+
+async function toggleBloqueioAcesso(empresa) {
+  const novoEstado = !empresa.acessoBloqueadoPorAdmin
+  const msg = novoEstado ? 'Bloquear acesso à plataforma para todos os consultores e clientes desta empresa?' : 'Desbloquear o acesso à plataforma?'
+  if (!confirm(msg)) return
+  try {
+    await empresaApi.bloquearAcesso(empresa.id, novoEstado)
+    empresaStore.listar()
+    toast.success(novoEstado ? 'Acesso bloqueado. Consultores e clientes não poderão acessar a plataforma.' : 'Acesso desbloqueado.')
+  } catch (e) {
+    toast.error(e.response?.data?.mensagem || e.response?.data?.erro || 'Erro ao alterar bloqueio.')
   }
 }
 

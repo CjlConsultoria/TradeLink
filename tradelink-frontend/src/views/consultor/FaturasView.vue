@@ -223,7 +223,13 @@ async function abrirPagamentoEmbutido() {
       }
     }
     const elements = stripe.elements(elementsOptions)
-    const paymentElement = elements.create('payment', { layout: 'tabs' })
+    const paymentOptions = { layout: 'tabs' }
+    if (name || email) {
+      paymentOptions.defaultValues = {
+        billingDetails: { ...(name && { name }), ...(email && { email }) }
+      }
+    }
+    const paymentElement = elements.create('payment', paymentOptions)
     await nextTick()
     const el = document.getElementById('payment-element')
     if (!el) {
@@ -250,6 +256,21 @@ async function abrirPagamentoEmbutido() {
   }
 }
 
+function removerWidgetStripe() {
+  try {
+    const links = document.querySelectorAll('a[href*="stripe.com"]')
+    links.forEach((el) => {
+      const parent = el.parentElement
+      if (parent && (parent.tagName === 'BODY' || parent.childElementCount === 1)) {
+        parent.removeChild(el)
+        if (parent.tagName !== 'BODY' && parent.childElementCount === 0) parent.remove()
+      } else {
+        el.remove()
+      }
+    })
+  } catch (_) {}
+}
+
 function fecharModalPagamento() {
   if (paymentElementInstance && paymentElementRef.value) {
     try {
@@ -264,6 +285,7 @@ function fecharModalPagamento() {
   currentPaymentIntentId.value = ''
   erroModal.value = ''
   showModalPagamento.value = false
+  removerWidgetStripe()
 }
 
 async function confirmarPagamento() {
@@ -376,5 +398,6 @@ onMounted(async () => {
     window.history.replaceState({}, '', route.path)
   }
   await carregar()
+  removerWidgetStripe()
 })
 </script>

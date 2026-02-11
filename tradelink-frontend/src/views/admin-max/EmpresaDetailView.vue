@@ -28,6 +28,14 @@
             </select>
             <p v-if="empresa.planoNome" class="text-xs text-gray-500 mt-1">{{ empresa.totalUsuarios ?? 0 }} / {{ empresa.maxUsuarios ?? 0 }} usuários</p>
           </div>
+          <div>
+            <p class="text-sm text-gray-500">Acesso à plataforma</p>
+            <span v-if="empresa.acessoBloqueadoPorAdmin" class="inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Bloqueado</span>
+            <span v-else class="inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Liberado</span>
+            <button type="button" @click="toggleBloqueioAcesso" class="ml-2 mt-1 text-sm text-amber-700 hover:underline">
+              {{ empresa.acessoBloqueadoPorAdmin ? 'Desbloquear acesso' : 'Bloquear acesso' }}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -355,6 +363,21 @@ async function salvarNotificacoes() {
     console.error(e)
   } finally {
     notifSalvando.value = false
+  }
+}
+
+async function toggleBloqueioAcesso() {
+  if (!empresa.value) return
+  const novoEstado = !empresa.value.acessoBloqueadoPorAdmin
+  const msg = novoEstado ? 'Bloquear acesso à plataforma para todos os consultores e clientes desta empresa?' : 'Desbloquear o acesso?'
+  if (!confirm(msg)) return
+  try {
+    await empresaApi.bloquearAcesso(route.params.id, novoEstado)
+    const empRes = await empresaApi.buscar(route.params.id)
+    empresa.value = empRes.data
+    toast.success(novoEstado ? 'Acesso bloqueado.' : 'Acesso desbloqueado.')
+  } catch (e) {
+    toast.error(e.response?.data?.mensagem || e.response?.data?.erro || 'Erro ao alterar bloqueio.')
   }
 }
 

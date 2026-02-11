@@ -40,12 +40,13 @@ public class FaturaService {
     private final UserRepository userRepository;
 
     /**
-     * Verifica se a empresa está em dia: tem período vigente e não passou de 5 dias após o vencimento.
+     * Verifica se a empresa está em dia: não bloqueada por admin, tem período vigente e não passou de 5 dias após o vencimento.
      * AdminMax não usa empresa; para eles sempre true (checado no filtro).
-     * Empresa sem currentPeriodEnd (nova ou sem assinatura) tem acesso liberado até haver período definido.
+     * Bloqueio por admin (acessoBloqueadoPorAdmin) nega acesso a todos os consultores e clientes da empresa.
      */
     public boolean acessoPermitido(Empresa empresa) {
         if (empresa == null) return true;
+        if (Boolean.TRUE.equals(empresa.getAcessoBloqueadoPorAdmin())) return false;
         if (empresa.getCurrentPeriodEnd() == null) return true; // nova empresa ou sem assinatura: libera uso
         Instant limite = empresa.getCurrentPeriodEnd().plus(DIAS_TOLERANCIA_VENCIMENTO, ChronoUnit.DAYS);
         return Instant.now().isBefore(limite) || Instant.now().equals(limite);
@@ -65,6 +66,23 @@ public class FaturaService {
         User user = userRepository.findByIdWithEmpresa(usuarioId).orElse(null);
         if (user == null || user.getEmpresa() == null) return true;
         return acessoPermitido(user.getEmpresa());
+    }
+
+    /** Retorna o motivo do bloqueio quando o acesso não é permitido (para mensagem ao usuário). */
+    @Transactional(readOnly = true)
+    public String getMotivoBloqueioPorUsuarioId(Long usuarioId) {
+        User user = userRepository.findByIdWithEmpresa(usuarioId).orElse(null);
+        if (user == null || user.getEmpresa() == null) return null;
+        Empresa empresa = user.getEmpresa();
+        if (Boolean.TRUE.equals(empresa.getAcessoBloqueadoPorAdmin())) {
+            return "Acesso bloqueado pelo administrador. Entre em contato com o suporte.";
+        }
+        if (empresa.getCurrentPeriodEnd() == null) return null;
+        Instant limite = empresa.getCurrentPeriodEnd().plus(DIAS_TOLERANCIA_VENCIMENTO, ChronoUnit.DAYS);
+        if (Instant.now().isAfter(limite)) {
+            return "Assinatura vencida. Regularize o pagamento para continuar acessando.";
+        }
+        return null;
     }
 
     /**

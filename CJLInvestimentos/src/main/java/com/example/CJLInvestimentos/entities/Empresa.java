@@ -71,6 +71,11 @@ public class Empresa {
     @Column(name = "current_period_end")
     private Instant currentPeriodEnd;
 
+    /** Bloqueio manual pelo AdminMax: pagamento não validado ou outra diretriz. Bloqueia todos os consultores e clientes da empresa. */
+    @Column(name = "acesso_bloqueado_por_admin", nullable = false)
+    @Builder.Default
+    private Boolean acessoBloqueadoPorAdmin = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

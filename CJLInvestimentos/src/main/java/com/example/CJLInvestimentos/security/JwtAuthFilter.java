@@ -118,11 +118,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                             }
                         }
                         if (!allowedPath) {
+                            String motivo = faturaService.getMotivoBloqueioPorUsuarioId(user.getId());
+                            if (motivo == null) motivo = "Acesso bloqueado.";
                             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                             response.setContentType("application/json;charset=UTF-8");
                             response.getWriter().write(objectMapper.writeValueAsString(Map.of(
                                     "bloqueado", true,
-                                    "motivo", "Assinatura vencida. Regularize o pagamento para continuar acessando."
+                                    "motivo", motivo
                             )));
                             return;
                         }

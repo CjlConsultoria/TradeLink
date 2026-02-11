@@ -141,6 +141,11 @@ textarea:focus {
 }
 
 /* Esconde o widget/link flutuante do Stripe injetado ao usar Payment Element */
-body > a[href*="stripe.com"] {
+a[href*="stripe.com"] {
   display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
 }

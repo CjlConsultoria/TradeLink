@@ -112,6 +112,14 @@ public class AdminMaxController {
         return ResponseEntity.noContent().build();
     }
 
+    /** Bloqueia ou desbloqueia o acesso à plataforma da empresa (todos os consultores e clientes). Body: { "bloqueado": true/false }. */
+    @PutMapping("/empresas/{id}/bloquear-acesso")
+    public ResponseEntity<EmpresaResponse> bloquearAcessoEmpresa(
+            @PathVariable Long id, @RequestBody Map<String, Boolean> body) {
+        boolean bloqueado = body != null && Boolean.TRUE.equals(body.get("bloqueado"));
+        return ResponseEntity.ok(empresaService.bloquearAcesso(id, bloqueado));
+    }
+
     @PostMapping("/empresas/{empresaId}/consultores")
     public ResponseEntity<UserResponse> criarConsultor(
             @PathVariable Long empresaId, @RequestBody RegisterRequest request) {

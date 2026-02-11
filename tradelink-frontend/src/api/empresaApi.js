@@ -24,5 +24,9 @@ export default {
   },
   atribuirPlano(empresaId, planoId) {
     return api.put(`/admin-max/empresas/${empresaId}/plano`, { planoId })
+  },
+  /** Bloqueia ou desbloqueia o acesso à plataforma da empresa (todos consultores e clientes). */
+  bloquearAcesso(empresaId, bloqueado) {
+    return api.put(`/admin-max/empresas/${empresaId}/bloquear-acesso`, { bloqueado })
   }
 }

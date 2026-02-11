@@ -38,6 +38,8 @@ public class EmpresaResponse {
     private Instant currentPeriodEnd;
     /** Se a empresa está com acesso liberado (em dia ou dentro da tolerância de 5 dias). */
     private Boolean acessoPermitido;
+    /** Bloqueio manual pelo AdminMax: true = todos os consultores e clientes da empresa sem acesso à plataforma. */
+    private Boolean acessoBloqueadoPorAdmin;
     /** Status para AdminMax: EM_DIA, VENCIDO, EM_ATRASO, SEM_ASSINATURA. */
     private String statusPagamento;
 }

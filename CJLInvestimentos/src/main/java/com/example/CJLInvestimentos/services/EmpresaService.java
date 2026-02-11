@@ -114,6 +114,15 @@ public class EmpresaService {
         return toResponse(empresa);
     }
 
+    /** Bloqueia ou desbloqueia o acesso à plataforma para todos os consultores e clientes da empresa (diretriz admin). */
+    public EmpresaResponse bloquearAcesso(Long id, boolean bloqueado) {
+        Empresa empresa = empresaRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Empresa não encontrada"));
+        empresa.setAcessoBloqueadoPorAdmin(bloqueado);
+        empresaRepository.save(empresa);
+        return toResponse(empresa);
+    }
+
     private EmpresaResponse toResponse(Empresa empresa) {
         int totalUsuarios = (int) userRepository.countByEmpresaId(empresa.getId());
         int totalConsultores = (int) userRepository.countByEmpresaIdAndRole(empresa.getId(), Role.Admin);
@@ -139,6 +148,7 @@ public class EmpresaService {
                 .subscriptionStatus(empresa.getSubscriptionStatus() != null ? empresa.getSubscriptionStatus().name() : null)
                 .currentPeriodEnd(empresa.getCurrentPeriodEnd())
                 .acessoPermitido(faturaService.acessoPermitido(empresa))
+                .acessoBloqueadoPorAdmin(Boolean.TRUE.equals(empresa.getAcessoBloqueadoPorAdmin()))
                 .statusPagamento(calcularStatusPagamento(empresa))
                 .build();
     }
