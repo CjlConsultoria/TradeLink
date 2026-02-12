@@ -36,4 +36,28 @@ public class CotacaoScheduler {
         log.info("Buscando cotações do CoinCap...");
         cotacaoService.fetchAndSaveCoinCap();
     }
+
+    @Scheduled(initialDelayString = "${app.cotacao.initial-delay-frankfurter:240000}", fixedDelayString = "${app.cotacao.frankfurter.interval:600000}")
+    public void fetchFrankfurter() {
+        log.info("Buscando cotações do Frankfurter...");
+        cotacaoService.fetchAndSaveFrankfurter();
+    }
+
+    @Scheduled(initialDelayString = "${app.cotacao.initial-delay-kraken:270000}", fixedDelayString = "${app.cotacao.kraken.interval:600000}")
+    public void fetchKraken() {
+        log.info("Buscando cotações do Kraken...");
+        cotacaoService.fetchAndSaveKraken();
+    }
+
+    @Scheduled(initialDelayString = "${app.cotacao.initial-delay-kucoin:300000}", fixedDelayString = "${app.cotacao.kucoin.interval:600000}")
+    public void fetchKuCoin() {
+        log.info("Buscando cotações do KuCoin...");
+        cotacaoService.fetchAndSaveKuCoin();
+    }
+
+    @Scheduled(initialDelayString = "${app.cotacao.initial-delay-bybit:330000}", fixedDelayString = "${app.cotacao.bybit.interval:600000}")
+    public void fetchBybit() {
+        log.info("Buscando cotações do Bybit...");
+        cotacaoService.fetchAndSaveBybit();
+    }
 }

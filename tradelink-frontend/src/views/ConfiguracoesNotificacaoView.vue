@@ -69,7 +69,7 @@
         <!-- Push (navegador) -->
         <div class="card p-6">
           <h3 class="section-title">Notificações no navegador</h3>
-          <p class="text-sm text-gray-500 mb-3">Receba notificações mesmo com a aba fechada (quando a empresa tiver Push habilitado).</p>
+          <p class="text-sm text-gray-500 mb-3">Receba notificações mesmo com a aba fechada (quando a empresa tiver Push habilitado). <strong>Cada dispositivo (outro computador ou navegador) precisa ativar aqui separadamente</strong> para receber push nesse dispositivo.</p>
           <template v-if="!vapidPublicKey">
             <p class="text-sm text-amber-600">Push não está configurado no servidor. Entre em contato com o administrador.</p>
           </template>

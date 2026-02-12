@@ -2,7 +2,8 @@
   <div>
     <h2 class="page-title">Dashboard · Super Admin</h2>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <!-- Cards de indicadores gerenciais -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
       <router-link to="/admin-max/empresas" class="card p-6 block hover:border-indigo-300">
         <p class="text-sm text-gray-500">Total Empresas</p>
         <p class="text-3xl font-bold text-indigo-600 mt-1">{{ empresas.length }}</p>
@@ -17,7 +18,45 @@
       </router-link>
     </div>
 
-    <CotacoesDashboardSection titulo="Cotações" />
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+      <div class="card p-4 flex items-center justify-between">
+        <div>
+          <p class="text-sm text-gray-500">Empresas ativas</p>
+          <p class="text-2xl font-semibold text-green-600">{{ empresasAtivas }}</p>
+        </div>
+        <router-link to="/admin-max/empresas" class="text-sm text-indigo-600 hover:underline">Ver</router-link>
+      </div>
+      <div class="card p-4 flex items-center justify-between">
+        <div>
+          <p class="text-sm text-gray-500">Empresas inativas</p>
+          <p class="text-2xl font-semibold text-amber-600">{{ empresasInativas }}</p>
+        </div>
+        <router-link to="/admin-max/empresas" class="text-sm text-indigo-600 hover:underline">Ver</router-link>
+      </div>
+    </div>
+
+    <!-- Atalhos rápidos -->
+    <div class="card p-6 mb-8">
+      <h3 class="section-title mb-4">Atalhos</h3>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <router-link to="/admin-max/empresas" class="flex items-center gap-3 p-4 rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-colors">
+          <span class="text-2xl">🏢</span>
+          <span class="font-medium text-gray-800">Empresas</span>
+        </router-link>
+        <router-link to="/admin-max/planos" class="flex items-center gap-3 p-4 rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-colors">
+          <span class="text-2xl">📋</span>
+          <span class="font-medium text-gray-800">Planos</span>
+        </router-link>
+        <router-link to="/admin-max/usuarios" class="flex items-center gap-3 p-4 rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-colors">
+          <span class="text-2xl">👥</span>
+          <span class="font-medium text-gray-800">Usuários</span>
+        </router-link>
+        <router-link to="/admin-max/configuracoes" class="flex items-center gap-3 p-4 rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-colors">
+          <span class="text-2xl">⚙️</span>
+          <span class="font-medium text-gray-800">Configurações</span>
+        </router-link>
+      </div>
+    </div>
 
     <div class="card p-6">
       <div class="flex items-center justify-between mb-4">
@@ -76,7 +115,6 @@ import { computed, ref, onMounted } from 'vue'
 import { useEmpresaStore } from '../../stores/empresa'
 import planoApi from '../../api/planoApi'
 import { formatarCnpj } from '../../utils/validadores'
-import CotacoesDashboardSection from '../../components/cotacao/CotacoesDashboardSection.vue'
 
 const empresaStore = useEmpresaStore()
 const empresas = computed(() => empresaStore.empresas)
@@ -107,6 +145,8 @@ const empresasPaginadas = computed(() => {
 
 const totalConsultores = computed(() => empresas.value.reduce((sum, e) => sum + (e.totalConsultores || 0), 0))
 const totalClientes = computed(() => empresas.value.reduce((sum, e) => sum + (e.totalClientes || 0), 0))
+const empresasAtivas = computed(() => (empresas.value || []).filter(e => e.ativo === true).length)
+const empresasInativas = computed(() => (empresas.value || []).filter(e => e.ativo === false).length)
 
 onMounted(async () => {
   empresaStore.listar()

@@ -1,6 +1,8 @@
 package com.example.CJLInvestimentos.dtos.request;
 
 import com.example.CJLInvestimentos.entities.enums.TipoOperacao;
+import com.example.CJLInvestimentos.util.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -19,6 +21,7 @@ public class OperacaoClienteRequest {
     private BigDecimal quantidade;
 
     @NotNull(message = "Data de execução é obrigatória")
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private LocalDateTime dataExecucao;
 
     private String observacao;

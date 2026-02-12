@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Map.entry;
@@ -57,6 +58,35 @@ public class CotacaoService {
 
     @Value("${app.cotacao.coincap.rate-brl.url:https://api.coincap.io/v2/rates/brazilian-real}")
     private String coinCapRateBrlUrl;
+
+    @Value("${app.cotacao.frankfurter.url:https://api.frankfurter.dev/v1/latest?base=USD&symbols=BRL,EUR,GBP,CHF,JPY,CAD,AUD}")
+    private String frankfurterUrl;
+
+    @Value("${app.cotacao.kraken.url:https://api.kraken.com/0/public/Ticker?pair=XBTUSD,ETHUSD,LTCUSD,XRPUSD,ADAUSD,SOLUSD,DOTUSD,AVAXUSD,MATICUSD,LINKUSD,UNIUSD,BNBUSD,DOGEUSD}")
+    private String krakenUrl;
+
+    @Value("${app.cotacao.kucoin.url:https://api.kucoin.com/api/v1/market/allTickers}")
+    private String kucoinUrl;
+
+    @Value("${app.cotacao.bybit.url:https://api.bybit.com/v5/market/tickers?category=spot}")
+    private String bybitUrl;
+
+    /** Mapeamento Kraken: par interno -> símbolo (XBT = Bitcoin). */
+    private static final Map<String, String> KRAKEN_PAIR_TO_MOEDA = Map.ofEntries(
+            entry("XXBTZUSD", "BTC"),
+            entry("XETHZUSD", "ETH"),
+            entry("XLTCZUSD", "LTC"),
+            entry("XXRPZUSD", "XRP"),
+            entry("ADAUSD", "ADA"),
+            entry("SOLUSD", "SOL"),
+            entry("DOTUSD", "DOT"),
+            entry("AVAXUSD", "AVAX"),
+            entry("MATICUSD", "MATIC"),
+            entry("LINKUSD", "LINK"),
+            entry("UNIUSD", "UNI"),
+            entry("BNBUSD", "BNB"),
+            entry("XDGUSD", "DOGE")
+    );
 
     private static final Map<String, String> CRYPTO_MAP = Map.ofEntries(
             entry("bitcoin", "BTC"),
@@ -221,8 +251,11 @@ public class CotacaoService {
                 log.info("Binance: {} cotações salvas (substituídas)", cotacoes.size());
             }
         } catch (WebClientResponseException e) {
-            if (e.getStatusCode() != null && e.getStatusCode().value() == 429) {
-                log.warn("Binance retornou 429. Próxima tentativa no próximo ciclo.");
+            int code = e.getStatusCode() != null ? e.getStatusCode().value() : 0;
+            if (code == 429) {
+                log.warn("Binance retornou 429 (rate limit). Próxima tentativa no próximo ciclo.");
+            } else if (code == 451) {
+                log.warn("Binance retornou 451 (indisponível por restrição legal/região). Cotações da Binance não serão atualizadas.");
             } else {
                 log.error("Erro ao buscar cotações da Binance: {}", e.getMessage());
             }
@@ -298,12 +331,221 @@ public class CotacaoService {
         }
     }
 
-    /** Atualiza todas as cotações chamando todas as fontes (AwesomeAPI, CoinGecko, Binance, CoinCap). */
+    @Transactional
+    public void fetchAndSaveFrankfurter() {
+        try {
+            String response = webClientBuilder.build()
+                    .get()
+                    .uri(frankfurterUrl)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+            JsonNode root = objectMapper.readTree(response);
+            String base = root.has("base") ? root.get("base").asText().toUpperCase() : "USD";
+            JsonNode rates = root.get("rates");
+            if (rates == null || !rates.isObject()) return;
+            List<Cotacao> cotacoes = new ArrayList<>();
+            LocalDateTime now = LocalDateTime.now();
+            Iterator<Map.Entry<String, JsonNode>> it = rates.fields();
+            while (it.hasNext()) {
+                Map.Entry<String, JsonNode> e = it.next();
+                String par = e.getKey().toUpperCase();
+                BigDecimal price = parseBigDecimal(e.getValue().asText());
+                if (price == null || price.compareTo(BigDecimal.ZERO) <= 0) continue;
+                cotacoes.add(Cotacao.builder()
+                        .moeda(base)
+                        .parMoeda(par)
+                        .precoCompra(price)
+                        .precoVenda(price)
+                        .dataHora(now)
+                        .fonte("FRANKFURTER")
+                        .build());
+            }
+            if (!cotacoes.isEmpty()) {
+                cotacaoRepository.deleteByFonte("FRANKFURTER");
+                cotacaoRepository.saveAll(cotacoes);
+                log.info("Frankfurter: {} cotações salvas (substituídas)", cotacoes.size());
+            }
+        } catch (WebClientResponseException ex) {
+            if (ex.getStatusCode() != null && ex.getStatusCode().value() == 429) {
+                log.warn("Frankfurter retornou 429. Próxima tentativa no próximo ciclo.");
+            } else {
+                log.error("Erro ao buscar cotações do Frankfurter: {}", ex.getMessage());
+            }
+        } catch (Exception e) {
+            log.error("Erro ao buscar cotações do Frankfurter: {}", e.getMessage());
+        }
+    }
+
+    @Transactional
+    public void fetchAndSaveKraken() {
+        try {
+            String response = webClientBuilder.build()
+                    .get()
+                    .uri(krakenUrl)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+            JsonNode root = objectMapper.readTree(response);
+            if (root.has("error") && root.get("error").isArray() && root.get("error").size() > 0) return;
+            JsonNode result = root.get("result");
+            if (result == null || !result.isObject()) return;
+            List<Cotacao> cotacoes = new ArrayList<>();
+            LocalDateTime now = LocalDateTime.now();
+            Iterator<Map.Entry<String, JsonNode>> it = result.fields();
+            while (it.hasNext()) {
+                Map.Entry<String, JsonNode> e = it.next();
+                String pairKey = e.getKey();
+                String moeda = KRAKEN_PAIR_TO_MOEDA.get(pairKey);
+                if (moeda == null) {
+                    if (pairKey.endsWith("ZUSD")) moeda = pairKey.replace("ZUSD", "").replace("X", "").replace("XXBT", "BTC").replace("XETH", "ETH").replace("XLTC", "LTC").replace("XXRP", "XRP");
+                    else if (pairKey.endsWith("USD")) moeda = pairKey.replace("USD", "");
+                    else continue;
+                }
+                JsonNode ticker = e.getValue();
+                JsonNode c = ticker.get("c");
+                if (c == null || !c.isArray()) continue;
+                String priceStr = c.get(0).asText();
+                BigDecimal price = parseBigDecimal(priceStr);
+                if (price == null || price.compareTo(BigDecimal.ZERO) <= 0) continue;
+                cotacoes.add(Cotacao.builder()
+                        .moeda(moeda)
+                        .parMoeda("USD")
+                        .precoCompra(price)
+                        .precoVenda(price)
+                        .dataHora(now)
+                        .fonte("KRAKEN")
+                        .build());
+            }
+            if (!cotacoes.isEmpty()) {
+                cotacaoRepository.deleteByFonte("KRAKEN");
+                cotacaoRepository.saveAll(cotacoes);
+                log.info("Kraken: {} cotações salvas (substituídas)", cotacoes.size());
+            }
+        } catch (WebClientResponseException ex) {
+            if (ex.getStatusCode() != null && ex.getStatusCode().value() == 429) {
+                log.warn("Kraken retornou 429. Próxima tentativa no próximo ciclo.");
+            } else {
+                log.error("Erro ao buscar cotações do Kraken: {}", ex.getMessage());
+            }
+        } catch (Exception e) {
+            log.error("Erro ao buscar cotações do Kraken: {}", e.getMessage());
+        }
+    }
+
+    @Transactional
+    public void fetchAndSaveKuCoin() {
+        try {
+            String response = webClientBuilder.build()
+                    .get()
+                    .uri(kucoinUrl)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+            JsonNode root = objectMapper.readTree(response);
+            JsonNode data = root.has("data") ? root.get("data") : null;
+            if (data == null) return;
+            JsonNode tickers = data.get("ticker");
+            if (tickers == null || !tickers.isArray()) return;
+            List<Cotacao> cotacoes = new ArrayList<>();
+            LocalDateTime now = LocalDateTime.now();
+            Set<String> allowedPairs = Set.of("BTC-USDT", "ETH-USDT", "BNB-USDT", "XRP-USDT", "SOL-USDT", "ADA-USDT", "DOGE-USDT", "DOT-USDT", "AVAX-USDT", "MATIC-USDT", "LINK-USDT", "UNI-USDT", "LTC-USDT");
+            for (JsonNode t : tickers) {
+                String symbol = t.has("symbol") ? t.get("symbol").asText() : "";
+                if (!allowedPairs.contains(symbol)) continue;
+                String[] parts = symbol.split("-");
+                if (parts.length != 2) continue;
+                String moeda = parts[0].toUpperCase();
+                String par = parts[1].toUpperCase();
+                String priceStr = t.has("last") ? t.get("last").asText() : (t.has("sell") ? t.get("sell").asText() : null);
+                BigDecimal price = parseBigDecimal(priceStr);
+                if (price == null || price.compareTo(BigDecimal.ZERO) <= 0) continue;
+                cotacoes.add(Cotacao.builder()
+                        .moeda(moeda)
+                        .parMoeda(par)
+                        .precoCompra(price)
+                        .precoVenda(price)
+                        .dataHora(now)
+                        .fonte("KUCOIN")
+                        .build());
+            }
+            if (!cotacoes.isEmpty()) {
+                cotacaoRepository.deleteByFonte("KUCOIN");
+                cotacaoRepository.saveAll(cotacoes);
+                log.info("KuCoin: {} cotações salvas (substituídas)", cotacoes.size());
+            }
+        } catch (WebClientResponseException ex) {
+            if (ex.getStatusCode() != null && ex.getStatusCode().value() == 429) {
+                log.warn("KuCoin retornou 429. Próxima tentativa no próximo ciclo.");
+            } else {
+                log.error("Erro ao buscar cotações do KuCoin: {}", ex.getMessage());
+            }
+        } catch (Exception e) {
+            log.error("Erro ao buscar cotações do KuCoin: {}", e.getMessage());
+        }
+    }
+
+    @Transactional
+    public void fetchAndSaveBybit() {
+        try {
+            String response = webClientBuilder.build()
+                    .get()
+                    .uri(bybitUrl)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+            JsonNode root = objectMapper.readTree(response);
+            if (root.has("retCode") && root.get("retCode").asInt() != 0) return;
+            JsonNode result = root.get("result");
+            if (result == null) return;
+            JsonNode list = result.get("list");
+            if (list == null || !list.isArray()) return;
+            List<Cotacao> cotacoes = new ArrayList<>();
+            LocalDateTime now = LocalDateTime.now();
+            Set<String> want = Set.of("BTCUSDT", "ETHUSDT", "BNBUSDT", "XRPUSDT", "SOLUSDT", "ADAUSDT", "DOGEUSDT", "DOTUSDT", "AVAXUSDT", "MATICUSDT", "LINKUSDT", "UNIUSDT", "LTCUSDT");
+            for (JsonNode item : list) {
+                String symbol = item.has("symbol") ? item.get("symbol").asText() : "";
+                if (!want.contains(symbol)) continue;
+                String lastPrice = item.has("lastPrice") ? item.get("lastPrice").asText() : null;
+                BigDecimal price = parseBigDecimal(lastPrice);
+                if (price == null || price.compareTo(BigDecimal.ZERO) <= 0) continue;
+                String moeda = symbol.replace("USDT", "").replace("USDC", "").toUpperCase();
+                if (moeda.isEmpty()) continue;
+                cotacoes.add(Cotacao.builder()
+                        .moeda(moeda)
+                        .parMoeda("USDT")
+                        .precoCompra(price)
+                        .precoVenda(price)
+                        .dataHora(now)
+                        .fonte("BYBIT")
+                        .build());
+            }
+            if (!cotacoes.isEmpty()) {
+                cotacaoRepository.deleteByFonte("BYBIT");
+                cotacaoRepository.saveAll(cotacoes);
+                log.info("Bybit: {} cotações salvas (substituídas)", cotacoes.size());
+            }
+        } catch (WebClientResponseException ex) {
+            if (ex.getStatusCode() != null && ex.getStatusCode().value() == 429) {
+                log.warn("Bybit retornou 429. Próxima tentativa no próximo ciclo.");
+            } else {
+                log.error("Erro ao buscar cotações do Bybit: {}", ex.getMessage());
+            }
+        } catch (Exception e) {
+            log.error("Erro ao buscar cotações do Bybit: {}", e.getMessage());
+        }
+    }
+
+    /** Atualiza todas as cotações chamando todas as fontes (AwesomeAPI, CoinGecko, Binance, CoinCap, Frankfurter, Kraken, KuCoin, Bybit). */
     public void forceRefresh() {
         fetchAndSaveAwesomeApi();
         fetchAndSaveCoinGecko();
         fetchAndSaveBinance();
         fetchAndSaveCoinCap();
+        fetchAndSaveFrankfurter();
+        fetchAndSaveKraken();
+        fetchAndSaveKuCoin();
+        fetchAndSaveBybit();
     }
 
     /** Remove todas as cotações do banco (zerar). */
