@@ -16,11 +16,15 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.security.Security;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -51,22 +55,32 @@ public class NotificationService {
     @Value("${app.notificacao.email.from:}")
     private String emailFrom;
 
+    @Value("${app.notificacao.email.resend-api-key:${RESEND_API_KEY:}}")
+    private String resendApiKey;
+
     private static final String TELEGRAM_API = "https://api.telegram.org/bot";
+    private static final String RESEND_API = "https://api.resend.com/emails";
     private static final String FROM_DISPLAY_NAME = "TradeLink";
 
     @PostConstruct
     public void logEmailConfig() {
-        if (mailSender != null && emailFrom != null && !emailFrom.isBlank()) {
-            log.info("Notificação e-mail: CONFIGURADO (remetente: {}). Os e-mails serão enviados.", emailFrom);
+        if (resendApiKey != null && !resendApiKey.isBlank()) {
+            log.info("Notificação e-mail: CONFIGURADO (Resend). Remetente: {}. Os e-mails serão enviados via API.", emailFrom != null && !emailFrom.isBlank() ? emailFrom : "defina app.notificacao.email.from");
+        } else if (mailSender != null && emailFrom != null && !emailFrom.isBlank()) {
+            log.info("Notificação e-mail: CONFIGURADO (SMTP). Remetente: {}. Os e-mails serão enviados.", emailFrom);
         } else {
-            log.warn("Notificação e-mail: NÃO CONFIGURADO. Defina MAIL_PASSWORD no ambiente (Render/Rancher) com a Senha de app do Gmail e reinicie. Veja docs/CONFIGURAR-EMAIL-GMAIL.md");
+            log.warn("Notificação e-mail: NÃO CONFIGURADO. Para Render: defina RESEND_API_KEY e app.notificacao.email.from (ex: onboarding@resend.dev). Veja docs/CONFIGURAR-EMAIL-GMAIL.md");
         }
     }
 
     /** Envia e-mail em texto simples (se configurado). */
     public void enviarEmail(String para, String assunto, String corpo) {
+        if (resendApiKey != null && !resendApiKey.isBlank()) {
+            enviarViaResend(para, assunto, null, corpo);
+            return;
+        }
         if (mailSender == null || emailFrom == null || emailFrom.isBlank()) {
-            log.info("E-mail não configurado (MAIL_PASSWORD ou app.notificacao.email.from vazio), ignorando envio.");
+            log.info("E-mail não configurado (RESEND_API_KEY ou MAIL_PASSWORD / app.notificacao.email.from vazio), ignorando envio.");
             return;
         }
         try {
@@ -87,8 +101,12 @@ public class NotificationService {
 
     /** Envia e-mail em HTML (template responsivo). Usa remetente com nome para reduzir chance de ir para spam. */
     public void enviarEmailHtml(String para, String assunto, String htmlBody) {
+        if (resendApiKey != null && !resendApiKey.isBlank()) {
+            enviarViaResend(para, assunto, htmlBody, null);
+            return;
+        }
         if (mailSender == null || emailFrom == null || emailFrom.isBlank()) {
-            log.info("E-mail não configurado (MAIL_PASSWORD ou app.notificacao.email.from vazio), ignorando envio para {}", para);
+            log.info("E-mail não configurado (RESEND_API_KEY ou MAIL_PASSWORD / app.notificacao.email.from vazio), ignorando envio para {}", para);
             return;
         }
         try {
@@ -104,6 +122,38 @@ public class NotificationService {
             log.warn("Falha ao enviar e-mail HTML para {}: {} - {}", para, e.getClass().getSimpleName(), e.getMessage());
             if (log.isDebugEnabled()) {
                 log.debug("Detalhe da exceção de e-mail", e);
+            }
+        }
+    }
+
+    /** Envia e-mail via API Resend (HTTPS). Usado quando RESEND_API_KEY está definido (ex: no Render). */
+    private void enviarViaResend(String para, String assunto, String html, String texto) {
+        if (emailFrom == null || emailFrom.isBlank()) {
+            log.warn("Resend configurado mas app.notificacao.email.from vazio. Defina o remetente (ex: onboarding@resend.dev).");
+            return;
+        }
+        try {
+            String from = emailFrom.contains("<") ? emailFrom : (FROM_DISPLAY_NAME + " <" + emailFrom.trim() + ">");
+            Map<String, Object> body = new java.util.HashMap<>();
+            body.put("from", from);
+            body.put("to", List.of(para));
+            body.put("subject", assunto);
+            if (html != null && !html.isBlank()) {
+                body.put("html", html);
+            } else {
+                body.put("text", texto != null ? texto : "");
+            }
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(resendApiKey.trim());
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+            RestTemplate rest = new RestTemplate();
+            rest.postForEntity(RESEND_API, request, String.class);
+            log.info("E-mail enviado para {} via Resend (assunto: {})", para, assunto);
+        } catch (Exception e) {
+            log.warn("Falha ao enviar e-mail via Resend para {}: {} - {}", para, e.getClass().getSimpleName(), e.getMessage());
+            if (log.isDebugEnabled()) {
+                log.debug("Detalhe da exceção Resend", e);
             }
         }
     }
