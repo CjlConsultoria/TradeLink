@@ -65,7 +65,10 @@ public class NotificationService {
             mailSender.send(msg);
             log.info("E-mail enviado para {}", para);
         } catch (Exception e) {
-            log.warn("Falha ao enviar e-mail para {}: {}", para, e.getMessage());
+            log.warn("Falha ao enviar e-mail para {}: {} - {}", para, e.getClass().getSimpleName(), e.getMessage());
+            if (log.isDebugEnabled()) {
+                log.debug("Detalhe da exceção de e-mail", e);
+            }
         }
     }
 
@@ -84,7 +87,10 @@ public class NotificationService {
             mailSender.send(msg);
             log.info("E-mail HTML enviado para {}", para);
         } catch (Exception e) {
-            log.warn("Falha ao enviar e-mail HTML para {}: {}", para, e.getMessage());
+            log.warn("Falha ao enviar e-mail HTML para {}: {} - {}", para, e.getClass().getSimpleName(), e.getMessage());
+            if (log.isDebugEnabled()) {
+                log.debug("Detalhe da exceção de e-mail", e);
+            }
         }
     }
 

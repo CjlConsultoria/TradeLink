@@ -50,6 +50,38 @@ export function isValidTelefone (tel) {
   return s.length === 10 || s.length === 11
 }
 
+/** CEP: 8 dígitos. */
+export function isValidCep (cep) {
+  const s = apenasDigitos(cep)
+  return s.length === 8
+}
+
+/** Formata CEP ao digitar (00000-000). Retorna string com máscara aplicada. */
+export function maskCep (valor) {
+  const s = apenasDigitos(valor).slice(0, 8)
+  if (s.length <= 5) return s
+  return `${s.slice(0, 5)}-${s.slice(5)}`
+}
+
+/** Formata CNPJ ao digitar (00.000.000/0001-00). */
+export function maskCnpj (valor) {
+  const s = apenasDigitos(valor).slice(0, 14)
+  if (s.length <= 2) return s
+  if (s.length <= 5) return `${s.slice(0, 2)}.${s.slice(2)}`
+  if (s.length <= 8) return `${s.slice(0, 2)}.${s.slice(2, 5)}.${s.slice(5)}`
+  if (s.length <= 12) return `${s.slice(0, 2)}.${s.slice(2, 5)}.${s.slice(5, 8)}/${s.slice(8)}`
+  return `${s.slice(0, 2)}.${s.slice(2, 5)}.${s.slice(5, 8)}/${s.slice(8, 12)}-${s.slice(12)}`
+}
+
+/** Formata CPF ao digitar (000.000.000-00). */
+export function maskCpf (valor) {
+  const s = apenasDigitos(valor).slice(0, 11)
+  if (s.length <= 3) return s
+  if (s.length <= 6) return `${s.slice(0, 3)}.${s.slice(3)}`
+  if (s.length <= 9) return `${s.slice(0, 3)}.${s.slice(3, 6)}.${s.slice(6)}`
+  return `${s.slice(0, 3)}.${s.slice(3, 6)}.${s.slice(6, 9)}-${s.slice(9)}`
+}
+
 export function formatarCnpj (cnpj) {
   if (cnpj == null || cnpj === '') return ''
   const s = apenasDigitos(cnpj)
@@ -62,4 +94,11 @@ export function formatarCpf (cpf) {
   const s = apenasDigitos(cpf)
   if (s.length !== 11) return String(cpf).trim()
   return `${s.slice(0, 3)}.${s.slice(3, 6)}.${s.slice(6, 9)}-${s.slice(9)}`
+}
+
+export function formatarCep (cep) {
+  if (cep == null || cep === '') return ''
+  const s = apenasDigitos(cep)
+  if (s.length !== 8) return String(cep).trim()
+  return `${s.slice(0, 5)}-${s.slice(5)}`
 }

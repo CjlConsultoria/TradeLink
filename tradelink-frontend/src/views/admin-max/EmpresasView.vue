@@ -23,8 +23,17 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">CNPJ *</label>
-              <input v-model="form.cnpj" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="00.000.000/0001-00" :class="{ 'border-red-500': cnpjInvalido }" />
-              <p v-if="cnpjInvalido" class="text-red-500 text-xs mt-0.5">CNPJ inválido. Verifique os dígitos.</p>
+              <input
+                :value="form.cnpj"
+                required
+                class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                :class="cnpjCompleto ? (cnpjInvalido ? 'border-red-500' : 'border-green-600') : 'border-gray-300'"
+                placeholder="00.000.000/0001-00"
+                maxlength="18"
+                @input="form.cnpj = maskCnpj($event.target.value)"
+              />
+              <p v-if="cnpjCompleto && cnpjInvalido" class="text-red-500 text-xs mt-0.5">CNPJ inválido. Verifique os dígitos.</p>
+              <p v-else-if="cnpjCompleto && !cnpjInvalido" class="text-green-600 text-xs mt-0.5">CNPJ válido.</p>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Plano</label>
@@ -42,15 +51,18 @@
                 <label class="block text-sm text-gray-600 mb-1">CEP</label>
                 <div class="relative">
                   <input
-                    v-model="form.cep"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    :value="form.cep"
+                    class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    :class="cepCompleto ? 'border-green-600' : 'border-gray-300'"
                     placeholder="00000-000"
-                    maxlength="10"
+                    maxlength="9"
+                    @input="form.cep = maskCep($event.target.value)"
                     @blur="buscarCep"
                   />
                   <span v-if="loadingCep" class="absolute right-3 top-1/2 -translate-y-1/2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" aria-hidden="true" />
                 </div>
-                <p class="text-xs text-gray-500 mt-0.5">Digite o CEP e saia do campo para preencher automaticamente (ViaCEP).</p>
+                <p v-if="cepCompleto" class="text-green-600 text-xs mt-0.5">CEP válido.</p>
+                <p v-else class="text-xs text-gray-500 mt-0.5">Digite o CEP e saia do campo para preencher automaticamente (ViaCEP).</p>
               </div>
               <div class="md:col-span-2">
                 <label class="block text-sm text-gray-600 mb-1">Logradouro</label>
@@ -88,8 +100,16 @@
               </div>
               <div>
                 <label class="block text-sm text-gray-600 mb-1">CPF do responsável</label>
-                <input v-model="form.cpfResponsavel" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500" :class="cpfInvalido ? 'border-red-500' : 'border-gray-300'" placeholder="000.000.000-00" />
-                <p v-if="cpfInvalido" class="text-red-500 text-xs mt-0.5">CPF inválido.</p>
+                <input
+                  :value="form.cpfResponsavel"
+                  class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  :class="cpfCompleto ? (cpfInvalido ? 'border-red-500' : 'border-green-600') : 'border-gray-300'"
+                  placeholder="000.000.000-00"
+                  maxlength="14"
+                  @input="form.cpfResponsavel = maskCpf($event.target.value)"
+                />
+                <p v-if="cpfCompleto && cpfInvalido" class="text-red-500 text-xs mt-0.5">CPF inválido.</p>
+                <p v-else-if="cpfCompleto && !cpfInvalido" class="text-green-600 text-xs mt-0.5">CPF válido.</p>
               </div>
               <div>
                 <label class="block text-sm text-gray-600 mb-1">E-mail alternativo</label>
@@ -186,7 +206,7 @@ import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import EmptyState from '../../components/common/EmptyState.vue'
 import ToggleSwitch from '../../components/common/ToggleSwitch.vue'
 import { formatDate } from '../../utils/formatters'
-import { isValidCnpj, isValidCpf, formatarCnpj, apenasDigitos } from '../../utils/validadores'
+import { isValidCnpj, isValidCpf, formatarCnpj, formatarCep, formatarCpf, apenasDigitos, maskCep, maskCnpj, maskCpf } from '../../utils/validadores'
 
 const toast = useToast()
 const empresaStore = useEmpresaStore()
@@ -228,16 +248,17 @@ function getFormInicial() {
   }
 }
 
+const cnpjCompleto = computed(() => apenasDigitos(form.value.cnpj).length === 14)
 const cnpjInvalido = computed(() => {
-  const c = form.value.cnpj
-  if (!c || String(c).trim().length < 14) return false
-  return !isValidCnpj(c)
+  if (!cnpjCompleto.value) return false
+  return !isValidCnpj(form.value.cnpj)
 })
+const cpfCompleto = computed(() => apenasDigitos(form.value.cpfResponsavel).length === 11)
 const cpfInvalido = computed(() => {
-  const c = form.value.cpfResponsavel
-  if (!c || String(c).trim().length < 11) return false
-  return !isValidCpf(c)
+  if (!cpfCompleto.value) return false
+  return !isValidCpf(form.value.cpfResponsavel)
 })
+const cepCompleto = computed(() => apenasDigitos(form.value.cep).length === 8)
 
 function closeForm() {
   showForm.value = false
@@ -248,11 +269,14 @@ function closeForm() {
 
 function editar(empresa) {
   editingId.value = empresa.id
+  const cnpjRaw = empresa.cnpj ?? ''
+  const cepRaw = empresa.cep ?? ''
+  const cpfRaw = empresa.cpfResponsavel ?? ''
   form.value = {
     nome: empresa.nome ?? '',
-    cnpj: empresa.cnpj ?? '',
+    cnpj: apenasDigitos(cnpjRaw).length === 14 ? formatarCnpj(cnpjRaw) : cnpjRaw,
     planoId: empresa.planoId ?? null,
-    cep: empresa.cep ?? '',
+    cep: apenasDigitos(cepRaw).length === 8 ? formatarCep(cepRaw) : cepRaw,
     logradouro: empresa.logradouro ?? '',
     numero: empresa.numero ?? '',
     complemento: empresa.complemento ?? '',
@@ -260,7 +284,7 @@ function editar(empresa) {
     cidade: empresa.cidade ?? '',
     uf: empresa.uf ?? '',
     nomeResponsavel: empresa.nomeResponsavel ?? '',
-    cpfResponsavel: empresa.cpfResponsavel ?? '',
+    cpfResponsavel: apenasDigitos(cpfRaw).length === 11 ? formatarCpf(cpfRaw) : cpfRaw,
     emailAlternativo: empresa.emailAlternativo ?? '',
     telefone: empresa.telefone ?? '',
     notificacaoEmail: empresa.notificacaoEmail !== false,
