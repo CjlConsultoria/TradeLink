@@ -8,16 +8,26 @@
       </div>
     </div>
     <nav class="sidebar__nav" aria-label="Menu principal">
-      <router-link
-        v-for="item in menuItems"
-        :key="item.to"
-        :to="item.to"
-        class="sidebar__link"
-        :class="{ 'sidebar__link--active': isActive(item.to) }"
-      >
-        <span class="sidebar__icon" aria-hidden="true">{{ item.icon }}</span>
-        <span>{{ item.label }}</span>
-      </router-link>
+      <template v-for="item in menuItems" :key="item.to || item.label">
+        <router-link
+          v-if="item.to"
+          :to="item.to"
+          class="sidebar__link"
+          :class="{ 'sidebar__link--active': isActive(item.to) }"
+        >
+          <span class="sidebar__icon" aria-hidden="true">{{ item.icon }}</span>
+          <span>{{ item.label }}</span>
+        </router-link>
+        <button
+          v-else-if="item.action"
+          type="button"
+          class="sidebar__link"
+          @click="handleAction(item.action)"
+        >
+          <span class="sidebar__icon" aria-hidden="true">{{ item.icon }}</span>
+          <span>{{ item.label }}</span>
+        </button>
+      </template>
     </nav>
   </aside>
   <div v-if="open" class="sidebar__backdrop" aria-hidden="true" @click="$emit('close')"></div>
@@ -27,9 +37,11 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
+import { useChatPanel } from '../../composables/useChatPanel'
 
 const props = defineProps({ open: Boolean })
-defineEmits(['close'])
+const emit = defineEmits(['close'])
+const { openChat } = useChatPanel()
 const route = useRoute()
 const authStore = useAuthStore()
 
@@ -56,10 +68,12 @@ const menuItems = computed(() => {
         { to: '/consultor/carteiras', label: 'Carteiras', icon: '💼' },
         { to: '/consultor/rebalanceamento', label: 'Rebalanceamento', icon: '⚖️' },
         { to: '/consultor/clientes', label: 'Clientes', icon: '👥' },
-      { to: '/consultor/cotacoes', label: 'Cotações', icon: '💹' },
-      { to: '/consultor/faturas', label: 'Faturas', icon: '🧾' },
-      { to: '/consultor/relatorios', label: 'Histórico e Relatórios', icon: '📈' },
-      { to: '/consultor/configuracoes', label: 'Configurações', icon: '⚙️' }
+        { to: '/consultor/cotacoes', label: 'Cotações', icon: '💹' },
+        { to: '/consultor/faturas', label: 'Faturas', icon: '🧾' },
+        { to: '/consultor/relatorios', label: 'Histórico e Relatórios', icon: '📈' },
+        { to: '/consultor/faq', label: 'FAQ', icon: '❓' },
+        { label: 'Suporte', icon: '💬', action: 'openChat' },
+        { to: '/consultor/configuracoes', label: 'Configurações', icon: '⚙️' }
       ]
     case 'Cliente':
       // Menu reduzido para clientes em auto-gestão (sem consultor)
@@ -70,6 +84,8 @@ const menuItems = computed(() => {
           { to: '/cliente/cotacoes', label: 'Cotações', icon: '💹' },
           { to: '/cliente/faturas', label: 'Faturas', icon: '🧾' },
           { to: '/cliente/relatorios', label: 'Relatórios', icon: '📈' },
+          { to: '/cliente/faq', label: 'FAQ', icon: '❓' },
+          { label: 'Suporte', icon: '💬', action: 'openChat' },
           { to: '/cliente/configuracoes', label: 'Configurações', icon: '⚙️' }
         ]
       }
@@ -79,6 +95,8 @@ const menuItems = computed(() => {
         { to: '/cliente/carteiras', label: 'Carteiras', icon: '💼' },
         { to: '/cliente/cotacoes', label: 'Cotações', icon: '💹' },
         { to: '/cliente/relatorios', label: 'Relatórios', icon: '📈' },
+        { to: '/cliente/faq', label: 'FAQ', icon: '❓' },
+        { label: 'Suporte', icon: '💬', action: 'openChat' },
         { to: '/cliente/configuracoes', label: 'Configurações', icon: '⚙️' }
       ]
     default:
@@ -89,6 +107,13 @@ const menuItems = computed(() => {
 function isActive(path) {
   if (path === '/admin-max' || path === '/consultor' || path === '/cliente') return route.path === path
   return route.path.startsWith(path)
+}
+
+function handleAction(action) {
+  if (action === 'openChat') {
+    openChat()
+    emit('close')
+  }
 }
 </script>
 
@@ -181,6 +206,12 @@ function isActive(path) {
   color: #c7d2fe;
   text-decoration: none;
   transition: background 0.2s, color 0.2s;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
 }
 
 .sidebar__link:hover {

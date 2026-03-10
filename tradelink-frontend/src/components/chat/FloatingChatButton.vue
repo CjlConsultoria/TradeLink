@@ -14,16 +14,17 @@
     </button>
 
     <!-- Chat panel -->
-    <ChatPanel v-if="chatOpen" @close="chatOpen = false" @update-badge="fetchNaoLidas" />
+    <ChatPanel v-if="chatOpen" @close="closeChat" @update-badge="fetchNaoLidas" />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import chatApi from '../../api/chatApi'
 import ChatPanel from './ChatPanel.vue'
+import { useChatPanel } from '../../composables/useChatPanel'
 
-const chatOpen = ref(false)
+const { chatOpen, openChat, closeChat } = useChatPanel()
 const naoLidas = ref(0)
 let pollInterval = null
 
@@ -34,10 +35,6 @@ async function fetchNaoLidas() {
   } catch {
     // silently ignore
   }
-}
-
-function openChat() {
-  chatOpen.value = true
 }
 
 onMounted(() => {

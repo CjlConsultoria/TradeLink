@@ -66,6 +66,7 @@ const routes = [
       { path: 'cotacoes/:moeda/:parMoeda', name: 'CotacaoDetailConsultor', component: CotacaoDetailView },
       { path: 'relatorios', name: 'RelatoriosConsultor', component: RelatoriosView },
       { path: 'faturas', name: 'FaturasConsultor', component: () => import('../views/consultor/FaturasView.vue') },
+      { path: 'faq', name: 'FaqConsultor', component: () => import('../views/common/FaqInternaView.vue') },
       { path: 'configuracoes', name: 'ConfiguracoesConsultor', component: ConfiguracoesNotificacaoView }
     ]
   },
@@ -82,6 +83,7 @@ const routes = [
       { path: 'cotacoes/:moeda/:parMoeda', name: 'CotacaoDetailCliente', component: CotacaoDetailView },
       { path: 'relatorios', name: 'RelatoriosCliente', component: RelatoriosClienteView },
       { path: 'faturas', name: 'FaturasCliente', component: () => import('../views/cliente/FaturasClienteView.vue') },
+      { path: 'faq', name: 'FaqCliente', component: () => import('../views/common/FaqInternaView.vue') },
       { path: 'configuracoes', name: 'ConfiguracoesCliente', component: ConfiguracoesNotificacaoView }
     ]
   },
