@@ -94,8 +94,8 @@
                 <input v-model="form.cnpj" type="text" maxlength="18" class="cadastro-input" placeholder="00.000.000/0000-00"
                   @input="onCnpjInput" />
               </div>
-              <div :class="tipoPessoa === 'PJ' ? '' : 'cadastro-col-span-2'">
-                <label class="cadastro-label">Nome da Empresa {{ tipoPessoa === 'PJ' ? '*' : '' }}</label>
+              <div v-if="tipoPessoa === 'PJ'">
+                <label class="cadastro-label">Nome da Empresa *</label>
                 <input v-model="form.nomeEmpresa" type="text" maxlength="150" class="cadastro-input" placeholder="Nome da sua empresa" />
               </div>
             </div>
