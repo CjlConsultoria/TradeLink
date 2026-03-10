@@ -4,6 +4,7 @@ import com.example.CJLInvestimentos.dtos.request.AtivarContaRequest;
 import com.example.CJLInvestimentos.dtos.request.AutoCadastroRequest;
 import com.example.CJLInvestimentos.dtos.request.LoginRequest;
 import com.example.CJLInvestimentos.dtos.request.RegisterRequest;
+import com.example.CJLInvestimentos.dtos.request.VerifyOtpRequest;
 import com.example.CJLInvestimentos.dtos.response.AuthResponse;
 import com.example.CJLInvestimentos.dtos.response.AutoCadastroResponse;
 import com.example.CJLInvestimentos.dtos.response.ValidarConviteResponse;
@@ -18,6 +19,7 @@ import com.example.CJLInvestimentos.services.AutoGestaoService;
 import com.example.CJLInvestimentos.services.FaturaService;
 import com.example.CJLInvestimentos.services.JwtService;
 import com.example.CJLInvestimentos.services.NotificationAsyncRunner;
+import com.example.CJLInvestimentos.services.OtpService;
 import com.example.CJLInvestimentos.services.TrialService;
 import com.example.CJLInvestimentos.services.UserService;
 import jakarta.validation.Valid;
@@ -45,6 +47,7 @@ public class AuthController {
     private final AutoGestaoService autoGestaoService;
     private final AutoCadastroService autoCadastroService;
     private final TrialService trialService;
+    private final OtpService otpService;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
@@ -106,6 +109,61 @@ public class AuthController {
                     .body(AuthResponse.builder().mensagem("Conta inativa. Entre em contato com o administrador.").build());
         }
 
+        // 2FA: AdminMax faz login direto, demais precisam verificar OTP
+        if (user.getRole() != Role.AdminMax) {
+            otpService.generateAndSend(user);
+            return ResponseEntity.ok(AuthResponse.builder()
+                    .requires2FA(true)
+                    .userId(user.getId())
+                    .mensagem("Código de verificação enviado para seu e-mail.")
+                    .build());
+        }
+
+        return ResponseEntity.ok(buildFullAuthResponse(user).build());
+    }
+
+    @PostMapping("/verify-otp")
+    public ResponseEntity<AuthResponse> verifyOtp(@RequestBody VerifyOtpRequest request) {
+        if (request.getUserId() == null || request.getCode() == null || request.getCode().isBlank()) {
+            return ResponseEntity.badRequest()
+                    .body(AuthResponse.builder().mensagem("Código e usuário são obrigatórios.").build());
+        }
+
+        User user = userRepository.findById(request.getUserId()).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(AuthResponse.builder().mensagem("Usuário não encontrado.").build());
+        }
+
+        if (!otpService.validate(user.getId(), request.getCode())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(AuthResponse.builder().mensagem("Código inválido ou expirado.").build());
+        }
+
+        return ResponseEntity.ok(buildFullAuthResponse(user).build());
+    }
+
+    @PostMapping("/resend-otp")
+    public ResponseEntity<AuthResponse> resendOtp(@RequestBody VerifyOtpRequest request) {
+        if (request.getUserId() == null) {
+            return ResponseEntity.badRequest()
+                    .body(AuthResponse.builder().mensagem("Usuário é obrigatório.").build());
+        }
+
+        User user = userRepository.findById(request.getUserId()).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(AuthResponse.builder().mensagem("Usuário não encontrado.").build());
+        }
+
+        otpService.generateAndSend(user);
+        return ResponseEntity.ok(AuthResponse.builder()
+                .mensagem("Novo código de verificação enviado para seu e-mail.")
+                .build());
+    }
+
+    /** Monta a resposta completa de autenticação com token JWT e flags de bloqueio/trial. */
+    private AuthResponse.AuthResponseBuilder buildFullAuthResponse(User user) {
         String token = jwtService.generateToken(user);
 
         AuthResponse.AuthResponseBuilder response = AuthResponse.builder()
@@ -120,7 +178,6 @@ public class AuthController {
         if (user.getEmpresa() != null && !faturaService.acessoPermitidoPorUsuarioId(user.getId())) {
             boolean porAdmin = faturaService.isBloqueadoPorAdmin(user.getId());
             if (porAdmin) {
-                // Bloqueio por admin ou empresa inativa: acesso totalmente restrito
                 response.bloqueado(true)
                         .bloqueadoPorAdmin(true)
                         .motivoBloqueio(faturaService.getMotivoBloqueioPorUsuarioId(user.getId()));
@@ -159,7 +216,7 @@ public class AuthController {
             }
         }
 
-        return ResponseEntity.ok(response.build());
+        return response;
     }
 
     // === AUTO-CADASTRO ===

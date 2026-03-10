@@ -36,6 +36,7 @@ const routes = [
   { path: '/faq', name: 'FaqPublica', component: FaqView, meta: { public: true } },
   { path: '/precos', name: 'Precos', component: PrecosView, meta: { public: true } },
   { path: '/acesso-bloqueado', name: 'AcessoBloqueado', component: AcessoBloqueadoView, meta: { requiresAuth: true } },
+  { path: '/verify-otp', name: 'VerifyOtp', component: () => import('../views/auth/VerifyOtpView.vue'), meta: { public: true } },
   { path: '/', redirect: '/login' },
   {
     path: '/admin-max',

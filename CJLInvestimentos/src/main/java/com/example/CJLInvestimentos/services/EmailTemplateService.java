@@ -623,6 +623,42 @@ public class EmailTemplateService {
         return wrapInLayout("Bem-vindo ao TradeLink", "Sua conta foi criada! 5 dias gratuitos.", body);
     }
 
+    /** E-mail com codigo OTP para autenticacao de dois fatores. */
+    public String buildOtp(String nome, String code) {
+        String nomeDisplay = (nome != null && !nome.isBlank()) ? escape(nome) : "Usuario";
+
+        // Cada digito em uma celula separada para visual premium
+        StringBuilder digits = new StringBuilder();
+        digits.append("<table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" style=\"margin:24px auto;\"><tr>");
+        for (char c : code.toCharArray()) {
+            digits.append("<td style=\"width:48px; height:56px; background:rgba(99,102,241,0.12); border:1px solid rgba(99,102,241,0.3); border-radius:10px; text-align:center; vertical-align:middle; margin:0 4px; font-size:28px; font-weight:800; color:#a5b4fc; letter-spacing:2px;\">")
+                  .append(c)
+                  .append("</td><td style=\"width:8px;\"></td>");
+        }
+        digits.append("</tr></table>");
+
+        String body = """
+            <p style="margin:0 0 8px; font-size:14px; color:#94a3b8;">Verificacao de seguranca</p>
+            <h2 style="margin:0 0 20px; color:#f1f5f9; font-size:24px; font-weight:700;">Codigo de Verificacao</h2>
+            <p style="margin:0 0 8px; color:#cbd5e1;">Ola, <strong style="color:#f1f5f9;">%s</strong>!</p>
+            <p style="margin:0 0 24px; color:#cbd5e1;">Use o codigo abaixo para completar seu login no TradeLink:</p>
+            %s
+            """.formatted(nomeDisplay, digits.toString());
+
+        body += buildAlertBox("&#9200;",
+                "Este codigo expira em <strong style='color:#fbbf24;'>5 minutos</strong>. "
+                + "Se voce nao solicitou este codigo, ignore este e-mail.",
+                "rgba(245,158,11,0.08)", "rgba(245,158,11,0.2)");
+
+        body += """
+            <p style="margin:16px 0 0; color:#64748b; font-size:13px;">
+                Nao compartilhe este codigo com ninguem. A equipe do TradeLink nunca pedira seu codigo.</p>
+            """;
+
+        return wrapInLayout("Codigo de Verificacao - TradeLink",
+                "Seu codigo de verificacao TradeLink: " + code, body);
+    }
+
     private static String escape(String s) {
         if (s == null) return "";
         return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");

@@ -339,6 +339,12 @@ public class NotificationService {
         enviarEmailHtml(para, "Bem-vindo ao TradeLink! Seu trial gratuito comecou", html);
     }
 
+    /** Envia e-mail com codigo OTP para autenticacao de dois fatores. Sempre envia, ignora config da empresa. */
+    public void enviarEmailOtp(String para, String nome, String code) {
+        String html = emailTemplateService.buildOtp(nome, code);
+        enviarEmailHtml(para, "Codigo de Verificacao - TradeLink", html);
+    }
+
     /** Chamado quando um cliente registra operacao: notificar consultor. */
     public void notificarOperacaoRegistrada(Empresa empresa, User consultor, String nomeCliente,
                                              String carteiraNome, String tipoOp, String ativo,

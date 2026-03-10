@@ -32,4 +32,6 @@ public class AuthResponse {
     private Boolean precisaEscolherPlano;
     /** true quando o usuário foi auto-cadastrado. */
     private Boolean autoCadastro;
+    /** true quando login requer verificação 2FA (OTP por e-mail). */
+    private Boolean requires2FA;
 }

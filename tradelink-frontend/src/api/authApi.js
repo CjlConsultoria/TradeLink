@@ -15,5 +15,11 @@ export default {
   },
   autoCadastro(data) {
     return api.post('/auth/auto-cadastro', data)
+  },
+  verifyOtp(data) {
+    return api.post('/auth/verify-otp', data)
+  },
+  resendOtp(data) {
+    return api.post('/auth/resend-otp', data)
   }
 }

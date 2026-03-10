@@ -166,6 +166,15 @@ public class NotificationAsyncRunner {
     }
 
     @Async
+    public void enviarEmailOtpAsync(String email, String nome, String code) {
+        try {
+            notificationService.enviarEmailOtp(email, nome, code);
+        } catch (Exception e) {
+            log.warn("Falha ao enviar e-mail OTP em background: {}", e.getMessage());
+        }
+    }
+
+    @Async
     public void notificarOperacaoRegistradaAsync(Long recomendacaoId, Long clienteId,
                                                   String tipoOp, String ativo,
                                                   String quantidade, String precoExecutado) {

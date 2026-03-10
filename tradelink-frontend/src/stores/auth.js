@@ -25,6 +25,31 @@ export const useAuthStore = defineStore('auth', () => {
   async function login(email, senha) {
     const response = await authApi.login({ email, senha })
     const data = response.data
+    // Se requer 2FA, não salva token (será salvo após verify-otp)
+    if (data.requires2FA) {
+      return data
+    }
+    token.value = data.token
+    user.value = {
+      id: data.userId,
+      nome: data.nome,
+      role: data.role,
+      empresaId: data.empresaId,
+      clienteExcluido: data.clienteExcluido || false,
+      autoGestaoAtiva: data.autoGestaoAtiva || false,
+      trialAtivo: data.trialAtivo || false,
+      trialFim: data.trialFim || null,
+      precisaEscolherPlano: data.precisaEscolherPlano || false,
+      autoCadastro: data.autoCadastro || false
+    }
+    localStorage.setItem('token', data.token)
+    localStorage.setItem('user', JSON.stringify(user.value))
+    return data
+  }
+
+  async function verifyOtp(userId, code) {
+    const response = await authApi.verifyOtp({ userId, code })
+    const data = response.data
     token.value = data.token
     user.value = {
       id: data.userId,
@@ -50,5 +75,5 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('user')
   }
 
-  return { token, user, isAuthenticated, dashboardRoute, login, logout }
+  return { token, user, isAuthenticated, dashboardRoute, login, verifyOtp, logout }
 })

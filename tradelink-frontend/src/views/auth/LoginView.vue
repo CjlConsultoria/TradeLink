@@ -96,6 +96,11 @@ async function handleLogin() {
   loading.value = true
   try {
     const data = await authStore.login(email.value, senha.value)
+    // 2FA: redirecionar para verificação OTP
+    if (data.requires2FA === true) {
+      router.push({ path: '/verify-otp', query: { userId: data.userId } })
+      return
+    }
     if (data.bloqueado === true) {
       const role = data.role || authStore.user?.role
       // Bloqueio por admin ou empresa inativa: todos vão para tela de bloqueio
