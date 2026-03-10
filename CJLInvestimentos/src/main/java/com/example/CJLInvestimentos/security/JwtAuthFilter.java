@@ -31,10 +31,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             "/api/consultor/checkout-pix",
             "/api/consultor/checkout-cartao-boleto",
             "/api/consultor/checkout-embedded",
+            "/api/consultor/chat",
             "/api/cliente/faturas",
             "/api/cliente/checkout-pix",
             "/api/cliente/checkout-cartao-boleto",
-            "/api/cliente/checkout-embedded"
+            "/api/cliente/checkout-embedded",
+            "/api/cliente/exclusao",
+            "/api/cliente/chat"
     };
 
     private final JwtService jwtService;
@@ -52,7 +55,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String path = request.getServletPath();
 
         // 🔓 ignora rotas públicas e error
-        if (path.startsWith("/api/auth") || path.startsWith("/api/webhooks/") || path.equals("/error")) {
+        if (path.startsWith("/api/auth") || path.startsWith("/api/public") || path.startsWith("/api/webhooks/") || path.equals("/error")) {
             filterChain.doFilter(request, response);
             return;
         }

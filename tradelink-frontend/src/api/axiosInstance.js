@@ -51,14 +51,15 @@ api.interceptors.response.use(
         return Promise.reject(error)
       }
       const path = typeof window !== 'undefined' ? window.location.pathname : ''
-      const jaNaPaginaFaturas = path === '/consultor/faturas' || path === '/cliente/faturas'
-      if (!jaNaPaginaFaturas) {
-        try {
-          const user = JSON.parse(localStorage.getItem('user') || '{}')
-          if (user.role === 'Admin') window.location.href = '/consultor/faturas'
-          else if (user.role === 'Cliente') window.location.href = '/cliente/faturas'
-        } catch (_) {}
-      }
+      try {
+        const user = JSON.parse(localStorage.getItem('user') || '{}')
+        if (user.role === 'Admin' && path !== '/consultor/faturas') {
+          window.location.href = '/consultor/faturas'
+        } else if (user.role === 'Cliente' && path !== '/acesso-bloqueado') {
+          sessionStorage.setItem('motivoBloqueio', motivo || 'Assinatura vencida. Entre em contato com seu consultor.')
+          window.location.href = '/acesso-bloqueado'
+        }
+      } catch (_) {}
       return Promise.reject(error)
     }
     return Promise.reject(error)

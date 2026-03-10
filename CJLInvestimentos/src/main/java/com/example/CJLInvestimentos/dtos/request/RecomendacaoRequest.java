@@ -22,5 +22,7 @@ public class RecomendacaoRequest {
     private BigDecimal precoAlvo;
     private BigDecimal stopLoss;
     private BigDecimal quantidade;
+    private BigDecimal percentual;
+    private Boolean modoPercentual;
     private String observacao;
 }

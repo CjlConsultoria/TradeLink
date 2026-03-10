@@ -15,6 +15,12 @@ public class Plano {
     private Long id;
     @Column(nullable = false, unique = true)
     private String nome;
+
+    /** Tipo do plano: CONSULTOR (para empresas) ou AUTO_GESTAO (para clientes individuais). */
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private String tipo = "CONSULTOR";
+
     @Column(name = "max_usuarios", nullable = false)
     private Integer maxUsuarios;
     @Column(nullable = false, precision = 10, scale = 2)

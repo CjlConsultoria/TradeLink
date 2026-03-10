@@ -3,14 +3,18 @@ package com.example.CJLInvestimentos.services;
 import com.example.CJLInvestimentos.entities.Recomendacao;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
+
 /**
- * Monta o HTML dos e-mails (layout responsivo único + conteúdo por tipo).
+ * Monta o HTML dos e-mails (layout responsivo com design premium).
  */
 @Service
 public class EmailTemplateService {
 
     private static final String APP_NAME = "TradeLink";
-    private static final String FOOTER_TEXT = "Este é um e-mail automático. Não responda diretamente.";
+    private static final String APP_URL = "https://tradelink-grun.onrender.com";
 
     /** Layout base responsivo (table-based para clientes de e-mail). */
     public String wrapInLayout(String title, String preheader, String bodyContent) {
@@ -32,31 +36,36 @@ public class EmailTemplateService {
                 .preheader { display: none !important; visibility: hidden; max-height: 0; font-size: 1px; line-height: 1px; }
                 @media only screen and (max-width: 600px) {
                   .wrapper { width: 100%% !important; max-width: 100%% !important; }
-                  .content { padding: 16px !important; }
-                  .btn { display: block !important; width: 100%% !important; }
+                  .content { padding: 20px !important; }
+                  .btn { display: block !important; width: 100%% !important; text-align: center !important; }
+                  .metric-cell { display: block !important; width: 100%% !important; padding: 8px 0 !important; }
                 }
               </style>
             </head>
-            <body style="margin:0; padding:0; background-color:#f4f4f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+            <body style="margin:0; padding:0; background-color:#0f172a; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
               <span class="preheader">%s</span>
-              <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="background-color:#f4f4f5;">
-                <tr><td align="center" style="padding: 24px 16px;">
-                  <table class="wrapper" role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px; width:100%%; background-color:#ffffff; border-radius:12px; box-shadow: 0 4px 6px rgba(0,0,0,0.07);">
+              <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="background-color:#0f172a;">
+                <tr><td align="center" style="padding: 32px 16px;">
+                  <!-- Logo -->
+                  <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px; width:100%%;">
+                    <tr><td align="center" style="padding-bottom:24px;">
+                      <table role="presentation" cellspacing="0" cellpadding="0"><tr>
+                        <td style="background:linear-gradient(135deg, #6366f1, #8b5cf6); width:40px; height:40px; border-radius:10px; text-align:center; vertical-align:middle; font-size:20px; color:#fff;">&#9651;</td>
+                        <td style="padding-left:12px; color:#f1f5f9; font-size:22px; font-weight:700; letter-spacing:-0.5px;">%s</td>
+                      </tr></table>
+                    </td></tr>
+                  </table>
+                  <!-- Card -->
+                  <table class="wrapper" role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px; width:100%%; background-color:#1e293b; border-radius:16px; border:1px solid rgba(99,102,241,0.15);">
                     <tr>
-                      <td style="background: linear-gradient(135deg, #4f46e5 0%%, #7c3aed 100%%); padding: 28px 32px; border-radius: 12px 12px 0 0;">
-                        <table width="100%%" cellspacing="0" cellpadding="0"><tr>
-                          <td><h1 style="margin:0; color:#ffffff; font-size:24px; font-weight:700; letter-spacing:-0.5px;">%s</h1></td>
-                        </tr></table>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td class="content" style="padding: 32px; color:#374151; font-size:16px; line-height:1.6;">
+                      <td class="content" style="padding: 36px 32px; color:#e2e8f0; font-size:16px; line-height:1.7;">
                         %s
                       </td>
                     </tr>
                     <tr>
-                      <td style="padding: 20px 32px; border-top: 1px solid #e5e7eb; color:#9ca3af; font-size:12px; border-radius: 0 0 12px 12px;">
-                        %s
+                      <td style="padding: 20px 32px; border-top: 1px solid rgba(255,255,255,0.06); color:#64748b; font-size:12px; border-radius: 0 0 16px 16px; line-height:1.6;">
+                        Este e-mail foi enviado automaticamente pelo TradeLink.<br>
+                        Se voce nao esperava este e-mail, pode ignora-lo com seguranca.
                       </td>
                     </tr>
                   </table>
@@ -68,60 +77,550 @@ public class EmailTemplateService {
                 escape(title),
                 escape(preheader),
                 escape(APP_NAME),
-                bodyContent,
-                FOOTER_TEXT
+                bodyContent
             );
     }
 
+    // ─── Helpers visuais ───
+
+    private String buildButton(String text, String url, String bgColor) {
+        return """
+            <table role="presentation" cellspacing="0" cellpadding="0" style="margin:24px 0 8px;"><tr>
+              <td class="btn" style="border-radius:10px; background:%s;">
+                <a href="%s" target="_blank" style="display:inline-block; padding:14px 32px; color:#ffffff !important; text-decoration:none; font-weight:600; font-size:15px; letter-spacing:0.3px;">%s</a>
+              </td>
+            </tr></table>
+            """.formatted(bgColor, url, text);
+    }
+
+    private String buildButton(String text, String url) {
+        return buildButton(text, url, "linear-gradient(135deg, #6366f1, #8b5cf6)");
+    }
+
+    private String buildInfoRow(String label, String value, boolean highlighted) {
+        String bg = highlighted ? "background-color:rgba(99,102,241,0.08);" : "";
+        return """
+            <tr style="%s"><td style="padding:12px 16px; color:#94a3b8; font-size:14px; font-weight:500; width:40%%;">%s</td><td style="padding:12px 16px; color:#f1f5f9; font-size:14px; font-weight:600;">%s</td></tr>
+            """.formatted(bg, label, value);
+    }
+
+    private String buildInfoTable(String[][] rows) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<table role=\"presentation\" width=\"100%%\" cellspacing=\"0\" cellpadding=\"0\" style=\"margin:16px 0; border:1px solid rgba(255,255,255,0.08); border-radius:10px; overflow:hidden;\">");
+        for (int i = 0; i < rows.length; i++) {
+            sb.append(buildInfoRow(rows[i][0], rows[i][1], i % 2 == 0));
+        }
+        sb.append("</table>");
+        return sb.toString();
+    }
+
+    private String buildBadge(String text, String bgColor, String textColor) {
+        return """
+            <span style="display:inline-block; padding:4px 14px; border-radius:20px; font-size:13px; font-weight:600; background:%s; color:%s;">%s</span>
+            """.formatted(bgColor, textColor, text);
+    }
+
+    private String buildAlertBox(String icon, String message, String bgColor, String borderColor) {
+        return """
+            <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="margin:16px 0;">
+              <tr><td style="background:%s; border:1px solid %s; border-radius:10px; padding:16px 20px;">
+                <table role="presentation" cellspacing="0" cellpadding="0"><tr>
+                  <td style="font-size:20px; vertical-align:top; padding-right:12px;">%s</td>
+                  <td style="color:#f1f5f9; font-size:14px; line-height:1.6;">%s</td>
+                </tr></table>
+              </td></tr>
+            </table>
+            """.formatted(bgColor, borderColor, icon, message);
+    }
+
+    // ─── Templates existentes (melhorados) ───
+
     public String buildNovoUsuario(String nome, String email, String roleDisplay) {
+        String roleBadge;
+        if (roleDisplay.toLowerCase().contains("cliente")) {
+            roleBadge = buildBadge("Cliente", "rgba(34,197,94,0.15)", "#22c55e");
+        } else {
+            roleBadge = buildBadge("Consultor", "rgba(99,102,241,0.15)", "#a5b4fc");
+        }
+
         String body = """
-            <p style="margin:0 0 16px;">Olá, <strong>%s</strong>!</p>
-            <p style="margin:0 0 20px;">Sua conta no <strong>TradeLink</strong> foi criada. Você está cadastrado como <strong>%s</strong>.</p>
-            <p style="margin:0 0 24px;">Use o e-mail <strong>%s</strong> e a senha que você definiu para acessar o sistema.</p>
-            <p style="margin:0 0 8px;">Acesse:</p>
-            <p style="margin:0 0 24px;"><a href="https://tradelink-grun.onrender.com/login" style="display:inline-block; padding:12px 24px; background: linear-gradient(135deg, #4f46e5, #7c3aed); color:#ffffff !important; text-decoration:none; border-radius:8px; font-weight:600;">Fazer login</a></p>
-            <p style="margin:0; color:#6b7280; font-size:14px;">Se você não solicitou este cadastro, ignore este e-mail.</p>
-            """.formatted(escape(nome), escape(roleDisplay), escape(email));
-        return wrapInLayout("Bem-vindo ao TradeLink", "Sua conta foi criada.", body);
+            <p style="margin:0 0 8px; font-size:14px; color:#94a3b8;">Bem-vindo(a)</p>
+            <h2 style="margin:0 0 20px; color:#f1f5f9; font-size:24px; font-weight:700;">Ola, %s!</h2>
+            <p style="margin:0 0 20px; color:#cbd5e1;">Sua conta no <strong style="color:#a5b4fc;">TradeLink</strong> foi criada com sucesso. Voce esta cadastrado como:</p>
+            <p style="margin:0 0 24px;">%s</p>
+            """.formatted(escape(nome), roleBadge);
+
+        body += buildInfoTable(new String[][]{
+            {"E-mail", escape(email)},
+            {"Perfil", escape(roleDisplay)}
+        });
+
+        body += buildButton("Acessar o TradeLink", APP_URL + "/login");
+
+        body += """
+            <p style="margin:16px 0 0; color:#64748b; font-size:13px;">Se voce nao solicitou este cadastro, ignore este e-mail.</p>
+            """;
+
+        return wrapInLayout("Bem-vindo ao TradeLink", "Sua conta foi criada com sucesso.", body);
     }
 
     public String buildSenhaAlterada(String nome) {
         String body = """
-            <p style="margin:0 0 16px;">Olá, <strong>%s</strong>!</p>
-            <p style="margin:0 0 20px;">A senha da sua conta no <strong>TradeLink</strong> foi alterada com sucesso.</p>
-            <p style="margin:0 0 24px;">Se foi você quem fez a alteração, não é necessário fazer nada.</p>
-            <p style="margin:0; color:#dc2626; font-size:14px;">Se você não alterou a senha, entre em contato com o administrador do sistema imediatamente.</p>
+            <h2 style="margin:0 0 20px; color:#f1f5f9; font-size:22px; font-weight:700;">Senha Alterada</h2>
+            <p style="margin:0 0 16px; color:#cbd5e1;">Ola, <strong style="color:#f1f5f9;">%s</strong>!</p>
+            <p style="margin:0 0 20px; color:#cbd5e1;">A senha da sua conta no TradeLink foi alterada com sucesso.</p>
             """.formatted(escape(nome));
-        return wrapInLayout("Senha alterada", "Sua senha foi alterada.", body);
+
+        body += buildAlertBox("&#9888;&#65039;",
+                "<strong style='color:#fbbf24;'>Nao foi voce?</strong><br>Se voce nao alterou a senha, entre em contato com o administrador do sistema imediatamente.",
+                "rgba(245,158,11,0.08)", "rgba(245,158,11,0.2)");
+
+        body += buildButton("Acessar o TradeLink", APP_URL + "/login");
+
+        return wrapInLayout("Senha alterada", "Sua senha foi alterada com sucesso.", body);
     }
 
     public String buildNovaRecomendacao(Recomendacao rec) {
         String moeda = rec.getMoeda() != null ? rec.getMoeda() : "-";
         String par = rec.getParMoeda() != null ? rec.getParMoeda() : "-";
-        String tipo = rec.getTipo() != null ? rec.getTipo().name() : "-";
-        String entrada = rec.getPrecoEntrada() != null ? rec.getPrecoEntrada().toPlainString() : "-";
-        String alvo = rec.getPrecoAlvo() != null ? rec.getPrecoAlvo().toPlainString() : "-";
+        String tipoStr = rec.getTipo() != null ? rec.getTipo().name() : "-";
+        String entrada = rec.getPrecoEntrada() != null ? "$" + rec.getPrecoEntrada().toPlainString() : "-";
+        String alvo = rec.getPrecoAlvo() != null ? "$" + rec.getPrecoAlvo().toPlainString() : "-";
+
+        boolean isCompra = "COMPRA".equalsIgnoreCase(tipoStr);
+        String tipoBadge = isCompra
+                ? buildBadge("COMPRA", "rgba(34,197,94,0.15)", "#22c55e")
+                : buildBadge("VENDA", "rgba(239,68,68,0.15)", "#ef4444");
+
         String body = """
-            <p style="margin:0 0 16px;">Nova recomendação disponível na sua carteira.</p>
-            <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="margin:20px 0; border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
-              <tr style="background:#f9fafb;"><td style="padding:12px 16px; font-weight:600; color:#6b7280;">Ativo</td><td style="padding:12px 16px;"><strong>%s / %s</strong></td></tr>
-              <tr><td style="padding:12px 16px; color:#6b7280;">Tipo</td><td style="padding:12px 16px;">%s</td></tr>
-              <tr style="background:#f9fafb;"><td style="padding:12px 16px; color:#6b7280;">Entrada</td><td style="padding:12px 16px;">%s</td></tr>
-              <tr><td style="padding:12px 16px; color:#6b7280;">Alvo</td><td style="padding:12px 16px;">%s</td></tr>
-            </table>
-            <p style="margin:0 0 24px;"><a href="https://tradelink-grun.onrender.com/cliente" style="display:inline-block; padding:12px 24px; background: linear-gradient(135deg, #4f46e5, #7c3aed); color:#ffffff !important; text-decoration:none; border-radius:8px; font-weight:600;">Ver no dashboard</a></p>
-            """.formatted(escape(moeda), escape(par), escape(tipo), escape(entrada), escape(alvo));
-        return wrapInLayout("Nova recomendação", "Nova recomendação: " + moeda + "/" + par, body);
+            <p style="margin:0 0 8px; font-size:14px; color:#94a3b8;">Nova recomendacao</p>
+            <h2 style="margin:0 0 8px; color:#f1f5f9; font-size:24px; font-weight:700;">%s / %s</h2>
+            <p style="margin:0 0 20px;">%s</p>
+            <p style="margin:0 0 16px; color:#cbd5e1;">Seu consultor criou uma nova recomendacao para a sua carteira. Confira os detalhes abaixo e execute quando estiver pronto.</p>
+            """.formatted(escape(moeda), escape(par), tipoBadge);
+
+        body += buildInfoTable(new String[][]{
+            {"Ativo", escape(moeda) + " / " + escape(par)},
+            {"Tipo", escape(tipoStr)},
+            {"Preco de Entrada", escape(entrada)},
+            {"Preco Alvo", escape(alvo)}
+        });
+
+        body += buildAlertBox("&#128161;",
+                "Acesse o sistema para ver todos os detalhes, incluindo quantidade sugerida e observacoes do consultor.",
+                "rgba(99,102,241,0.06)", "rgba(99,102,241,0.15)");
+
+        body += buildButton("Ver Recomendacao", APP_URL + "/cliente");
+
+        return wrapInLayout("Nova Recomendacao: " + moeda + "/" + par,
+                "Nova recomendacao de " + tipoStr + ": " + moeda + "/" + par, body);
     }
 
     public String buildClienteResolveu(String nomeCliente, String moeda, String par, String carteiraNome) {
         String body = """
-            <p style="margin:0 0 16px;"><strong>%s</strong> marcou como resolvida uma recomendação.</p>
-            <p style="margin:0 0 12px;">Recomendação: <strong>%s / %s</strong></p>
-            <p style="margin:0 0 24px;">Carteira: %s</p>
-            <p style="margin:0;"><a href="https://tradelink-grun.onrender.com/consultor" style="display:inline-block; padding:12px 24px; background: linear-gradient(135deg, #4f46e5, #7c3aed); color:#ffffff !important; text-decoration:none; border-radius:8px; font-weight:600;">Abrir painel do consultor</a></p>
-            """.formatted(escape(nomeCliente), escape(moeda), escape(par), escape(carteiraNome));
-        return wrapInLayout("Cliente resolveu recomendação", "Cliente resolveu: " + moeda + "/" + par, body);
+            <p style="margin:0 0 8px; font-size:14px; color:#94a3b8;">Recomendacao resolvida</p>
+            <h2 style="margin:0 0 20px; color:#f1f5f9; font-size:22px; font-weight:700;">%s resolveu uma recomendacao</h2>
+            """.formatted(escape(nomeCliente));
+
+        body += buildInfoTable(new String[][]{
+            {"Cliente", escape(nomeCliente)},
+            {"Ativo", escape(moeda) + " / " + escape(par)},
+            {"Carteira", escape(carteiraNome)},
+            {"Status", "Resolvida &#10003;"}
+        });
+
+        body += buildButton("Abrir Painel do Consultor", APP_URL + "/consultor");
+
+        return wrapInLayout("Cliente resolveu: " + moeda + "/" + par,
+                nomeCliente + " resolveu: " + moeda + "/" + par, body);
+    }
+
+    // ─── Novos templates ───
+
+    /** Notificacao de portfolio critico (consultor) */
+    public String buildPortfolioCritico(String nomeCliente, String carteiraNome,
+                                         int totalDesvios, String maiorDesvio,
+                                         List<String[]> ativos) {
+        String body = """
+            <p style="margin:0 0 8px; font-size:14px; color:#94a3b8;">Alerta de Portfolio</p>
+            <h2 style="margin:0 0 8px; color:#ef4444; font-size:24px; font-weight:700;">&#9888; Portfolio Critico</h2>
+            <p style="margin:0 0 16px; color:#cbd5e1;">O portfolio de <strong style="color:#f1f5f9;">%s</strong> na carteira <strong style="color:#a5b4fc;">%s</strong> esta em estado <strong style="color:#ef4444;">critico</strong> e necessita de atencao imediata.</p>
+            """.formatted(escape(nomeCliente), escape(carteiraNome));
+
+        body += buildAlertBox("&#128680;",
+                "<strong style='color:#ef4444;'>" + totalDesvios + " ativo(s) fora da margem</strong><br>Maior desvio: <strong>" + escape(maiorDesvio) + "</strong>",
+                "rgba(239,68,68,0.08)", "rgba(239,68,68,0.25)");
+
+        if (ativos != null && !ativos.isEmpty()) {
+            body += "<table role=\"presentation\" width=\"100%%\" cellspacing=\"0\" cellpadding=\"0\" style=\"margin:16px 0; border:1px solid rgba(255,255,255,0.08); border-radius:10px; overflow:hidden;\">";
+            body += "<tr style=\"background:rgba(99,102,241,0.08);\"><td style=\"padding:10px 16px; color:#94a3b8; font-size:13px; font-weight:600;\">Ativo</td><td style=\"padding:10px 16px; color:#94a3b8; font-size:13px; font-weight:600;\">Atual</td><td style=\"padding:10px 16px; color:#94a3b8; font-size:13px; font-weight:600;\">Ideal</td><td style=\"padding:10px 16px; color:#94a3b8; font-size:13px; font-weight:600;\">Acao</td></tr>";
+            for (String[] row : ativos) {
+                String acaoBadge = "COMPRAR".equalsIgnoreCase(row[3])
+                        ? buildBadge("COMPRAR", "rgba(34,197,94,0.15)", "#22c55e")
+                        : "VENDER".equalsIgnoreCase(row[3])
+                            ? buildBadge("VENDER", "rgba(239,68,68,0.15)", "#ef4444")
+                            : buildBadge("OK", "rgba(148,163,184,0.1)", "#94a3b8");
+                body += "<tr><td style=\"padding:10px 16px; color:#f1f5f9; font-size:14px; font-weight:600;\">" + escape(row[0]) +
+                        "</td><td style=\"padding:10px 16px; color:#f1f5f9; font-size:14px;\">" + escape(row[1]) +
+                        "</td><td style=\"padding:10px 16px; color:#94a3b8; font-size:14px;\">" + escape(row[2]) +
+                        "</td><td style=\"padding:10px 16px;\">" + acaoBadge + "</td></tr>";
+            }
+            body += "</table>";
+        }
+
+        body += buildButton("Abrir Painel de Rebalanceamento", APP_URL + "/consultor/rebalanceamento", "linear-gradient(135deg, #dc2626, #ef4444)");
+
+        return wrapInLayout("Portfolio Critico: " + nomeCliente,
+                "ALERTA: Portfolio de " + nomeCliente + " esta critico", body);
+    }
+
+    /** Notificacao de recomendacoes geradas em lote (consultor) */
+    public String buildRecomendacoesGeradas(int totalRecomendacoes, int totalClientes, String carteiraNome) {
+        String body = """
+            <p style="margin:0 0 8px; font-size:14px; color:#94a3b8;">Rebalanceamento</p>
+            <h2 style="margin:0 0 20px; color:#f1f5f9; font-size:22px; font-weight:700;">Recomendacoes Geradas com Sucesso</h2>
+            <p style="margin:0 0 20px; color:#cbd5e1;">O rebalanceamento foi executado e as recomendacoes foram criadas automaticamente.</p>
+            """;
+
+        // Metricas em linha
+        body += """
+            <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="margin:16px 0;">
+              <tr>
+                <td class="metric-cell" style="width:50%%; padding-right:8px;">
+                  <table role="presentation" width="100%%" cellspacing="0" cellpadding="0">
+                    <tr><td style="background:rgba(99,102,241,0.1); border:1px solid rgba(99,102,241,0.2); border-radius:10px; padding:20px; text-align:center;">
+                      <span style="display:block; font-size:28px; font-weight:800; color:#a5b4fc;">%d</span>
+                      <span style="display:block; font-size:13px; color:#94a3b8; margin-top:4px;">Recomendacoes</span>
+                    </td></tr>
+                  </table>
+                </td>
+                <td class="metric-cell" style="width:50%%; padding-left:8px;">
+                  <table role="presentation" width="100%%" cellspacing="0" cellpadding="0">
+                    <tr><td style="background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.2); border-radius:10px; padding:20px; text-align:center;">
+                      <span style="display:block; font-size:28px; font-weight:800; color:#22c55e;">%d</span>
+                      <span style="display:block; font-size:13px; color:#94a3b8; margin-top:4px;">Clientes Impactados</span>
+                    </td></tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+            """.formatted(totalRecomendacoes, totalClientes);
+
+        if (carteiraNome != null) {
+            body += "<p style=\"margin:0 0 16px; color:#94a3b8; font-size:14px;\">Carteira: <strong style=\"color:#f1f5f9;\">" + escape(carteiraNome) + "</strong></p>";
+        }
+
+        body += buildAlertBox("&#128276;",
+                "Os clientes serao notificados automaticamente sobre as novas recomendacoes (se as notificacoes estiverem ativadas).",
+                "rgba(99,102,241,0.06)", "rgba(99,102,241,0.15)");
+
+        body += buildButton("Ver Recomendacoes", APP_URL + "/consultor");
+
+        return wrapInLayout("Recomendacoes Geradas",
+                totalRecomendacoes + " recomendacoes geradas para " + totalClientes + " clientes", body);
+    }
+
+    /** Notificacao de novo aporte/saque (consultor) */
+    public String buildNovaMovimentacao(String nomeCliente, String carteiraNome,
+                                         String tipo, String valor, String data) {
+        boolean isAporte = "APORTE".equalsIgnoreCase(tipo);
+        String icon = isAporte ? "&#128176;" : "&#128184;";
+        String tipoBadge = isAporte
+                ? buildBadge("APORTE", "rgba(34,197,94,0.15)", "#22c55e")
+                : buildBadge("SAQUE", "rgba(239,68,68,0.15)", "#ef4444");
+
+        String body = """
+            <p style="margin:0 0 8px; font-size:14px; color:#94a3b8;">Movimentacao</p>
+            <h2 style="margin:0 0 8px; color:#f1f5f9; font-size:22px; font-weight:700;">%s Nova Movimentacao</h2>
+            <p style="margin:0 0 16px;">%s</p>
+            <p style="margin:0 0 20px; color:#cbd5e1;">O cliente <strong style="color:#f1f5f9;">%s</strong> registrou uma movimentacao na carteira <strong style="color:#a5b4fc;">%s</strong>.</p>
+            """.formatted(icon, tipoBadge, escape(nomeCliente), escape(carteiraNome));
+
+        body += buildInfoTable(new String[][]{
+            {"Cliente", escape(nomeCliente)},
+            {"Carteira", escape(carteiraNome)},
+            {"Tipo", escape(tipo)},
+            {"Valor", escape(valor)},
+            {"Data", escape(data)}
+        });
+
+        if (isAporte) {
+            body += buildAlertBox("&#128161;",
+                    "Apos o aporte, a alocacao do cliente pode ter mudado. Considere executar um novo rebalanceamento.",
+                    "rgba(99,102,241,0.06)", "rgba(99,102,241,0.15)");
+        }
+
+        body += buildButton("Ver Carteira", APP_URL + "/consultor");
+
+        return wrapInLayout("Movimentacao: " + tipo + " de " + valor,
+                nomeCliente + " fez um " + tipo + " de " + valor, body);
+    }
+
+    /** Notificacao de operacao registrada (consultor) */
+    public String buildOperacaoRegistrada(String nomeCliente, String carteiraNome,
+                                           String tipoOp, String ativo, String quantidade,
+                                           String precoExecutado) {
+        boolean isCompra = "COMPRA".equalsIgnoreCase(tipoOp);
+        String tipoBadge = isCompra
+                ? buildBadge("COMPRA", "rgba(34,197,94,0.15)", "#22c55e")
+                : buildBadge("VENDA", "rgba(239,68,68,0.15)", "#ef4444");
+
+        String body = """
+            <p style="margin:0 0 8px; font-size:14px; color:#94a3b8;">Operacao Executada</p>
+            <h2 style="margin:0 0 8px; color:#f1f5f9; font-size:22px; font-weight:700;">%s Executou uma Operacao</h2>
+            <p style="margin:0 0 16px;">%s</p>
+            """.formatted(escape(nomeCliente), tipoBadge);
+
+        body += buildInfoTable(new String[][]{
+            {"Cliente", escape(nomeCliente)},
+            {"Carteira", escape(carteiraNome)},
+            {"Ativo", escape(ativo)},
+            {"Quantidade", escape(quantidade)},
+            {"Preco Executado", "$" + escape(precoExecutado)}
+        });
+
+        body += buildButton("Ver Detalhes", APP_URL + "/consultor");
+
+        return wrapInLayout("Operacao: " + nomeCliente + " " + tipoOp + " " + ativo,
+                nomeCliente + " executou " + tipoOp + " de " + ativo, body);
+    }
+
+    /** Resumo semanal do consultor */
+    public String buildResumoSemanal(String nomeConsultor, int totalClientes,
+                                      int clientesOk, int clientesAtencao, int clientesCritico,
+                                      String valorTotal, int recomendacoesAtivas,
+                                      int operacoesSemanais) {
+        String body = """
+            <p style="margin:0 0 8px; font-size:14px; color:#94a3b8;">Resumo Semanal</p>
+            <h2 style="margin:0 0 8px; color:#f1f5f9; font-size:22px; font-weight:700;">Ola, %s!</h2>
+            <p style="margin:0 0 20px; color:#cbd5e1;">Aqui esta o resumo semanal dos seus clientes no TradeLink.</p>
+            """.formatted(escape(nomeConsultor));
+
+        // Metricas 2x2
+        body += """
+            <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="margin:16px 0;">
+              <tr>
+                <td class="metric-cell" style="width:50%%; padding:4px 4px 4px 0;">
+                  <table role="presentation" width="100%%" cellspacing="0" cellpadding="0">
+                    <tr><td style="background:rgba(99,102,241,0.1); border-radius:10px; padding:16px; text-align:center;">
+                      <span style="display:block; font-size:24px; font-weight:800; color:#a5b4fc;">%d</span>
+                      <span style="display:block; font-size:12px; color:#94a3b8; margin-top:2px;">Total Clientes</span>
+                    </td></tr>
+                  </table>
+                </td>
+                <td class="metric-cell" style="width:50%%; padding:4px 0 4px 4px;">
+                  <table role="presentation" width="100%%" cellspacing="0" cellpadding="0">
+                    <tr><td style="background:rgba(34,197,94,0.08); border-radius:10px; padding:16px; text-align:center;">
+                      <span style="display:block; font-size:24px; font-weight:800; color:#22c55e;">%s</span>
+                      <span style="display:block; font-size:12px; color:#94a3b8; margin-top:2px;">Valor Total</span>
+                    </td></tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td class="metric-cell" style="width:50%%; padding:4px 4px 4px 0;">
+                  <table role="presentation" width="100%%" cellspacing="0" cellpadding="0">
+                    <tr><td style="background:rgba(245,158,11,0.08); border-radius:10px; padding:16px; text-align:center;">
+                      <span style="display:block; font-size:24px; font-weight:800; color:#fbbf24;">%d</span>
+                      <span style="display:block; font-size:12px; color:#94a3b8; margin-top:2px;">Recomendacoes Ativas</span>
+                    </td></tr>
+                  </table>
+                </td>
+                <td class="metric-cell" style="width:50%%; padding:4px 0 4px 4px;">
+                  <table role="presentation" width="100%%" cellspacing="0" cellpadding="0">
+                    <tr><td style="background:rgba(59,130,246,0.08); border-radius:10px; padding:16px; text-align:center;">
+                      <span style="display:block; font-size:24px; font-weight:800; color:#3b82f6;">%d</span>
+                      <span style="display:block; font-size:12px; color:#94a3b8; margin-top:2px;">Operacoes na Semana</span>
+                    </td></tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+            """.formatted(totalClientes, escape(valorTotal), recomendacoesAtivas, operacoesSemanais);
+
+        // Status dos clientes
+        body += """
+            <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="margin:12px 0;">
+              <tr>
+                <td style="padding:8px 16px; border-radius:8px 8px 0 0; background:rgba(255,255,255,0.03);">
+                  <table role="presentation" width="100%%" cellspacing="0" cellpadding="0"><tr>
+                    <td style="color:#94a3b8; font-size:13px; font-weight:600;">Saude dos Portfolios</td>
+                  </tr></table>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:12px 16px; border:1px solid rgba(255,255,255,0.06); border-radius:0 0 8px 8px;">
+                  <table role="presentation" width="100%%" cellspacing="0" cellpadding="0"><tr>
+                    <td style="text-align:center;">
+                      <span style="color:#22c55e; font-weight:700; font-size:16px;">%d</span>
+                      <span style="color:#94a3b8; font-size:12px;"> OK</span>
+                    </td>
+                    <td style="text-align:center; border-left:1px solid rgba(255,255,255,0.06); border-right:1px solid rgba(255,255,255,0.06);">
+                      <span style="color:#f59e0b; font-weight:700; font-size:16px;">%d</span>
+                      <span style="color:#94a3b8; font-size:12px;"> Atencao</span>
+                    </td>
+                    <td style="text-align:center;">
+                      <span style="color:#ef4444; font-weight:700; font-size:16px;">%d</span>
+                      <span style="color:#94a3b8; font-size:12px;"> Critico</span>
+                    </td>
+                  </tr></table>
+                </td>
+              </tr>
+            </table>
+            """.formatted(clientesOk, clientesAtencao, clientesCritico);
+
+        if (clientesCritico > 0) {
+            body += buildAlertBox("&#128680;",
+                    "<strong style='color:#ef4444;'>" + clientesCritico + " cliente(s) em estado critico!</strong><br>Acesse o painel de rebalanceamento para analisar e gerar recomendacoes.",
+                    "rgba(239,68,68,0.06)", "rgba(239,68,68,0.2)");
+        }
+
+        body += buildButton("Acessar Dashboard", APP_URL + "/consultor");
+
+        return wrapInLayout("Resumo Semanal - TradeLink",
+                "Resumo: " + totalClientes + " clientes, " + clientesCritico + " critico(s)", body);
+    }
+
+    /** E-mail de convite para novo cliente ativar conta */
+    public String buildConviteCliente(String email, String token, String empresaNome) {
+        String activationUrl = APP_URL + "/ativar-conta/" + token;
+
+        String body = """
+            <p style="margin:0 0 8px; font-size:14px; color:#94a3b8;">Convite</p>
+            <h2 style="margin:0 0 20px; color:#f1f5f9; font-size:24px; font-weight:700;">Voce foi convidado!</h2>
+            <p style="margin:0 0 20px; color:#cbd5e1;">
+                A empresa <strong style="color:#a5b4fc;">%s</strong> convidou voce para
+                acessar o <strong style="color:#a5b4fc;">TradeLink</strong>, a plataforma
+                de acompanhamento e controle de investimentos.</p>
+            <p style="margin:0 0 24px; color:#cbd5e1;">
+                Clique no botao abaixo para ativar sua conta e completar seu cadastro:</p>
+            """.formatted(escape(empresaNome));
+
+        body += buildButton("Ativar Minha Conta", activationUrl);
+
+        body += buildAlertBox("&#9200;",
+                "Este convite expira em <strong style='color:#fbbf24;'>48 horas</strong>. "
+                + "Caso o link expire, solicite um novo convite ao seu consultor.",
+                "rgba(245,158,11,0.08)", "rgba(245,158,11,0.2)");
+
+        body += """
+            <p style="margin:16px 0 0; color:#64748b; font-size:13px;">
+                Se voce nao esperava este convite, ignore este e-mail com seguranca.</p>
+            """;
+
+        return wrapInLayout("Convite TradeLink",
+                "Voce foi convidado para o TradeLink por " + empresaNome, body);
+    }
+
+    /** E-mail informando o cliente que foi desvinculado pelo consultor */
+    public String buildExclusaoCliente(String nome) {
+        String nomeDisplay = (nome != null && !nome.isBlank()) ? escape(nome) : "Cliente";
+        String loginUrl = APP_URL + "/login";
+
+        String body = """
+            <h1 style="margin:0 0 8px; font-size:22px; color:#f1f5f9;">
+                Alteracao na sua conta</h1>
+            <p style="margin:0 0 24px; color:#94a3b8; font-size:15px;">
+                Ola, <strong style="color:#e2e8f0;">%s</strong></p>
+
+            <p style="margin:0 0 16px; color:#94a3b8; font-size:14px; line-height:1.6;">
+                Informamos que seu consultor desvinculou sua conta do grupo de atendimento.
+                Seus dados e historico de investimentos estao preservados.</p>
+
+            <p style="margin:0 0 24px; color:#94a3b8; font-size:14px; line-height:1.6;">
+                Ao fazer login, voce encontrara opcoes para continuar gerenciando seu portfolio
+                de forma independente ou baixar um relatorio completo com todo seu historico.</p>
+            """.formatted(nomeDisplay);
+
+        body += buildButton("Acessar Minha Conta", loginUrl);
+
+        body += buildAlertBox("&#128274;",
+                "Seus dados estao seguros. Nenhuma informacao foi perdida neste processo.",
+                "rgba(99,102,241,0.08)", "rgba(99,102,241,0.2)");
+
+        body += """
+            <p style="margin:16px 0 0; color:#64748b; font-size:13px;">
+                Em caso de duvidas, entre em contato com o suporte do TradeLink.</p>
+            """;
+
+        return wrapInLayout("Alteracao na sua conta TradeLink",
+                "Seu consultor desvinculou sua conta. Acesse para ver suas opcoes.", body);
+    }
+
+    /** E-mail informando o cliente que foi vinculado a um novo consultor */
+    public String buildVinculacaoCliente(String nome, String empresaNome) {
+        String nomeDisplay = (nome != null && !nome.isBlank()) ? escape(nome) : "Cliente";
+        String empresaDisplay = (empresaNome != null && !empresaNome.isBlank()) ? escape(empresaNome) : "um novo consultor";
+        String loginUrl = APP_URL + "/login";
+
+        String body = """
+            <h1 style="margin:0 0 8px; font-size:22px; color:#f1f5f9;">
+                Bem-vindo de volta!</h1>
+            <p style="margin:0 0 24px; color:#94a3b8; font-size:15px;">
+                Ola, <strong style="color:#e2e8f0;">%s</strong></p>
+
+            <p style="margin:0 0 16px; color:#94a3b8; font-size:14px; line-height:1.6;">
+                Boa noticia! Sua conta foi vinculada ao grupo de atendimento de
+                <strong style="color:#e2e8f0;">%s</strong>.</p>
+
+            <p style="margin:0 0 24px; color:#94a3b8; font-size:14px; line-height:1.6;">
+                Voce agora tem acesso completo a todas as funcionalidades da plataforma,
+                incluindo carteiras, recomendacoes e acompanhamento profissional do seu portfolio.</p>
+            """.formatted(nomeDisplay, empresaDisplay);
+
+        body += buildButton("Acessar Minha Conta", loginUrl);
+
+        body += buildAlertBox("&#127881;",
+                "Seu historico e dados foram preservados. Tudo continua como antes.",
+                "rgba(16,185,129,0.08)", "rgba(16,185,129,0.2)");
+
+        return wrapInLayout("Bem-vindo de volta ao TradeLink",
+                "Sua conta foi vinculada a " + empresaDisplay + ". Acesse a plataforma.", body);
+    }
+
+    /** E-mail de boas-vindas para auto-cadastro (cliente ou consultor). */
+    public String buildBoasVindasAutoCadastro(String nome, String tipo, java.time.LocalDateTime trialFim) {
+        String perfil = "CONSULTOR".equalsIgnoreCase(tipo) ? "Consultor/Assessor" : "Investidor";
+        String trialFimStr = trialFim != null ? trialFim.toLocalDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "";
+
+        String body = """
+            <h2 style="margin:0 0 16px 0; color:#f1f5f9; font-size:22px; font-weight:700;">Bem-vindo ao TradeLink!</h2>
+            <p style="margin:0 0 12px 0;">Ola, <strong>%s</strong>!</p>
+            <p style="margin:0 0 20px 0;">Sua conta como <strong>%s</strong> foi criada com sucesso.</p>
+
+            <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="margin-bottom:24px;">
+              <tr><td style="background:linear-gradient(135deg, #6366f1, #8b5cf6); border-radius:12px; padding:20px;">
+                <p style="margin:0 0 8px 0; color:#fff; font-size:18px; font-weight:700;">5 Dias Gratuitos</p>
+                <p style="margin:0; color:rgba(255,255,255,0.9); font-size:14px;">
+                  Seu periodo de teste gratuito esta ativo ate <strong>%s</strong>.
+                  Explore todas as funcionalidades sem compromisso!
+                </p>
+              </td></tr>
+            </table>
+
+            <p style="margin:0 0 8px 0; font-weight:600; color:#f1f5f9;">O que voce pode fazer:</p>
+            <ul style="margin:0 0 24px 0; padding-left:20px; color:#cbd5e1;">
+              <li style="margin-bottom:6px;">Gerenciar seu portfolio de investimentos</li>
+              <li style="margin-bottom:6px;">Acompanhar cotacoes em tempo real</li>
+              <li style="margin-bottom:6px;">Gerar relatorios detalhados</li>
+              <li style="margin-bottom:6px;">Receber notificacoes inteligentes</li>
+            </ul>
+
+            <table role="presentation" cellspacing="0" cellpadding="0" style="margin-bottom:16px;">
+              <tr><td style="background:linear-gradient(135deg, #6366f1, #8b5cf6); border-radius:8px;">
+                <a href="%s/login" style="display:inline-block; padding:14px 32px; color:#fff; text-decoration:none; font-weight:600; font-size:16px;">Acessar Minha Conta</a>
+              </td></tr>
+            </table>
+
+            <p style="margin:0; color:#94a3b8; font-size:13px;">Apos o periodo de teste, escolha o plano ideal para voce.</p>
+            """.formatted(
+                escape(nome),
+                escape(perfil),
+                trialFimStr,
+                APP_URL
+        );
+
+        return wrapInLayout("Bem-vindo ao TradeLink", "Sua conta foi criada! 5 dias gratuitos.", body);
     }
 
     private static String escape(String s) {

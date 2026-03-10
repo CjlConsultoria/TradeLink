@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs grep -l \"DataLoader\\\\|CommandLineRunner\\\\|InitializingBean\")",
+      "Bash(PGPASSWORD=postgres psql -h localhost -U postgres -d cjlinvestimentos -c \"SELECT id, nome, email, role, ativo FROM tb_usuarios WHERE role = ''AdminMax'';\")",
+      "Bash(PGPASSWORD=postgres \"C:/Program Files/PostgreSQL/14/bin/psql.exe\" -h localhost -U postgres -d cjlinvestimentos -c \"SELECT id, nome, email, role, ativo FROM tb_usuarios WHERE role = ''AdminMax'';\")",
+      "Bash(curl -s -X POST http://localhost:8080/api/auth/register -H \"Content-Type: application/json\" -d '{\"\"nome\"\":\"\"Super Admin\"\",\"\"email\"\":\"\"admin@tradelink.local\"\",\"\"senha\"\":\"\"admin123\"\",\"\"role\"\":\"\"AdminMax\"\"}')",
+      "Bash(./mvnw compile -q)",
+      "Bash(where python3)",
+      "Bash(where python)",
+      "Bash(where py)",
+      "Bash(pip install pandas openpyxl)",
+      "Bash(python3 -c \":*)",
+      "Bash(/c/Users/ritad/AppData/Local/Programs/Python/Python312/python.exe -c \":*)",
+      "Bash(/c/Users/ritad/AppData/Local/Programs/Python/Python312/python.exe -m pip install pandas openpyxl)",
+      "Bash(npx vite build)",
+      "Bash(ls -la \"C:\\\\GIT\\\\TradeLink\\\\tradelink-frontend\"\" | grep -E \"tail)",
+      "Bash(style \")",
+      "Bash(\"C:\\\\Users\\\\ritad\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python312\\\\python.exe\" -c \":*)",
+      "Bash(mvn compile -q)",
+      "Bash(cmd.exe /c \"mvnw.cmd compile -q\")",
+      "Bash(.mvnw compile -q)",
+      "Bash(.mvnw.cmd compile -q)",
+      "Bash(cmd /c \"mvnw.cmd compile -q\")",
+      "Bash(cmd /c \"cd /d C:\\\\GIT\\\\TradeLink\\\\CJLInvestimentos && mvnw.cmd compile -q\")",
+      "Bash(cmd.exe /c \"cd /d C:\\\\GIT\\\\TradeLink\\\\CJLInvestimentos && call mvnw.cmd compile -q 2>&1\")",
+      "Bash(powershell -Command \"Set-Location ''C:\\\\GIT\\\\TradeLink\\\\CJLInvestimentos''; ./mvnw compile -q 2>&1\")",
+      "Bash(powershell -Command \"Set-Location ''C:\\\\GIT\\\\TradeLink\\\\tradelink-frontend''; npm run build 2>&1 | Select-Object -Last 30\")",
+      "Bash(powershell -Command \"./mvnw compile -q 2>&1\")",
+      "Bash(powershell -Command \"npm run build 2>&1\")",
+      "Bash(npm run build)",
+      "Bash(xargs grep -l \"termo\\\\|terms\\\\|faq\\\\|help\\\\|chat\")",
+      "Bash(./mvnw.cmd compile -q)",
+      "Bash(cmd.exe /c \"cd /d C:\\\\GIT\\\\TradeLink\\\\tradelink-frontend && npm run build\")",
+      "Bash(powershell.exe -Command \"cd ''C:\\\\GIT\\\\TradeLink\\\\tradelink-frontend''; npm run build 2>&1\")",
+      "Bash(powershell.exe -Command \"cd ''C:\\\\GIT\\\\TradeLink\\\\CJLInvestimentos''; ./mvnw compile -q 2>&1\")"
+    ]
+  }
+}

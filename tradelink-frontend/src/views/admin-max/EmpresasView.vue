@@ -199,6 +199,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useEmpresaStore } from '../../stores/empresa'
 import { useToast } from '../../composables/useToast'
+import { useConfirm } from '../../composables/useConfirm'
 import empresaApi from '../../api/empresaApi'
 import planoApi from '../../api/planoApi'
 import paymentApi from '../../api/paymentApi'
@@ -209,6 +210,7 @@ import { formatDate } from '../../utils/formatters'
 import { isValidCnpj, isValidCpf, formatarCnpj, formatarCep, formatarCpf, apenasDigitos, maskCep, maskCnpj, maskCpf } from '../../utils/validadores'
 
 const toast = useToast()
+const { confirm } = useConfirm()
 const empresaStore = useEmpresaStore()
 const empresas = computed(() => empresaStore.empresas)
 const loading = computed(() => empresaStore.loading)
@@ -352,8 +354,9 @@ async function salvar() {
 }
 
 async function onBloqueioChange(empresa, bloqueado) {
-  const msg = bloqueado ? 'Bloquear acesso à plataforma para todos os consultores e clientes desta empresa?' : 'Desbloquear o acesso à plataforma?'
-  if (!confirm(msg)) return
+  const msg = bloqueado ? 'Bloquear acesso a plataforma para todos os consultores e clientes desta empresa?' : 'Desbloquear o acesso a plataforma?'
+  const ok = await confirm({ title: bloqueado ? 'Bloquear acesso' : 'Desbloquear acesso', message: msg, confirmText: bloqueado ? 'Bloquear' : 'Desbloquear', variant: bloqueado ? 'danger' : 'info' })
+  if (!ok) return
   loadingBloqueio.value[empresa.id] = true
   try {
     await empresaApi.bloquearAcesso(empresa.id, bloqueado)
@@ -367,8 +370,9 @@ async function onBloqueioChange(empresa, bloqueado) {
 }
 
 async function onAtivoChange(empresa, ativo) {
-  const msg = ativo ? 'Reativar esta empresa?' : 'Desativar esta empresa?'
-  if (!confirm(msg)) return
+  const msg = ativo ? 'Reativar esta empresa?' : 'Desativar esta empresa? Os usuarios nao poderao acessar o sistema.'
+  const ok = await confirm({ title: ativo ? 'Reativar empresa' : 'Desativar empresa', message: msg, confirmText: ativo ? 'Reativar' : 'Desativar', variant: ativo ? 'info' : 'warning' })
+  if (!ok) return
   loadingAtivo.value[empresa.id] = true
   try {
     if (ativo) {

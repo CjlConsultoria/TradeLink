@@ -12,4 +12,9 @@ public interface FaturaRepository extends JpaRepository<Fatura, Long> {
     List<Fatura> findByEmpresaIdAndStatusOrderByDataVencimentoDesc(Long empresaId, StatusFatura status);
 
     boolean existsByEmpresaIdAndReferenciaExterna(Long empresaId, String referenciaExterna);
+
+    // Faturas de auto-gestão (por usuário individual)
+    List<Fatura> findByUserIdOrderByDataVencimentoDesc(Long userId);
+
+    boolean existsByUserIdAndReferenciaExterna(Long userId, String referenciaExterna);
 }

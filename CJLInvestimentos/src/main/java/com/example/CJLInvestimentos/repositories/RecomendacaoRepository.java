@@ -22,4 +22,6 @@ public interface RecomendacaoRepository extends JpaRepository<Recomendacao, Long
     List<Recomendacao> findByCarteiraIdIn(List<Long> carteiraIds);
     long countByCarteiraId(Long carteiraId);
     long countByCarteiraIdAndStatus(Long carteiraId, StatusRecomendacao status);
+    boolean existsByCarteiraIdAndMoedaAndTipoAndStatus(Long carteiraId, String moeda,
+            com.example.CJLInvestimentos.entities.enums.TipoRecomendacao tipo, StatusRecomendacao status);
 }

@@ -63,16 +63,30 @@ public class StripePaymentService {
     @Value("${stripe.cancel-url-pagamento-cliente:http://localhost:5173/cliente/faturas}")
     private String cancelUrlPagamentoCliente;
 
+    @Value("${stripe.success-url-autogestao:http://localhost:5173/cliente/pos-exclusao?pagamento=ok}")
+    private String successUrlAutoGestao;
+
+    @Value("${stripe.cancel-url-autogestao:http://localhost:5173/cliente/pos-exclusao}")
+    private String cancelUrlAutoGestao;
+
+    @Value("${stripe.price-autogestao-mensal:999}")
+    private long precoAutoGestaoMensalCentavos;
+
+    @Value("${stripe.price-relatorio-avulso:1990}")
+    private long precoRelatorioAvulsoCentavos;
+
     private final EmpresaRepository empresaRepository;
     private final PlanoRepository planoRepository;
     private final FaturaService faturaService;
     private final UserRepository userRepository;
+    private final PlanoService planoService;
 
-    public StripePaymentService(EmpresaRepository empresaRepository, PlanoRepository planoRepository, FaturaService faturaService, UserRepository userRepository) {
+    public StripePaymentService(EmpresaRepository empresaRepository, PlanoRepository planoRepository, FaturaService faturaService, UserRepository userRepository, PlanoService planoService) {
         this.empresaRepository = empresaRepository;
         this.planoRepository = planoRepository;
         this.faturaService = faturaService;
         this.userRepository = userRepository;
+        this.planoService = planoService;
     }
 
     @PostConstruct
@@ -440,15 +454,214 @@ public class StripePaymentService {
             return;
         }
         Map<String, String> meta = pi.getMetadata();
-        if (meta == null || !meta.containsKey("empresa_id")) {
-            log.warn("payment_intent.succeeded: PaymentIntent {} sem metadata empresa_id (não é pagamento de assinatura?)", pi.getId());
+        if (meta == null) {
+            log.warn("payment_intent.succeeded: PaymentIntent {} sem metadata", pi.getId());
             return;
         }
-        Long empresaId = Long.parseLong(meta.get("empresa_id"));
+
         BigDecimal amount = BigDecimal.valueOf(pi.getAmount()).divide(BigDecimal.valueOf(100));
         FormaPagamento forma = obterFormaPagamentoDoPaymentIntent(pi);
-        faturaService.registrarPagamentoExterno(empresaId, amount, forma, pi.getId());
-        log.info("Fatura registrada via payment_intent.succeeded: empresa={}, forma={}, valor={}", empresaId, forma, amount);
+
+        // Pagamento individual de cliente (auto-gestão ou relatório)
+        if (meta.containsKey("user_id")) {
+            Long userId = Long.parseLong(meta.get("user_id"));
+            String tipo = meta.getOrDefault("tipo", "autogestao");
+            if ("relatorio".equals(tipo)) {
+                faturaService.registrarPagamentoRelatorioCliente(userId, amount, forma, pi.getId());
+                log.info("Relatório pago via payment_intent.succeeded: user={}, valor={}", userId, amount);
+            } else {
+                faturaService.registrarPagamentoExternoCliente(userId, amount, forma, pi.getId(), "Auto-Gestão Mensal");
+                log.info("Auto-gestão paga via payment_intent.succeeded: user={}, forma={}, valor={}", userId, forma, amount);
+            }
+            return;
+        }
+
+        // Pagamento de empresa (fluxo existente)
+        if (meta.containsKey("empresa_id")) {
+            Long empresaId = Long.parseLong(meta.get("empresa_id"));
+            faturaService.registrarPagamentoExterno(empresaId, amount, forma, pi.getId());
+            log.info("Fatura registrada via payment_intent.succeeded: empresa={}, forma={}, valor={}", empresaId, forma, amount);
+            return;
+        }
+
+        log.warn("payment_intent.succeeded: PaymentIntent {} sem metadata empresa_id ou user_id", pi.getId());
+    }
+
+    // ─── Checkout individual (auto-gestão) ─────────────────────────
+
+    /** Cria Checkout Session para assinatura mensal de auto-gestão (R$9,99). Retorna URL de redirect. */
+    public Map<String, String> createCheckoutSessionAutoGestao(User user, String customReturnUrl) {
+        if (!isConfigured()) throw new BusinessException("Pagamentos não estão configurados.");
+        long amountCentavos = planoService.getPrecoAutoGestaoCentavos();
+        String customerId = getOrCreateStripeCustomerForUser(user);
+        try {
+            SessionCreateParams.LineItem.PriceData.ProductData productData =
+                    SessionCreateParams.LineItem.PriceData.ProductData.builder()
+                            .setName("Auto-Gestão TradeLink - Mensal")
+                            .build();
+            SessionCreateParams.LineItem.PriceData priceData = SessionCreateParams.LineItem.PriceData.builder()
+                    .setCurrency("brl")
+                    .setUnitAmount(amountCentavos)
+                    .setProductData(productData)
+                    .build();
+            SessionCreateParams.LineItem lineItem = SessionCreateParams.LineItem.builder()
+                    .setPriceData(priceData)
+                    .setQuantity(1L)
+                    .build();
+            SessionCreateParams.PaymentIntentData paymentIntentData = SessionCreateParams.PaymentIntentData.builder()
+                    .putMetadata("user_id", user.getId().toString())
+                    .putMetadata("tipo", "autogestao")
+                    .build();
+            // Se o frontend enviou um returnUrl customizado (ex: /cliente/faturas), usar ele
+            String baseSuccessUrl = (customReturnUrl != null && !customReturnUrl.isBlank())
+                    ? customReturnUrl : successUrlAutoGestao;
+            String successWithSession = baseSuccessUrl + (baseSuccessUrl.contains("?") ? "&" : "?") + "session_id={CHECKOUT_SESSION_ID}";
+            String baseCancelUrl = (customReturnUrl != null && !customReturnUrl.isBlank())
+                    ? customReturnUrl : cancelUrlAutoGestao;
+            SessionCreateParams.Builder paramsBuilder = SessionCreateParams.builder()
+                    .setMode(SessionCreateParams.Mode.PAYMENT)
+                    .setSuccessUrl(successWithSession)
+                    .setCancelUrl(baseCancelUrl)
+                    .putMetadata("user_id", user.getId().toString())
+                    .putMetadata("tipo", "autogestao")
+                    .addLineItem(lineItem)
+                    .setPaymentIntentData(paymentIntentData)
+                    .addPaymentMethodType(SessionCreateParams.PaymentMethodType.CARD)
+                    .addPaymentMethodType(SessionCreateParams.PaymentMethodType.BOLETO);
+            if (customerId != null) paramsBuilder.setCustomer(customerId);
+            Session session = Session.create(paramsBuilder.build());
+            Map<String, String> result = new HashMap<>();
+            result.put("checkoutUrl", session.getUrl());
+            result.put("sessionId", session.getId());
+            return result;
+        } catch (Exception e) {
+            log.error("Erro ao criar Checkout Session auto-gestão", e);
+            throw new BusinessException("Erro ao iniciar pagamento: " + e.getMessage());
+        }
+    }
+
+    /** Cria Checkout Session para re-download do relatório completo (R$19,90). Retorna URL de redirect. */
+    public Map<String, String> createCheckoutSessionRelatorio(User user) {
+        if (!isConfigured()) throw new BusinessException("Pagamentos não estão configurados.");
+        long amountCentavos = precoRelatorioAvulsoCentavos > 0 ? precoRelatorioAvulsoCentavos : 1990;
+        String customerId = getOrCreateStripeCustomerForUser(user);
+        try {
+            SessionCreateParams.LineItem.PriceData.ProductData productData =
+                    SessionCreateParams.LineItem.PriceData.ProductData.builder()
+                            .setName("Relatório Completo TradeLink")
+                            .build();
+            SessionCreateParams.LineItem.PriceData priceData = SessionCreateParams.LineItem.PriceData.builder()
+                    .setCurrency("brl")
+                    .setUnitAmount(amountCentavos)
+                    .setProductData(productData)
+                    .build();
+            SessionCreateParams.LineItem lineItem = SessionCreateParams.LineItem.builder()
+                    .setPriceData(priceData)
+                    .setQuantity(1L)
+                    .build();
+            SessionCreateParams.PaymentIntentData paymentIntentData = SessionCreateParams.PaymentIntentData.builder()
+                    .putMetadata("user_id", user.getId().toString())
+                    .putMetadata("tipo", "relatorio")
+                    .build();
+            String successWithSession = successUrlAutoGestao + (successUrlAutoGestao.contains("?") ? "&" : "?") + "session_id={CHECKOUT_SESSION_ID}&tipo=relatorio";
+            SessionCreateParams.Builder paramsBuilder = SessionCreateParams.builder()
+                    .setMode(SessionCreateParams.Mode.PAYMENT)
+                    .setSuccessUrl(successWithSession)
+                    .setCancelUrl(cancelUrlAutoGestao)
+                    .putMetadata("user_id", user.getId().toString())
+                    .putMetadata("tipo", "relatorio")
+                    .addLineItem(lineItem)
+                    .setPaymentIntentData(paymentIntentData)
+                    .addPaymentMethodType(SessionCreateParams.PaymentMethodType.CARD)
+                    .addPaymentMethodType(SessionCreateParams.PaymentMethodType.BOLETO);
+            if (customerId != null) paramsBuilder.setCustomer(customerId);
+            Session session = Session.create(paramsBuilder.build());
+            Map<String, String> result = new HashMap<>();
+            result.put("checkoutUrl", session.getUrl());
+            result.put("sessionId", session.getId());
+            return result;
+        } catch (Exception e) {
+            log.error("Erro ao criar Checkout Session relatório avulso", e);
+            throw new BusinessException("Erro ao iniciar pagamento: " + e.getMessage());
+        }
+    }
+
+    /** Confirma pagamento individual por session_id do Stripe Checkout (fallback para quando webhook não chega). */
+    public boolean confirmarPagamentoIndividualPorSessionId(String sessionId, Long userId) {
+        if (!isConfigured() || sessionId == null || sessionId.isBlank()) return false;
+        try {
+            Session session = Session.retrieve(sessionId);
+            if (!"paid".equals(session.getPaymentStatus())) return false;
+            Map<String, String> meta = session.getMetadata();
+            if (meta == null || !meta.containsKey("user_id")) return false;
+            Long sessionUserId = Long.parseLong(meta.get("user_id"));
+            if (!sessionUserId.equals(userId)) return false;
+            String piId = getPaymentIntentIdFromSession(session);
+            if (piId == null || piId.isBlank()) return false;
+            Long amountTotal = session.getAmountTotal();
+            if (amountTotal == null || amountTotal <= 0) return false;
+            BigDecimal amount = BigDecimal.valueOf(amountTotal).divide(BigDecimal.valueOf(100));
+            FormaPagamento forma = FormaPagamento.CARTAO;
+            String tipo = meta.getOrDefault("tipo", "autogestao");
+            if ("relatorio".equals(tipo)) {
+                faturaService.registrarPagamentoRelatorioCliente(userId, amount, forma, piId);
+            } else {
+                faturaService.registrarPagamentoExternoCliente(userId, amount, forma, piId, "Auto-Gestão Mensal");
+            }
+            log.info("Pagamento individual confirmado via session_id: user={}, tipo={}", userId, tipo);
+            return true;
+        } catch (Exception e) {
+            log.error("Erro ao confirmar pagamento individual por session_id", e);
+            return false;
+        }
+    }
+
+    /** Confirma pagamento individual por payment_intent_id (fallback para quando webhook não chega). */
+    public boolean confirmarPagamentoIndividualPorPaymentIntentId(String paymentIntentId, Long userId) {
+        if (!isConfigured() || paymentIntentId == null || paymentIntentId.isBlank()) return false;
+        try {
+            PaymentIntent pi = PaymentIntent.retrieve(paymentIntentId);
+            if (!"succeeded".equals(pi.getStatus())) return false;
+            Map<String, String> meta = pi.getMetadata();
+            if (meta == null || !meta.containsKey("user_id")) return false;
+            Long piUserId = Long.parseLong(meta.get("user_id"));
+            if (!piUserId.equals(userId)) return false;
+            BigDecimal amount = BigDecimal.valueOf(pi.getAmount()).divide(BigDecimal.valueOf(100));
+            FormaPagamento forma = obterFormaPagamentoDoPaymentIntent(pi);
+            String tipo = meta.getOrDefault("tipo", "autogestao");
+            if ("relatorio".equals(tipo)) {
+                faturaService.registrarPagamentoRelatorioCliente(userId, amount, forma, pi.getId());
+            } else {
+                faturaService.registrarPagamentoExternoCliente(userId, amount, forma, pi.getId(), "Auto-Gestão Mensal");
+            }
+            return true;
+        } catch (Exception e) {
+            log.error("Erro ao confirmar pagamento individual por payment_intent_id", e);
+            return false;
+        }
+    }
+
+    /** Obtém ou cria Stripe Customer para um usuário individual (billing por CPF). */
+    private String getOrCreateStripeCustomerForUser(User user) {
+        if (user.getStripeCustomerId() != null && !user.getStripeCustomerId().isBlank()) {
+            return user.getStripeCustomerId();
+        }
+        try {
+            CustomerCreateParams.Builder paramsBuilder = CustomerCreateParams.builder()
+                    .setName(user.getNome() != null ? user.getNome() : user.getEmail())
+                    .setEmail(user.getEmail())
+                    .putMetadata("user_id", user.getId().toString());
+            if (user.getCpf() != null && !user.getCpf().isBlank()) {
+                paramsBuilder.putMetadata("cpf", user.getCpf());
+            }
+            Customer customer = Customer.create(paramsBuilder.build());
+            user.setStripeCustomerId(customer.getId());
+            userRepository.save(user);
+            return customer.getId();
+        } catch (Exception e) {
+            log.warn("Erro ao criar Stripe Customer para user {}: {}", user.getId(), e.getMessage());
+            return null;
+        }
     }
 
     /**

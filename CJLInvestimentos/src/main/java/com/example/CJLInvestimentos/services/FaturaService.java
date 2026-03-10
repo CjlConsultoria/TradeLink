@@ -38,6 +38,7 @@ public class FaturaService {
     private final FaturaRepository faturaRepository;
     private final EmpresaRepository empresaRepository;
     private final UserRepository userRepository;
+    private final PlanoService planoService;
 
     /**
      * Verifica se a empresa está em dia: não bloqueada por admin, tem período vigente e não passou de 5 dias após o vencimento.
@@ -277,10 +278,98 @@ public class FaturaService {
         empresaRepository.save(empresa);
     }
 
+    // ─── Billing individual (auto-gestão) ───────────────────────────
+
+    /** Verifica se a subscription de auto-gestão do cliente está ativa. */
+    public boolean autoGestaoAcessoPermitido(User user) {
+        if (user.getCurrentPeriodEnd() == null) return false;
+        Instant limite = user.getCurrentPeriodEnd().plus(DIAS_TOLERANCIA_VENCIMENTO, ChronoUnit.DAYS);
+        return Instant.now().isBefore(limite) || Instant.now().equals(limite);
+    }
+
+    /** Registra pagamento de auto-gestão para um cliente individual (não empresa). */
+    @Transactional
+    public void registrarPagamentoExternoCliente(Long userId, BigDecimal valor, FormaPagamento forma,
+                                                  String referenciaExterna, String descricao) {
+        if (faturaRepository.existsByUserIdAndReferenciaExterna(userId, referenciaExterna)) return;
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
+
+        Instant dataVencimento;
+        if (user.getCurrentPeriodEnd() == null) {
+            dataVencimento = Instant.now().plus(DIAS_PERIODO, ChronoUnit.DAYS);
+        } else {
+            dataVencimento = user.getCurrentPeriodEnd();
+        }
+        Instant novoFimPeriodo = dataVencimento.plus(DIAS_PERIODO, ChronoUnit.DAYS);
+
+        faturaRepository.save(Fatura.builder()
+                .user(user)
+                .dataVencimento(dataVencimento)
+                .dataPagamento(Instant.now())
+                .valor(valor)
+                .status(StatusFatura.PAGA)
+                .formaPagamento(forma)
+                .referenciaExterna(referenciaExterna)
+                .descricaoServico(descricao != null ? descricao : "Auto-Gestão Mensal")
+                .build());
+
+        user.setCurrentPeriodEnd(novoFimPeriodo);
+        user.setSubscriptionStatus("ACTIVE");
+        user.setAutoGestao(true);
+        userRepository.save(user);
+    }
+
+    /** Registra pagamento avulso de relatório para um cliente individual. */
+    @Transactional
+    public void registrarPagamentoRelatorioCliente(Long userId, BigDecimal valor, FormaPagamento forma,
+                                                    String referenciaExterna) {
+        if (faturaRepository.existsByUserIdAndReferenciaExterna(userId, referenciaExterna)) return;
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
+
+        faturaRepository.save(Fatura.builder()
+                .user(user)
+                .dataVencimento(Instant.now())
+                .dataPagamento(Instant.now())
+                .valor(valor)
+                .status(StatusFatura.PAGA)
+                .formaPagamento(forma)
+                .referenciaExterna(referenciaExterna)
+                .descricaoServico("Relatório Completo - Download Avulso")
+                .build());
+
+        // Libera novo download
+        user.setRelatorioComplBaixado(false);
+        userRepository.save(user);
+    }
+
+    /** Retorna faturas do cliente individual (auto-gestão). */
+    @Transactional(readOnly = true)
+    public FaturasComProximaResponse getFaturasParaClienteIndividual(Long userId) {
+        List<FaturaResponse> faturas = faturaRepository.findByUserIdOrderByDataVencimentoDesc(userId)
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+        User user = userRepository.findById(userId).orElse(null);
+        boolean acesso = user != null && autoGestaoAcessoPermitido(user);
+        return FaturasComProximaResponse.builder()
+                .faturas(faturas)
+                .proxima(ProximaFaturaResponse.builder()
+                        .temAssinatura(user != null && user.getCurrentPeriodEnd() != null)
+                        .dataVencimento(user != null ? user.getCurrentPeriodEnd() : null)
+                        .valor(planoService.getPrecoAutoGestao())
+                        .planoNome(planoService.getNomeAutoGestao())
+                        .build())
+                .acessoPermitido(acesso)
+                .build();
+    }
+
     private FaturaResponse toResponse(Fatura f) {
         return FaturaResponse.builder()
                 .id(f.getId())
-                .empresaId(f.getEmpresa().getId())
+                .empresaId(f.getEmpresa() != null ? f.getEmpresa().getId() : null)
+                .userId(f.getUser() != null ? f.getUser().getId() : null)
                 .dataVencimento(f.getDataVencimento())
                 .dataPagamento(f.getDataPagamento())
                 .valor(f.getValor())

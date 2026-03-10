@@ -25,6 +25,12 @@ export default {
   criarCliente(data) {
     return api.post('/consultor/clientes', data)
   },
+  convidarCliente(email) {
+    return api.post('/consultor/clientes/convidar', { email })
+  },
+  getLicenca() {
+    return api.get('/consultor/licenca')
+  },
   inativarCliente(id) {
     return api.put(`/consultor/clientes/${id}/inativar`)
   },
@@ -33,6 +39,9 @@ export default {
   },
   excluirCliente(id) {
     return api.delete(`/consultor/clientes/${id}`)
+  },
+  vincularCliente(email) {
+    return api.post('/consultor/clientes/vincular', { email })
   },
   dashboard() {
     return api.get('/cliente/dashboard')

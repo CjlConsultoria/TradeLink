@@ -11,8 +11,13 @@ export const useAuthStore = defineStore('auth', () => {
   const dashboardRoute = computed(() => {
     switch (user.value?.role) {
       case 'AdminMax': return '/admin-max'
-      case 'Admin': return '/consultor'
-      case 'Cliente': return '/cliente'
+      case 'Admin':
+        if (user.value?.precisaEscolherPlano) return '/consultor/faturas'
+        return '/consultor'
+      case 'Cliente':
+        if (user.value?.clienteExcluido && !user.value?.autoGestaoAtiva) return '/cliente/pos-exclusao'
+        if (user.value?.autoCadastro && user.value?.precisaEscolherPlano) return '/cliente/pos-exclusao'
+        return '/cliente'
       default: return '/login'
     }
   })
@@ -25,7 +30,13 @@ export const useAuthStore = defineStore('auth', () => {
       id: data.userId,
       nome: data.nome,
       role: data.role,
-      empresaId: data.empresaId
+      empresaId: data.empresaId,
+      clienteExcluido: data.clienteExcluido || false,
+      autoGestaoAtiva: data.autoGestaoAtiva || false,
+      trialAtivo: data.trialAtivo || false,
+      trialFim: data.trialFim || null,
+      precisaEscolherPlano: data.precisaEscolherPlano || false,
+      autoCadastro: data.autoCadastro || false
     }
     localStorage.setItem('token', data.token)
     localStorage.setItem('user', JSON.stringify(user.value))

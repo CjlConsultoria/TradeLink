@@ -22,8 +22,13 @@ public class Fatura {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "empresa_id", nullable = false)
+    @JoinColumn(name = "empresa_id")
     private Empresa empresa;
+
+    /** Usuário individual (para faturas de auto-gestão — quando empresa_id é null). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
 
     /** Data de vencimento (30 dias após assinatura ou após período anterior). */
     @Column(name = "data_vencimento", nullable = false)

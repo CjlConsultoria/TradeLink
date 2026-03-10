@@ -13,7 +13,9 @@ import com.example.CJLInvestimentos.repositories.RecomendacaoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,7 +26,9 @@ public class OperacaoClienteService {
     private final OperacaoClienteRepository operacaoClienteRepository;
     private final RecomendacaoRepository recomendacaoRepository;
     private final CarteiraClienteRepository carteiraClienteRepository;
+    private final PortfolioService portfolioService;
 
+    @Transactional
     public OperacaoClienteResponse registrar(Long recomendacaoId, OperacaoClienteRequest request, User cliente) {
         Recomendacao rec = recomendacaoRepository.findById(recomendacaoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Recomendação não encontrada"));
@@ -32,6 +36,8 @@ public class OperacaoClienteService {
         if (!carteiraClienteRepository.existsByCarteiraIdAndClienteId(rec.getCarteira().getId(), cliente.getId())) {
             throw new AccessDeniedException("Você não tem acesso a esta recomendação");
         }
+
+        BigDecimal valorTotal = request.getPrecoExecutado().multiply(request.getQuantidade());
 
         OperacaoCliente op = operacaoClienteRepository.save(
                 OperacaoCliente.builder()
@@ -42,8 +48,15 @@ public class OperacaoClienteService {
                         .quantidade(request.getQuantidade())
                         .dataExecucao(request.getDataExecucao())
                         .observacao(request.getObservacao())
+                        .moedaBase(rec.getMoeda())
+                        .moedaContra(rec.getParMoeda())
+                        .valorTotal(valorTotal)
+                        .portfolioAtualizado(true)
                         .build()
         );
+
+        portfolioService.atualizarPortfolioAposOperacao(op);
+
         return toResponse(op);
     }
 
@@ -82,28 +95,47 @@ public class OperacaoClienteService {
     }
 
     /** Cliente edita uma operação própria. */
+    @Transactional
     public OperacaoClienteResponse atualizar(Long operacaoId, OperacaoClienteRequest request, User cliente) {
         OperacaoCliente op = operacaoClienteRepository.findById(operacaoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Operação não encontrada"));
         if (!op.getCliente().getId().equals(cliente.getId())) {
             throw new AccessDeniedException("Só é possível editar suas próprias operações");
         }
+
+        if (Boolean.TRUE.equals(op.getPortfolioAtualizado())) {
+            portfolioService.reverterPortfolioOperacao(op);
+        }
+
         op.setTipo(request.getTipo());
         op.setPrecoExecutado(request.getPrecoExecutado());
         op.setQuantidade(request.getQuantidade());
         op.setDataExecucao(request.getDataExecucao());
         op.setObservacao(request.getObservacao());
+
+        BigDecimal valorTotal = request.getPrecoExecutado().multiply(request.getQuantidade());
+        op.setValorTotal(valorTotal);
+        op.setPortfolioAtualizado(true);
+
         operacaoClienteRepository.save(op);
+        portfolioService.atualizarPortfolioAposOperacao(op);
+
         return toResponse(op);
     }
 
     /** Cliente exclui uma operação própria. */
+    @Transactional
     public void excluir(Long operacaoId, User cliente) {
         OperacaoCliente op = operacaoClienteRepository.findById(operacaoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Operação não encontrada"));
         if (!op.getCliente().getId().equals(cliente.getId())) {
             throw new AccessDeniedException("Só é possível excluir suas próprias operações");
         }
+
+        if (Boolean.TRUE.equals(op.getPortfolioAtualizado())) {
+            portfolioService.reverterPortfolioOperacao(op);
+        }
+
         operacaoClienteRepository.delete(op);
     }
 

@@ -46,12 +46,15 @@ const menuItems = computed(() => {
         { to: '/admin-max/empresas', label: 'Empresas', icon: '🏢' },
         { to: '/admin-max/usuarios', label: 'Usuários', icon: '👥' },
         { to: '/admin-max/planos', label: 'Planos', icon: '💰' },
+        { to: '/admin-max/faq', label: 'FAQ', icon: '❓' },
+        { to: '/admin-max/chat', label: 'Chat Suporte', icon: '💬' },
         { to: '/admin-max/configuracoes', label: 'Configurações', icon: '⚙️' }
       ]
     case 'Admin':
       return [
         { to: '/consultor', label: 'Dashboard', icon: '📊' },
         { to: '/consultor/carteiras', label: 'Carteiras', icon: '💼' },
+        { to: '/consultor/rebalanceamento', label: 'Rebalanceamento', icon: '⚖️' },
         { to: '/consultor/clientes', label: 'Clientes', icon: '👥' },
       { to: '/consultor/cotacoes', label: 'Cotações', icon: '💹' },
       { to: '/consultor/faturas', label: 'Faturas', icon: '🧾' },
@@ -59,8 +62,20 @@ const menuItems = computed(() => {
       { to: '/consultor/configuracoes', label: 'Configurações', icon: '⚙️' }
       ]
     case 'Cliente':
+      // Menu reduzido para clientes em auto-gestão (sem consultor)
+      if (authStore.user?.autoGestaoAtiva) {
+        return [
+          { to: '/cliente', label: 'Dashboard', icon: '📊' },
+          { to: '/cliente/portfolio', label: 'Meu Portfolio', icon: '📦' },
+          { to: '/cliente/cotacoes', label: 'Cotações', icon: '💹' },
+          { to: '/cliente/faturas', label: 'Faturas', icon: '🧾' },
+          { to: '/cliente/relatorios', label: 'Relatórios', icon: '📈' },
+          { to: '/cliente/configuracoes', label: 'Configurações', icon: '⚙️' }
+        ]
+      }
       return [
         { to: '/cliente', label: 'Dashboard', icon: '📊' },
+        { to: '/cliente/portfolio', label: 'Meu Portfolio', icon: '📦' },
         { to: '/cliente/carteiras', label: 'Carteiras', icon: '💼' },
         { to: '/cliente/cotacoes', label: 'Cotações', icon: '💹' },
         { to: '/cliente/relatorios', label: 'Relatórios', icon: '📈' },

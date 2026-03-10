@@ -282,4 +282,71 @@ public class NotificationService {
                 rec.getCarteira() != null && rec.getCarteira().getNome() != null ? rec.getCarteira().getNome() : "-");
         notificarUsuario(empresa, consultor, titulo, corpo, html);
     }
+
+    /** Chamado quando um portfolio entra em estado CRITICO: notificar consultor. */
+    public void notificarPortfolioCritico(Empresa empresa, User consultor, String nomeCliente,
+                                           String carteiraNome, int totalDesvios, String maiorDesvio,
+                                           List<String[]> ativos) {
+        String titulo = "Portfolio Critico: " + nomeCliente;
+        String corpo = String.format("ALERTA: O portfolio de %s (carteira %s) esta CRITICO. %d ativo(s) fora da margem. Maior desvio: %s.",
+                nomeCliente, carteiraNome, totalDesvios, maiorDesvio);
+        String html = emailTemplateService.buildPortfolioCritico(nomeCliente, carteiraNome, totalDesvios, maiorDesvio, ativos);
+        notificarUsuario(empresa, consultor, titulo, corpo, html);
+    }
+
+    /** Chamado quando recomendacoes sao geradas em lote: notificar consultor com resumo. */
+    public void notificarRecomendacoesGeradas(Empresa empresa, User consultor,
+                                               int totalRecomendacoes, int totalClientes, String carteiraNome) {
+        String titulo = "Recomendacoes Geradas";
+        String corpo = String.format("%d recomendacoes geradas para %d clientes%s.",
+                totalRecomendacoes, totalClientes,
+                carteiraNome != null ? " (carteira " + carteiraNome + ")" : "");
+        String html = emailTemplateService.buildRecomendacoesGeradas(totalRecomendacoes, totalClientes, carteiraNome);
+        notificarUsuario(empresa, consultor, titulo, corpo, html);
+    }
+
+    /** Chamado quando um cliente faz aporte/saque: notificar consultor. */
+    public void notificarNovaMovimentacao(Empresa empresa, User consultor, String nomeCliente,
+                                           String carteiraNome, String tipo, String valor, String data) {
+        String titulo = "Movimentacao: " + tipo + " de " + valor;
+        String corpo = String.format("%s registrou um %s de %s na carteira %s em %s.",
+                nomeCliente, tipo, valor, carteiraNome, data);
+        String html = emailTemplateService.buildNovaMovimentacao(nomeCliente, carteiraNome, tipo, valor, data);
+        notificarUsuario(empresa, consultor, titulo, corpo, html);
+    }
+
+    /** Envia e-mail de convite para novo cliente (sempre envia, ignora config da empresa). */
+    public void enviarEmailConvite(String para, String token, String empresaNome) {
+        String html = emailTemplateService.buildConviteCliente(para, token, empresaNome);
+        enviarEmailHtml(para, "Voce foi convidado para o TradeLink", html);
+    }
+
+    /** Envia e-mail informando o cliente que foi desvinculado pelo consultor. */
+    public void enviarEmailExclusaoCliente(String para, String nome) {
+        String html = emailTemplateService.buildExclusaoCliente(nome);
+        enviarEmailHtml(para, "Alteracao na sua conta TradeLink", html);
+    }
+
+    /** Envia e-mail informando o cliente que foi vinculado a um novo consultor. */
+    public void enviarEmailVinculacaoCliente(String para, String nome, String empresaNome) {
+        String html = emailTemplateService.buildVinculacaoCliente(nome, empresaNome);
+        enviarEmailHtml(para, "Bem-vindo de volta ao TradeLink!", html);
+    }
+
+    /** Envia e-mail de boas-vindas para auto-cadastro (cliente ou consultor). */
+    public void enviarBoasVindasAutoCadastro(String para, String nome, String tipo, java.time.LocalDateTime trialFim) {
+        String html = emailTemplateService.buildBoasVindasAutoCadastro(nome, tipo, trialFim);
+        enviarEmailHtml(para, "Bem-vindo ao TradeLink! Seu trial gratuito comecou", html);
+    }
+
+    /** Chamado quando um cliente registra operacao: notificar consultor. */
+    public void notificarOperacaoRegistrada(Empresa empresa, User consultor, String nomeCliente,
+                                             String carteiraNome, String tipoOp, String ativo,
+                                             String quantidade, String precoExecutado) {
+        String titulo = "Operacao: " + nomeCliente + " " + tipoOp + " " + ativo;
+        String corpo = String.format("%s executou %s de %s %s a $%s (carteira %s).",
+                nomeCliente, tipoOp, quantidade, ativo, precoExecutado, carteiraNome);
+        String html = emailTemplateService.buildOperacaoRegistrada(nomeCliente, carteiraNome, tipoOp, ativo, quantidade, precoExecutado);
+        notificarUsuario(empresa, consultor, titulo, corpo, html);
+    }
 }

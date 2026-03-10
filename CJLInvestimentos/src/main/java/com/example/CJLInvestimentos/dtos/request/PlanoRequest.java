@@ -8,6 +8,8 @@ import java.math.BigDecimal;
 public class PlanoRequest {
     @NotBlank(message = "Nome é obrigatório")
     private String nome;
+    /** Tipo do plano: CONSULTOR (default) ou AUTO_GESTAO */
+    private String tipo;
     @NotNull(message = "Máximo de usuários é obrigatório")
     @Min(value = 1, message = "Mínimo de 1 usuário")
     private Integer maxUsuarios;

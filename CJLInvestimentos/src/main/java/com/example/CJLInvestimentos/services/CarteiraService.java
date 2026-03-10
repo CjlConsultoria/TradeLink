@@ -10,15 +10,18 @@ import com.example.CJLInvestimentos.entities.User;
 import com.example.CJLInvestimentos.entities.enums.Role;
 import com.example.CJLInvestimentos.exceptions.BusinessException;
 import com.example.CJLInvestimentos.exceptions.ResourceNotFoundException;
+import com.example.CJLInvestimentos.repositories.AlocacaoAlvoRepository;
 import com.example.CJLInvestimentos.repositories.CarteiraClienteRepository;
 import com.example.CJLInvestimentos.repositories.CarteiraRepository;
 import com.example.CJLInvestimentos.repositories.OperacaoClienteRepository;
 import com.example.CJLInvestimentos.repositories.RecomendacaoRepository;
 import com.example.CJLInvestimentos.repositories.RecomendacaoResolvidaClienteRepository;
+import com.example.CJLInvestimentos.repositories.SnapshotPortfolioRepository;
 import com.example.CJLInvestimentos.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -33,6 +36,8 @@ public class CarteiraService {
     private final RecomendacaoResolvidaClienteRepository resolvidaClienteRepository;
     private final OperacaoClienteRepository operacaoClienteRepository;
     private final UserRepository userRepository;
+    private final AlocacaoAlvoRepository alocacaoAlvoRepository;
+    private final SnapshotPortfolioRepository snapshotPortfolioRepository;
 
     public CarteiraResponse criar(CarteiraRequest request, User consultor) {
         Carteira carteira = carteiraRepository.save(
@@ -60,7 +65,7 @@ public class CarteiraService {
         carteiraRepository.save(carteira);
     }
 
-    /** Exclui permanentemente a carteira. Só permite se não houver cliente associado. */
+    @Transactional
     public void excluir(Long id, User consultor) {
         Carteira carteira = getCarteiraDoConsultor(id, consultor);
         long totalClientes = carteiraClienteRepository.countByCarteiraId(id);
@@ -73,6 +78,8 @@ public class CarteiraService {
             operacaoClienteRepository.deleteByRecomendacaoId(rec.getId());
         }
         recomendacaoRepository.deleteAll(recomendacoes);
+        alocacaoAlvoRepository.deleteByCarteiraId(id);
+        snapshotPortfolioRepository.deleteByCarteiraId(id);
         carteiraRepository.delete(carteira);
     }
 
@@ -180,6 +187,10 @@ public class CarteiraService {
                 .createdAt(carteira.getCreatedAt())
                 .totalClientes(totalClientes)
                 .totalRecomendacoes(totalRecomendacoes)
+                .margemErro(carteira.getMargemErro())
+                .moedaReferenciaRebalance(carteira.getMoedaReferenciaRebalance())
+                .rebalanceAtivo(carteira.getRebalanceAtivo())
+                .temAlocacoes(alocacaoAlvoRepository.existsByCarteiraId(carteira.getId()))
                 .build();
     }
 }

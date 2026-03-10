@@ -1,8 +1,11 @@
 package com.example.CJLInvestimentos.services;
 
+import com.example.CJLInvestimentos.dtos.request.PreviewPercentualRequest;
 import com.example.CJLInvestimentos.dtos.request.RecomendacaoRequest;
+import com.example.CJLInvestimentos.dtos.response.PreviewPercentualResponse;
 import com.example.CJLInvestimentos.dtos.response.RecomendacaoResponse;
 import com.example.CJLInvestimentos.entities.Carteira;
+import com.example.CJLInvestimentos.entities.CarteiraCliente;
 import com.example.CJLInvestimentos.entities.Cotacao;
 import com.example.CJLInvestimentos.entities.Recomendacao;
 import com.example.CJLInvestimentos.entities.User;
@@ -24,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -41,10 +45,12 @@ public class RecomendacaoService {
     private final OperacaoClienteRepository operacaoClienteRepository;
     private final RecomendacaoResolvidaClienteRepository resolvidaClienteRepository;
     private final NotificationAsyncRunner notificationAsyncRunner;
+    private final PortfolioService portfolioService;
 
     public RecomendacaoResponse criar(Long carteiraId, RecomendacaoRequest request, User consultor) {
         Carteira carteira = getCarteiraDoConsultor(carteiraId, consultor);
 
+        boolean modoPerc = Boolean.TRUE.equals(request.getModoPercentual());
         Recomendacao recomendacao = recomendacaoRepository.save(
                 Recomendacao.builder()
                         .carteira(carteira)
@@ -54,7 +60,9 @@ public class RecomendacaoService {
                         .precoEntrada(request.getPrecoEntrada())
                         .precoAlvo(request.getPrecoAlvo())
                         .stopLoss(request.getStopLoss())
-                        .quantidade(request.getQuantidade())
+                        .quantidade(modoPerc ? null : request.getQuantidade())
+                        .percentual(modoPerc ? request.getPercentual() : null)
+                        .modoPercentual(modoPerc)
                         .observacao(request.getObservacao())
                         .build()
         );
@@ -69,13 +77,16 @@ public class RecomendacaoService {
 
         getCarteiraDoConsultor(recomendacao.getCarteira().getId(), consultor);
 
+        boolean modoPerc = Boolean.TRUE.equals(request.getModoPercentual());
         recomendacao.setTipo(request.getTipo());
         recomendacao.setMoeda(request.getMoeda().toUpperCase());
         recomendacao.setParMoeda(request.getParMoeda().toUpperCase());
         recomendacao.setPrecoEntrada(request.getPrecoEntrada());
         recomendacao.setPrecoAlvo(request.getPrecoAlvo());
         recomendacao.setStopLoss(request.getStopLoss());
-        recomendacao.setQuantidade(request.getQuantidade());
+        recomendacao.setQuantidade(modoPerc ? null : request.getQuantidade());
+        recomendacao.setPercentual(modoPerc ? request.getPercentual() : null);
+        recomendacao.setModoPercentual(modoPerc);
         recomendacao.setObservacao(request.getObservacao());
         recomendacaoRepository.save(recomendacao);
 
@@ -205,6 +216,44 @@ public class RecomendacaoService {
         return toResponse(rec, cliente.getId());
     }
 
+    public PreviewPercentualResponse previewPercentual(PreviewPercentualRequest request, User consultor) {
+        Carteira carteira = getCarteiraDoConsultor(request.getCarteiraId(), consultor);
+        String moeda = request.getMoeda().toUpperCase();
+        String parMoeda = request.getParMoeda().toUpperCase();
+        BigDecimal percentual = request.getPercentual();
+
+        BigDecimal precoAtual = cotacaoRepository
+                .findTopByMoedaAndParMoedaOrderByDataHoraDesc(moeda, parMoeda)
+                .map(Cotacao::getPrecoCompra)
+                .orElse(null);
+
+        List<CarteiraCliente> clientes = carteiraClienteRepository.findByCarteiraIdWithCliente(request.getCarteiraId());
+
+        List<PreviewPercentualResponse.ClientePreview> previews = new ArrayList<>();
+        for (CarteiraCliente cc : clientes) {
+            User cliente = cc.getCliente();
+            BigDecimal qtdAtivo = portfolioService.getQuantidadeAtivo(cliente.getId(), moeda);
+            BigDecimal qtdCalculada = qtdAtivo.multiply(percentual).divide(BigDecimal.valueOf(100), 8, RoundingMode.HALF_UP);
+            BigDecimal valorEstimado = (precoAtual != null) ? qtdCalculada.multiply(precoAtual).setScale(2, RoundingMode.HALF_UP) : null;
+
+            previews.add(PreviewPercentualResponse.ClientePreview.builder()
+                    .clienteId(cliente.getId())
+                    .clienteNome(cliente.getNome())
+                    .quantidadeAtivo(qtdAtivo)
+                    .quantidadeCalculada(qtdCalculada)
+                    .precoAtual(precoAtual)
+                    .valorEstimado(valorEstimado)
+                    .build());
+        }
+
+        return PreviewPercentualResponse.builder()
+                .moeda(moeda)
+                .parMoeda(parMoeda)
+                .percentual(percentual)
+                .clientes(previews)
+                .build();
+    }
+
     private RecomendacaoResponse toResponse(Recomendacao r) {
         return toResponse(r, null);
     }
@@ -225,6 +274,16 @@ public class RecomendacaoService {
             resolvidoEm = opt.map(RecomendacaoResolvidaCliente::getResolvidoEm).orElse(null);
         }
 
+        BigDecimal quantidadeCalculadaCliente = null;
+        BigDecimal valorEstimadoCliente = null;
+        if (clienteId != null && Boolean.TRUE.equals(r.getModoPercentual()) && r.getPercentual() != null) {
+            BigDecimal qtdAtivo = portfolioService.getQuantidadeAtivo(clienteId, r.getMoeda());
+            quantidadeCalculadaCliente = qtdAtivo.multiply(r.getPercentual()).divide(BigDecimal.valueOf(100), 8, RoundingMode.HALF_UP);
+            if (cotacaoAtual != null) {
+                valorEstimadoCliente = quantidadeCalculadaCliente.multiply(cotacaoAtual).setScale(2, RoundingMode.HALF_UP);
+            }
+        }
+
         return RecomendacaoResponse.builder()
                 .id(r.getId())
                 .carteiraId(r.getCarteira().getId())
@@ -236,6 +295,10 @@ public class RecomendacaoService {
                 .precoAlvo(r.getPrecoAlvo())
                 .stopLoss(r.getStopLoss())
                 .quantidade(r.getQuantidade())
+                .percentual(r.getPercentual())
+                .modoPercentual(r.getModoPercentual())
+                .quantidadeCalculadaCliente(quantidadeCalculadaCliente)
+                .valorEstimadoCliente(valorEstimadoCliente)
                 .status(r.getStatus())
                 .observacao(r.getObservacao())
                 .cotacaoAtual(cotacaoAtual)

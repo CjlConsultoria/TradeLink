@@ -16,6 +16,19 @@
       </router-link>
     </div>
     <CotacoesDashboardSection titulo="Cotações em tempo real" :show-refresh="true" />
+
+    <!-- Saude dos Portfolios -->
+    <div class="card p-6 mb-8">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="section-title">Saude dos Portfolios</h3>
+        <router-link to="/consultor/rebalanceamento"
+          class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">
+          Painel de Rebalanceamento
+        </router-link>
+      </div>
+      <SaudeClientesGrid />
+    </div>
+
     <div class="card p-6">
       <div class="flex items-center justify-between mb-4">
         <h3 class="section-title">Minhas Carteiras</h3>
@@ -49,6 +62,7 @@ import { useCotacaoStore } from '../../stores/cotacao'
 import carteiraApi from '../../api/carteiraApi'
 import userApi from '../../api/userApi'
 import CotacoesDashboardSection from '../../components/cotacao/CotacoesDashboardSection.vue'
+import SaudeClientesGrid from '../../components/rebalanceamento/SaudeClientesGrid.vue'
 
 const cotacaoStore = useCotacaoStore()
 const carteiras = ref([])

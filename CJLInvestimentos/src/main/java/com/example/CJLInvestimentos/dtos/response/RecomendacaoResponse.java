@@ -25,6 +25,10 @@ public class RecomendacaoResponse {
     private BigDecimal precoAlvo;
     private BigDecimal stopLoss;
     private BigDecimal quantidade;
+    private BigDecimal percentual;
+    private Boolean modoPercentual;
+    private BigDecimal quantidadeCalculadaCliente;
+    private BigDecimal valorEstimadoCliente;
     private StatusRecomendacao status;
     private String observacao;
     private BigDecimal cotacaoAtual;

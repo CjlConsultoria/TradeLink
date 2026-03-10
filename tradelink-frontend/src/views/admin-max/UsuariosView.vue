@@ -99,7 +99,7 @@
               </select>
             </div>
             <div v-else>
-              <input v-model="modal.empresaId" type="hidden" :value="null" />
+              <input v-model="modal.empresaId" type="hidden" />
             </div>
             <div class="flex items-center gap-2">
               <input v-model="modal.ativo" type="checkbox" id="modal-ativo" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
@@ -151,10 +151,12 @@ import { ref, computed, onMounted } from 'vue'
 import userApi from '../../api/userApi'
 import empresaApi from '../../api/empresaApi'
 import { useToast } from '../../composables/useToast'
+import { useConfirm } from '../../composables/useConfirm'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import ToggleSwitch from '../../components/common/ToggleSwitch.vue'
 
 const toast = useToast()
+const { confirm } = useConfirm()
 const loadingAtivo = ref({})
 const loading = ref(true)
 const usuarios = ref([])
@@ -253,7 +255,10 @@ async function salvarEdicao() {
 }
 
 async function onAtivoChange(u, ativo) {
-  if (!ativo && !confirm(`Inativar o usuário ${u.nome}? Ele não poderá mais acessar o sistema.`)) return
+  if (!ativo) {
+    const ok = await confirm({ title: 'Inativar usuario', message: `Inativar o usuario ${u.nome}? Ele nao podera mais acessar o sistema.`, confirmText: 'Inativar', variant: 'warning' })
+    if (!ok) return
+  }
   loadingAtivo.value[u.id] = true
   try {
     if (ativo) {

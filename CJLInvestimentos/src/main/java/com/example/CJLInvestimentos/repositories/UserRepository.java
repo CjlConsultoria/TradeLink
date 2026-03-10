@@ -18,4 +18,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     long countByEmpresaId(Long empresaId);
     long countByEmpresaIdAndRole(Long empresaId, Role role);
     long countByRole(Role role);
+
+    Optional<User> findByTokenConvite(String tokenConvite);
+    Optional<User> findByCpf(String cpf);
 }

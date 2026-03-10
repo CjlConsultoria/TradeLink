@@ -58,3 +58,11 @@ export const TIPO_COLORS = {
   COMPRA: 'bg-emerald-100 text-emerald-800',
   VENDA: 'bg-rose-100 text-rose-800'
 }
+
+export const CATEGORIAS_ATIVO = [
+  { value: 'CRYPTO', label: 'Criptomoeda' },
+  { value: 'FOREX', label: 'Moeda / Forex' },
+  { value: 'ACAO', label: 'Acao' },
+  { value: 'COMMODITIES', label: 'Commodity' },
+  { value: 'OUTRO', label: 'Outro' }
+]

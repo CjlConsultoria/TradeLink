@@ -2,8 +2,11 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
 import LoginView from '../views/auth/LoginView.vue'
+import CadastroView from '../views/auth/CadastroView.vue'
 import AcessoBloqueadoView from '../views/auth/AcessoBloqueadoView.vue'
 import AppLayout from '../components/layout/AppLayout.vue'
+import FaqView from '../views/public/FaqView.vue'
+import PrecosView from '../views/public/PrecosView.vue'
 
 import DashboardAdminMax from '../views/admin-max/DashboardAdminMax.vue'
 import EmpresasView from '../views/admin-max/EmpresasView.vue'
@@ -17,6 +20,7 @@ import CarteiraDetailView from '../views/consultor/CarteiraDetailView.vue'
 import ClientesView from '../views/consultor/ClientesView.vue'
 import CotacoesView from '../views/consultor/CotacoesView.vue'
 import RelatoriosView from '../views/consultor/RelatoriosView.vue'
+import PainelRebalanceamentoView from '../views/consultor/PainelRebalanceamentoView.vue'
 
 import DashboardCliente from '../views/cliente/DashboardCliente.vue'
 import CarteirasClienteView from '../views/cliente/CarteirasClienteView.vue'
@@ -28,6 +32,9 @@ import CotacaoDetailView from '../views/CotacaoDetailView.vue'
 
 const routes = [
   { path: '/login', name: 'Login', component: LoginView, meta: { public: true } },
+  { path: '/cadastro', name: 'Cadastro', component: CadastroView, meta: { public: true } },
+  { path: '/faq', name: 'FaqPublica', component: FaqView, meta: { public: true } },
+  { path: '/precos', name: 'Precos', component: PrecosView, meta: { public: true } },
   { path: '/acesso-bloqueado', name: 'AcessoBloqueado', component: AcessoBloqueadoView, meta: { requiresAuth: true } },
   { path: '/', redirect: '/login' },
   {
@@ -40,6 +47,8 @@ const routes = [
       { path: 'empresas/:id', name: 'EmpresaDetail', component: EmpresaDetailView },
       { path: 'usuarios', name: 'UsuariosAdminMax', component: UsuariosView },
       { path: 'planos', name: 'Planos', component: PlanosView },
+      { path: 'faq', name: 'FaqAdmin', component: () => import('../views/admin-max/FaqAdminView.vue') },
+      { path: 'chat', name: 'ChatAdmin', component: () => import('../views/admin-max/ChatAdminView.vue') },
       { path: 'configuracoes', name: 'ConfiguracoesAdminMax', component: ConfiguracoesNotificacaoView }
     ]
   },
@@ -51,6 +60,7 @@ const routes = [
       { path: '', name: 'ConsultorDashboard', component: DashboardConsultor },
       { path: 'carteiras', name: 'Carteiras', component: CarteirasView },
       { path: 'carteiras/:id', name: 'CarteiraDetail', component: CarteiraDetailView },
+      { path: 'rebalanceamento', name: 'PainelRebalanceamento', component: PainelRebalanceamentoView },
       { path: 'clientes', name: 'Clientes', component: ClientesView },
       { path: 'cotacoes', name: 'CotacoesConsultor', component: CotacoesView },
       { path: 'cotacoes/:moeda/:parMoeda', name: 'CotacaoDetailConsultor', component: CotacaoDetailView },
@@ -65,6 +75,7 @@ const routes = [
     meta: { requiresAuth: true, role: 'Cliente' },
     children: [
       { path: '', name: 'ClienteDashboard', component: DashboardCliente },
+      { path: 'portfolio', name: 'PortfolioCliente', component: () => import('../views/cliente/PortfolioView.vue') },
       { path: 'carteiras', name: 'CarteirasCliente', component: CarteirasClienteView },
       { path: 'carteiras/:id', name: 'CarteiraClienteDetail', component: CarteiraClienteDetailView },
       { path: 'cotacoes', name: 'CotacoesCliente', component: CotacoesClienteView },
@@ -73,6 +84,18 @@ const routes = [
       { path: 'faturas', name: 'FaturasCliente', component: () => import('../views/cliente/FaturasClienteView.vue') },
       { path: 'configuracoes', name: 'ConfiguracoesCliente', component: ConfiguracoesNotificacaoView }
     ]
+  },
+  {
+    path: '/cliente/pos-exclusao',
+    name: 'PosExclusao',
+    component: () => import('../views/cliente/PosExclusaoView.vue'),
+    meta: { requiresAuth: true, role: 'Cliente' }
+  },
+  {
+    path: '/ativar-conta/:token',
+    name: 'AtivarConta',
+    component: () => import('../views/auth/AtivarContaView.vue'),
+    meta: { public: true }
   },
   { path: '/:pathMatch(.*)*', redirect: '/login' }
 ]
@@ -87,6 +110,19 @@ router.beforeEach((to, from, next) => {
   if (to.meta.public) return next()
   if (to.meta.requiresAuth && !authStore.isAuthenticated) return next('/login')
   if (to.name === 'AcessoBloqueado') return next()
+  if (to.name === 'PosExclusao') return next()
+  // Redirecionar cliente excluído sem auto-gestão para tela pós-exclusão
+  if (authStore.user?.role === 'Cliente' && authStore.user?.clienteExcluido && !authStore.user?.autoGestaoAtiva) {
+    if (to.name !== 'PosExclusao') return next('/cliente/pos-exclusao')
+  }
+  // Consultor com trial expirado e sem plano → faturas para escolher plano
+  if (authStore.user?.role === 'Admin' && authStore.user?.precisaEscolherPlano) {
+    if (to.name !== 'FaturasConsultor' && to.name !== 'AcessoBloqueado') return next('/consultor/faturas')
+  }
+  // Cliente auto-cadastro com trial expirado e sem plano → pós-exclusão
+  if (authStore.user?.role === 'Cliente' && authStore.user?.autoCadastro && authStore.user?.precisaEscolherPlano) {
+    if (to.name !== 'PosExclusao') return next('/cliente/pos-exclusao')
+  }
   if (to.meta.role && authStore.user?.role !== to.meta.role) return next(authStore.dashboardRoute)
   next()
 })

@@ -299,6 +299,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useToast } from '../../composables/useToast'
+import { useConfirm } from '../../composables/useConfirm'
 import empresaApi from '../../api/empresaApi'
 import planoApi from '../../api/planoApi'
 import faturaApi from '../../api/faturaApi'
@@ -309,6 +310,7 @@ import EmptyState from '../../components/common/EmptyState.vue'
 import ToggleSwitch from '../../components/common/ToggleSwitch.vue'
 
 const toast = useToast()
+const { confirm } = useConfirm()
 
 const route = useRoute()
 const empresa = ref(null)
@@ -389,8 +391,15 @@ async function salvarNotificacoes() {
 
 async function onBloqueioChange(bloqueado) {
   if (!empresa.value) return
-  const msg = bloqueado ? 'Bloquear acesso à plataforma para todos os consultores e clientes desta empresa?' : 'Desbloquear o acesso?'
-  if (!confirm(msg)) return
+  const ok = await confirm({
+    title: bloqueado ? 'Bloquear acesso' : 'Desbloquear acesso',
+    message: bloqueado
+      ? 'Bloquear acesso à plataforma para todos os consultores e clientes desta empresa?'
+      : 'Desbloquear o acesso à plataforma para esta empresa?',
+    confirmText: bloqueado ? 'Bloquear' : 'Desbloquear',
+    variant: bloqueado ? 'danger' : 'info'
+  })
+  if (!ok) return
   loadingBloqueio.value = true
   try {
     await empresaApi.bloquearAcesso(route.params.id, bloqueado)

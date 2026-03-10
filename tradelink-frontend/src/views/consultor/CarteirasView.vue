@@ -45,7 +45,11 @@ import { useCarteiraStore } from '../../stores/carteira'
 import carteiraApi from '../../api/carteiraApi'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import EmptyState from '../../components/common/EmptyState.vue'
+import { useToast } from '../../composables/useToast'
+import { useConfirm } from '../../composables/useConfirm'
 
+const toast = useToast()
+const { confirm } = useConfirm()
 const carteiraStore = useCarteiraStore()
 const carteiras = computed(() => carteiraStore.carteiras)
 const loading = computed(() => carteiraStore.loading)
@@ -67,12 +71,18 @@ async function salvar() {
 }
 
 async function excluirCarteira(c) {
-  if (!confirm(`Excluir a carteira "${c.nome}"? Esta ação não pode ser desfeita.`)) return
+  let msg = `Excluir a carteira "${c.nome}"? Esta acao nao pode ser desfeita.`
+  if (c.totalRecomendacoes > 0) {
+    msg += `\n\nAtencao: ${c.totalRecomendacoes} recomendacao(oes) serao perdidas permanentemente.`
+  }
+  const ok = await confirm({ title: 'Excluir carteira', message: msg, confirmText: 'Excluir', variant: c.totalRecomendacoes > 0 ? 'warning' : 'danger' })
+  if (!ok) return
   try {
     await carteiraApi.excluir(c.id)
+    toast.success('Carteira excluida com sucesso.')
     carteiraStore.listar()
   } catch (e) {
-    alert(e.response?.data?.erro || e.response?.data?.mensagem || 'Erro ao excluir.')
+    toast.error(e.response?.data?.erro || e.response?.data?.mensagem || 'Erro ao excluir.')
   }
 }
 onMounted(() => carteiraStore.listar())

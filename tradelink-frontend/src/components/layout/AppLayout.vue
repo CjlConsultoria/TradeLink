@@ -7,6 +7,7 @@
         <router-view />
       </main>
     </div>
+    <FloatingChatButton v-if="showChatButton" />
     <FloatingActionButton v-if="showFab" @click="showRecomModal = true" />
     <RecomendacaoModal
       ref="recomModalRef"
@@ -27,6 +28,7 @@ import { useToast } from '../../composables/useToast'
 import AppHeader from './AppHeader.vue'
 import AppSidebar from './AppSidebar.vue'
 import FloatingActionButton from '../common/FloatingActionButton.vue'
+import FloatingChatButton from '../chat/FloatingChatButton.vue'
 import RecomendacaoModal from '../recomendacao/RecomendacaoModal.vue'
 import carteiraApi from '../../api/carteiraApi'
 import recomendacaoApi from '../../api/recomendacaoApi'
@@ -39,6 +41,10 @@ const fabCarteiras = ref([])
 const recomModalRef = ref(null)
 
 const showFab = computed(() => useAuthStore().user?.role === 'Admin')
+const showChatButton = computed(() => {
+  const role = useAuthStore().user?.role
+  return role === 'Admin' || role === 'Cliente'
+})
 
 useKeyboardShortcuts({ onNewRecommendation: () => { showRecomModal.value = true } })
 

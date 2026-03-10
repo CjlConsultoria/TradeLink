@@ -102,6 +102,18 @@ public class Empresa {
     @Builder.Default
     private Boolean acessoBloqueadoPorAdmin = false;
 
+    // --- Campos de auto-cadastro / trial ---
+
+    @Column(name = "trial_inicio")
+    private LocalDateTime trialInicio;
+
+    @Column(name = "trial_fim")
+    private LocalDateTime trialFim;
+
+    @Column(name = "auto_cadastro", nullable = false)
+    @Builder.Default
+    private Boolean autoCadastro = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

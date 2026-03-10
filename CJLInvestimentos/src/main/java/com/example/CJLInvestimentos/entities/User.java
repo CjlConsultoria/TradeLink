@@ -9,6 +9,8 @@ import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -50,6 +52,91 @@ public class User implements UserDetails {
     @Column(nullable = false)
     @Builder.Default
     private Boolean ativo = true;
+
+    // --- Campos do sistema de convite / ativação de conta ---
+
+    @Column(length = 14, unique = true)
+    private String cpf;
+
+    @Column(length = 30)
+    private String whatsapp;
+
+    @Column(length = 10)
+    private String cep;
+
+    @Column(length = 200)
+    private String logradouro;
+
+    @Column(length = 20)
+    private String numero;
+
+    @Column(length = 100)
+    private String complemento;
+
+    @Column(length = 100)
+    private String bairro;
+
+    @Column(length = 100)
+    private String cidade;
+
+    @Column(length = 2)
+    private String estado;
+
+    @Column(name = "termo_aceito")
+    private Boolean termoAceito;
+
+    @Column(name = "termo_aceito_em")
+    private LocalDateTime termoAceitoEm;
+
+    @Column(name = "token_convite", length = 128, unique = true)
+    private String tokenConvite;
+
+    @Column(name = "token_convite_expiracao")
+    private LocalDateTime tokenConviteExpiracao;
+
+    // --- Campos do sistema de exclusão / auto-gestão ---
+
+    @Column(name = "auto_gestao", nullable = false)
+    @Builder.Default
+    private Boolean autoGestao = false;
+
+    @Column(name = "relatorio_compl_baixado", nullable = false)
+    @Builder.Default
+    private Boolean relatorioComplBaixado = false;
+
+    @Column(name = "relatorio_compl_baixado_em")
+    private LocalDateTime relatorioComplBaixadoEm;
+
+    @Column(name = "data_exclusao")
+    private LocalDateTime dataExclusao;
+
+    /** Stripe customer ID para cobrança individual (quando empresa_id é null). */
+    @Column(name = "stripe_customer_id", length = 128)
+    private String stripeCustomerId;
+
+    /** Fim do período da assinatura auto-gestão. */
+    @Column(name = "current_period_end")
+    private Instant currentPeriodEnd;
+
+    /** Status da subscription individual: NONE, ACTIVE, EXPIRED, TRIAL. */
+    @Column(name = "subscription_status", length = 20)
+    @Builder.Default
+    private String subscriptionStatus = "NONE";
+
+    // --- Campos do sistema de auto-cadastro / trial ---
+
+    @Column(name = "trial_inicio")
+    private LocalDateTime trialInicio;
+
+    @Column(name = "trial_fim")
+    private LocalDateTime trialFim;
+
+    @Column(name = "auto_cadastro", nullable = false)
+    @Builder.Default
+    private Boolean autoCadastro = false;
+
+    @Column(length = 18)
+    private String cnpj;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
