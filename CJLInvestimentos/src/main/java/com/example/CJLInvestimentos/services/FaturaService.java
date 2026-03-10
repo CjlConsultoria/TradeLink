@@ -47,6 +47,7 @@ public class FaturaService {
      */
     public boolean acessoPermitido(Empresa empresa) {
         if (empresa == null) return true;
+        if (!Boolean.TRUE.equals(empresa.getAtivo())) return false; // empresa inativa
         if (Boolean.TRUE.equals(empresa.getAcessoBloqueadoPorAdmin())) return false;
         if (empresa.getCurrentPeriodEnd() == null) return true; // nova empresa ou sem assinatura: libera uso
         Instant limite = empresa.getCurrentPeriodEnd().plus(DIAS_TOLERANCIA_VENCIMENTO, ChronoUnit.DAYS);
@@ -75,8 +76,13 @@ public class FaturaService {
         User user = userRepository.findByIdWithEmpresa(usuarioId).orElse(null);
         if (user == null || user.getEmpresa() == null) return null;
         Empresa empresa = user.getEmpresa();
+        if (!Boolean.TRUE.equals(empresa.getAtivo())) {
+            if (user.getRole() == com.example.CJLInvestimentos.entities.enums.Role.Cliente) {
+                return "Empresa inativa. Entre em contato com sua empresa (consultor).";
+            }
+            return "Empresa inativa. Entre em contato com o responsável pelo sistema.";
+        }
         if (Boolean.TRUE.equals(empresa.getAcessoBloqueadoPorAdmin())) {
-            // Consultor: contato com responsável do sistema. Cliente: contato com a empresa (consultor).
             if (user.getRole() == com.example.CJLInvestimentos.entities.enums.Role.Cliente) {
                 return "Acesso bloqueado. Entre em contato com sua empresa (consultor).";
             }
@@ -95,7 +101,8 @@ public class FaturaService {
     public boolean isBloqueadoPorAdmin(Long usuarioId) {
         User user = userRepository.findByIdWithEmpresa(usuarioId).orElse(null);
         if (user == null || user.getEmpresa() == null) return false;
-        return Boolean.TRUE.equals(user.getEmpresa().getAcessoBloqueadoPorAdmin());
+        Empresa e = user.getEmpresa();
+        return Boolean.TRUE.equals(e.getAcessoBloqueadoPorAdmin()) || !Boolean.TRUE.equals(e.getAtivo());
     }
 
     /**

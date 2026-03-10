@@ -115,8 +115,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     if (!faturaService.acessoPermitidoPorUsuarioId(user.getId())) {
                         boolean allowedPath;
                         if (faturaService.isBloqueadoPorAdmin(user.getId())) {
-                            // Bloqueio por admin: só pode acessar /api/me para carregar dados e exibir a mensagem
-                            allowedPath = path.startsWith("/api/me");
+                            // Bloqueio por admin/inativação: permite /api/me e chat de suporte
+                            allowedPath = path.startsWith("/api/me")
+                                    || path.startsWith("/api/consultor/chat")
+                                    || path.startsWith("/api/cliente/chat");
                         } else {
                             // Bloqueio por pagamento: permite faturas e checkout para regularizar
                             allowedPath = false;

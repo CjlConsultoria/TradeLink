@@ -7,7 +7,8 @@
         </svg>
       </div>
       <h1 class="text-xl font-semibold text-gray-900 mb-2">Acesso bloqueado</h1>
-      <p class="text-gray-600 mb-8">{{ motivo || 'Seu acesso à plataforma está bloqueado.' }}</p>
+      <p class="text-gray-600 mb-6">{{ motivo || 'Seu acesso à plataforma está bloqueado.' }}</p>
+      <p class="text-sm text-gray-400 mb-8">Precisa de ajuda? Use o chat de suporte no canto inferior direito.</p>
       <button
         type="button"
         @click="sair"
@@ -16,6 +17,9 @@
         Sair
       </button>
     </div>
+
+    <!-- Chat de suporte disponível mesmo com acesso bloqueado -->
+    <FloatingChatButton v-if="authStore.isAuthenticated" />
   </div>
 </template>
 
@@ -23,6 +27,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
+import FloatingChatButton from '../../components/chat/FloatingChatButton.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()

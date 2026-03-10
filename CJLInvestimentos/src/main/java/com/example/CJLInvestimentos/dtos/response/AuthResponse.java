@@ -17,6 +17,8 @@ public class AuthResponse {
     private Long userId;
     private String nome;
     private Boolean bloqueado;
+    /** true quando bloqueio é por decisão do admin ou empresa inativa (não por pagamento). */
+    private Boolean bloqueadoPorAdmin;
     private String motivoBloqueio;
     /** true quando cliente foi excluído pelo consultor (empresa_id null, ativo=true). */
     private Boolean clienteExcluido;

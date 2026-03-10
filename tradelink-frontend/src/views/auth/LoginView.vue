@@ -98,6 +98,15 @@ async function handleLogin() {
     const data = await authStore.login(email.value, senha.value)
     if (data.bloqueado === true) {
       const role = data.role || authStore.user?.role
+      // Bloqueio por admin ou empresa inativa: todos vão para tela de bloqueio
+      if (data.bloqueadoPorAdmin === true) {
+        try {
+          sessionStorage.setItem('motivoBloqueio', data.motivoBloqueio || 'Acesso bloqueado. Entre em contato com o responsável pelo sistema.')
+        } catch (_) {}
+        router.push('/acesso-bloqueado')
+        return
+      }
+      // Bloqueio por pagamento: consultor vai para faturas, cliente para tela de bloqueio
       if (role === 'Admin') {
         router.push('/consultor/faturas')
         return

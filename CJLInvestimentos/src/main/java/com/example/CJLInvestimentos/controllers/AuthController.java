@@ -116,10 +116,15 @@ public class AuthController {
                 .empresaId(user.getEmpresa() != null ? user.getEmpresa().getId() : null)
                 .autoCadastro(Boolean.TRUE.equals(user.getAutoCadastro()));
 
-        // Bloqueio por pagamento (empresa)
+        // Bloqueio por admin, inativação ou pagamento (empresa)
         if (user.getEmpresa() != null && !faturaService.acessoPermitidoPorUsuarioId(user.getId())) {
-            // Verificar se é trial ativo da empresa
-            if (trialService.isTrialAtivoEmpresa(user.getEmpresa())) {
+            boolean porAdmin = faturaService.isBloqueadoPorAdmin(user.getId());
+            if (porAdmin) {
+                // Bloqueio por admin ou empresa inativa: acesso totalmente restrito
+                response.bloqueado(true)
+                        .bloqueadoPorAdmin(true)
+                        .motivoBloqueio(faturaService.getMotivoBloqueioPorUsuarioId(user.getId()));
+            } else if (trialService.isTrialAtivoEmpresa(user.getEmpresa())) {
                 response.trialAtivo(true);
                 response.trialFim(user.getEmpresa().getTrialFim() != null ? user.getEmpresa().getTrialFim().toString() : null);
             } else if (trialService.isTrialExpiradoEmpresa(user.getEmpresa())) {
