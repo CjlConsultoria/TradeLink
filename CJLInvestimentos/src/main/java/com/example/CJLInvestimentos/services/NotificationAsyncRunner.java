@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 public class NotificationAsyncRunner {
 
     private final NotificationService notificationService;
+    private final EmailApresentacaoService emailApresentacaoService;
     private final RecomendacaoRepository recomendacaoRepository;
     private final CarteiraClienteRepository carteiraClienteRepository;
     private final CarteiraRepository carteiraRepository;
@@ -200,6 +201,16 @@ public class NotificationAsyncRunner {
                     rec.getCarteira().getNome(), tipoOp, ativo, quantidade, precoExecutado);
         } catch (Exception e) {
             log.warn("Falha ao notificar operacao registrada em background: {}", e.getMessage());
+        }
+    }
+
+    /** Envia email de boas-vindas com apresentação automaticamente após ativação de conta. */
+    @Async
+    public void enviarEmailBoasVindasApresentacaoAsync(Long userId) {
+        try {
+            emailApresentacaoService.enviarBoasVindas(userId);
+        } catch (Exception e) {
+            log.warn("Falha ao enviar email de boas-vindas com apresentação em background (userId={}): {}", userId, e.getMessage());
         }
     }
 

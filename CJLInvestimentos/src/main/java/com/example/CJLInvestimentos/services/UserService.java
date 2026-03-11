@@ -74,6 +74,7 @@ public class UserService {
                         .build()
         );
         notificationAsyncRunner.enviarEmailNovoUsuarioAsync(user.getEmail(), user.getNome(), user.getRole());
+        notificationAsyncRunner.enviarEmailBoasVindasApresentacaoAsync(user.getId());
         return toResponse(user);
     }
 
@@ -439,6 +440,8 @@ public class UserService {
 
         // Email de boas-vindas
         notificationAsyncRunner.enviarEmailNovoUsuarioAsync(user.getEmail(), user.getNome(), user.getRole());
+        // Email de apresentação automático (boas-vindas com guia da plataforma)
+        notificationAsyncRunner.enviarEmailBoasVindasApresentacaoAsync(user.getId());
 
         // Auto-login: gera JWT
         String jwt = jwtService.generateToken(user);

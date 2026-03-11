@@ -8,9 +8,11 @@ import java.util.List;
 
 public interface EmailApresentacaoRepository extends JpaRepository<EmailApresentacao, Long> {
 
-    @Query("SELECT e FROM EmailApresentacao e JOIN FETCH e.user JOIN FETCH e.enviadoPor ORDER BY e.enviadoEm DESC")
+    @Query("SELECT e FROM EmailApresentacao e JOIN FETCH e.user LEFT JOIN FETCH e.enviadoPor ORDER BY e.enviadoEm DESC")
     List<EmailApresentacao> findAllWithUsersOrderByEnviadoEmDesc();
 
-    @Query("SELECT e FROM EmailApresentacao e JOIN FETCH e.user JOIN FETCH e.enviadoPor WHERE e.enviadoPor.id = :enviadoPorId ORDER BY e.enviadoEm DESC")
+    @Query("SELECT e FROM EmailApresentacao e JOIN FETCH e.user LEFT JOIN FETCH e.enviadoPor WHERE e.enviadoPor.id = :enviadoPorId ORDER BY e.enviadoEm DESC")
     List<EmailApresentacao> findByEnviadoPorIdWithUsers(Long enviadoPorId);
+
+    boolean existsByUserIdAndAutomaticoTrue(Long userId);
 }

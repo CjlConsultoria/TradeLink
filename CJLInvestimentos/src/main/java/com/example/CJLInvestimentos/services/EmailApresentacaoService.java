@@ -119,6 +119,65 @@ public class EmailApresentacaoService {
         };
     }
 
+    /**
+     * Envia automaticamente o email de apresentação como boas-vindas.
+     * Chamado após ativação de conta (convite, criação direta, auto-cadastro).
+     * Não envia duplicado se já foi enviado automaticamente para o mesmo user.
+     */
+    public void enviarBoasVindas(Long userId) {
+        // Evitar duplicidade
+        if (emailApresentacaoRepository.existsByUserIdAndAutomaticoTrue(userId)) {
+            log.info("Email de boas-vindas já enviado para userId={}, ignorando", userId);
+            return;
+        }
+
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) return;
+
+        TipoTemplateApresentacao tipo = detectarTipoTemplate(user);
+        String nome = user.getNome() != null ? user.getNome() : user.getEmail();
+        String html;
+
+        switch (tipo) {
+            case CONSULTOR:
+                html = emailTemplateService.buildBoasVindasConsultor(nome, linkPpt, linkHtml);
+                break;
+            case CLIENTE:
+                String consultorNome = "seu consultor";
+                if (user.getEmpresa() != null && user.getEmpresa().getNomeResponsavel() != null) {
+                    consultorNome = user.getEmpresa().getNomeResponsavel();
+                }
+                html = emailTemplateService.buildBoasVindasCliente(nome, consultorNome, linkPpt, linkHtml);
+                break;
+            case CLIENTE_AUTO_GESTAO:
+                html = emailTemplateService.buildBoasVindasClienteAutoGestao(nome, linkPpt, linkHtml);
+                break;
+            default:
+                html = emailTemplateService.buildBoasVindasConsultor(nome, linkPpt, linkHtml);
+        }
+
+        String assunto = "Bem-vindo ao TradeLink! Conheça a plataforma";
+
+        EmailApresentacao registro = EmailApresentacao.builder()
+                .user(user)
+                .enviadoPor(null)
+                .tipoTemplate(tipo)
+                .automatico(true)
+                .build();
+
+        try {
+            notificationService.enviarEmailHtml(user.getEmail(), assunto, html);
+            registro.setStatus("ENVIADO");
+            log.info("Email de boas-vindas automático ({}) enviado para {} (id={})", tipo, user.getEmail(), user.getId());
+        } catch (Exception e) {
+            registro.setStatus("FALHA");
+            registro.setErro(e.getMessage() != null ? e.getMessage().substring(0, Math.min(e.getMessage().length(), 500)) : "Erro desconhecido");
+            log.error("Falha ao enviar email de boas-vindas automático para {}: {}", user.getEmail(), e.getMessage());
+        }
+
+        emailApresentacaoRepository.save(registro);
+    }
+
     public List<EmailApresentacaoResponse> historico() {
         return emailApresentacaoRepository.findAllWithUsersOrderByEnviadoEmDesc()
                 .stream()
@@ -133,7 +192,7 @@ public class EmailApresentacaoService {
                 .emailDestinatario(e.getUser().getEmail())
                 .roleDestinatario(e.getUser().getRole().name())
                 .tipoTemplate(e.getTipoTemplate().name())
-                .nomeEnviadoPor(e.getEnviadoPor().getNome())
+                .nomeEnviadoPor(e.getEnviadoPor() != null ? e.getEnviadoPor().getNome() : "Sistema (automático)")
                 .enviadoEm(e.getEnviadoEm())
                 .status(e.getStatus())
                 .erro(e.getErro())

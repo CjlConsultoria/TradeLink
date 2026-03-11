@@ -82,6 +82,7 @@ public class AutoCadastroService {
         try {
             notificationAsyncRunner.enviarBoasVindasAutoCadastroAsync(
                     user.getEmail(), user.getNome(), "CLIENTE", trialFim);
+            notificationAsyncRunner.enviarEmailBoasVindasApresentacaoAsync(user.getId());
         } catch (Exception e) {
             log.warn("Falha ao enviar email de boas-vindas (auto-cadastro cliente): {}", e.getMessage());
         }
@@ -168,6 +169,7 @@ public class AutoCadastroService {
         try {
             notificationAsyncRunner.enviarBoasVindasAutoCadastroAsync(
                     user.getEmail(), user.getNome(), "CONSULTOR", trialFim);
+            notificationAsyncRunner.enviarEmailBoasVindasApresentacaoAsync(user.getId());
         } catch (Exception e) {
             log.warn("Falha ao enviar email de boas-vindas (auto-cadastro consultor): {}", e.getMessage());
         }

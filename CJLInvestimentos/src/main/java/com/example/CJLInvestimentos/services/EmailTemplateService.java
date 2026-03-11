@@ -966,6 +966,119 @@ public class EmailTemplateService {
             "Conheca o TradeLink: sua plataforma de investimentos auto-gestao", body);
     }
 
+    // ─── Templates de Boas-Vindas Automáticas (pós-ativação) ───
+
+    private String buildBoasVindasBanner() {
+        return """
+            <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="margin:0 0 20px;">
+              <tr>
+                <td style="background:linear-gradient(135deg,#6366f1,#8b5cf6); border-radius:12px; padding:16px 20px; text-align:center;">
+                  <span style="font-size:28px;">&#127881;</span><br>
+                  <span style="color:#ffffff; font-size:18px; font-weight:700;">Bem-vindo ao TradeLink!</span><br>
+                  <span style="color:#e0e7ff; font-size:13px;">Este e um email automatico de boas-vindas enviado apos a ativacao da sua conta.</span>
+                </td>
+              </tr>
+            </table>
+            """;
+    }
+
+    private String buildBoasVindasFooterNote() {
+        return """
+            <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="margin:20px 0 0;">
+              <tr>
+                <td style="background:#f8fafc; border-radius:8px; padding:14px 18px; border:1px solid #e2e8f0;">
+                  <span style="font-size:12px; color:#94a3b8;">&#128172; Este email foi enviado automaticamente pelo TradeLink apos a ativacao da sua conta. Voce nao precisa responde-lo. Se tiver duvidas, utilize o chat de suporte dentro da plataforma.</span>
+                </td>
+              </tr>
+            </table>
+            """;
+    }
+
+    /** Template de BOAS-VINDAS automatico para CONSULTOR. */
+    public String buildBoasVindasConsultor(String nome, String linkPpt, String linkHtml) {
+        String body = buildBoasVindasBanner();
+
+        body += "<h1 style=\"font-size:22px; color:#1e293b; margin:0 0 8px;\">Ola, " + escape(nome) + "! &#128075;</h1>"
+            + "<p style=\"color:#64748b; font-size:15px; margin:0 0 20px;\">Sua conta de consultor foi ativada com sucesso! Preparamos um guia completo para voce conhecer o sistema e migrar suas rotinas da planilha.</p>";
+
+        body += buildSectionHeader("&#128640; Primeiros Passos");
+        body += buildFeatureItem("1&#65039;&#8419;", "Cadastre seus clientes", "Envie convites por email ou cadastre manualmente. Eles recebem acesso automatico.");
+        body += buildFeatureItem("2&#65039;&#8419;", "Crie carteiras", "Monte carteiras modelo e vincule clientes. O sistema calcula saldos e graficos.");
+        body += buildFeatureItem("3&#65039;&#8419;", "Envie recomendacoes", "Use o Kanban para gerenciar suas sugestoes de compra e venda.");
+
+        body += buildSectionHeader("&#9889; Funcionalidades Disponiveis");
+        body += buildFeatureItem("&#128203;", "Kanban de Recomendacoes", "Gerencie sugestoes visualmente com drag-and-drop entre colunas.");
+        body += buildFeatureItem("&#128203;", "Copy Trading", "Replique operacoes em multiplas carteiras simultaneamente.");
+        body += buildFeatureItem("&#9878;&#65039;", "Rebalanceamento", "Monitore desvios de alocacao com badges visuais.");
+        body += buildFeatureItem("&#128276;", "Alertas de Preco", "Receba notificacao quando um ativo atingir o preco desejado.");
+        body += buildFeatureItem("&#127777;&#65039;", "Heat Map e Ferramentas", "Cotacoes em tempo real, comparador, simulador e watchlist.");
+
+        body += buildDownloadButtons(linkPpt, linkHtml);
+
+        body += buildAlertBox("&#128218;",
+            "Baixe a apresentacao completa e o guia interativo para conhecer todas as telas e funcionalidades em detalhes.",
+            "rgba(99,102,241,0.06)", "rgba(99,102,241,0.15)");
+
+        body += buildButton("Acessar o TradeLink", APP_URL + "/consultor");
+
+        body += buildBoasVindasFooterNote();
+
+        return wrapInLayout("Bem-vindo ao TradeLink!",
+            "Sua conta de consultor foi ativada. Conheca a plataforma!", body);
+    }
+
+    /** Template de BOAS-VINDAS automatico para CLIENTE (com consultor). */
+    public String buildBoasVindasCliente(String nome, String consultorNome, String linkPpt, String linkHtml) {
+        String body = buildBoasVindasBanner();
+
+        body += "<h1 style=\"font-size:22px; color:#1e293b; margin:0 0 8px;\">Ola, " + escape(nome) + "! &#128075;</h1>"
+            + "<p style=\"color:#64748b; font-size:15px; margin:0 0 20px;\">Sua conta foi ativada com sucesso! Seu consultor <strong>" + escape(consultorNome) + "</strong> utiliza o TradeLink para gerenciar seus investimentos. Veja o que voce pode acompanhar:</p>";
+
+        body += buildSectionHeader("&#128202; O que voce encontra no TradeLink");
+        body += buildFeatureItem("&#128193;", "Meu Portfolio", "Veja todos os seus ativos, alocacao e valor total investido.");
+        body += buildFeatureItem("&#128203;", "Recomendacoes", "Receba e aceite/recuse sugestoes do seu consultor.");
+        body += buildFeatureItem("&#128200;", "Performance", "Acompanhe rentabilidade acumulada e resultado por ativo.");
+        body += buildFeatureItem("&#127919;", "Metas", "Defina e acompanhe seus objetivos financeiros visualmente.");
+        body += buildFeatureItem("&#128276;", "Alertas e Ferramentas", "Heat Map, comparador, simulador e alertas de preco.");
+
+        body += buildDownloadButtons(linkPpt, linkHtml);
+
+        body += buildButton("Acessar o TradeLink", APP_URL + "/cliente");
+
+        body += buildBoasVindasFooterNote();
+
+        return wrapInLayout("Bem-vindo ao TradeLink!",
+            "Sua conta foi ativada. Acompanhe seus investimentos!", body);
+    }
+
+    /** Template de BOAS-VINDAS automatico para CLIENTE AUTO-GESTAO. */
+    public String buildBoasVindasClienteAutoGestao(String nome, String linkPpt, String linkHtml) {
+        String body = buildBoasVindasBanner();
+
+        body += "<h1 style=\"font-size:22px; color:#1e293b; margin:0 0 8px;\">Ola, " + escape(nome) + "! &#128075;</h1>"
+            + "<p style=\"color:#64748b; font-size:15px; margin:0 0 20px;\">Sua conta de investidor auto-gestao foi ativada! Voce tem acesso completo a todas as ferramentas para gerenciar seus proprios investimentos.</p>";
+
+        body += buildSectionHeader("&#128640; Comece Agora");
+        body += buildFeatureItem("1&#65039;&#8419;", "Monte seu portfolio", "Adicione seus ativos e acompanhe a evolucao em tempo real.");
+        body += buildFeatureItem("2&#65039;&#8419;", "Defina suas metas", "Crie objetivos financeiros e acompanhe o progresso.");
+        body += buildFeatureItem("3&#65039;&#8419;", "Explore o mercado", "Use Heat Map, comparador e simulador para tomar decisoes.");
+
+        body += buildSectionHeader("&#128295; Tudo que voce precisa");
+        body += buildFeatureItem("&#128193;", "Portfolio Completo", "Gerencie ativos, carteiras e alocacoes.");
+        body += buildFeatureItem("&#128200;", "Performance", "ROI, rentabilidade acumulada e graficos detalhados.");
+        body += buildFeatureItem("&#128276;", "Alertas de Preco", "Notificacao automatica quando um ativo atingir seu alvo.");
+        body += buildFeatureItem("&#127777;&#65039;", "Ferramentas de Mercado", "Heat Map, comparador, simulador e watchlist.");
+
+        body += buildDownloadButtons(linkPpt, linkHtml);
+
+        body += buildButton("Acessar o TradeLink", APP_URL + "/cliente");
+
+        body += buildBoasVindasFooterNote();
+
+        return wrapInLayout("Bem-vindo ao TradeLink!",
+            "Sua conta auto-gestao foi ativada. Gerencie seus investimentos!", body);
+    }
+
     private static String escape(String s) {
         if (s == null) return "";
         return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");

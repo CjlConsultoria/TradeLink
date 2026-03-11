@@ -26,8 +26,13 @@ public class EmailApresentacao {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "enviado_por_id", nullable = false)
+    @JoinColumn(name = "enviado_por_id")
     private User enviadoPor;
+
+    /** true quando enviado automaticamente pelo sistema (boas-vindas) */
+    @Column(name = "automatico")
+    @Builder.Default
+    private Boolean automatico = false;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
