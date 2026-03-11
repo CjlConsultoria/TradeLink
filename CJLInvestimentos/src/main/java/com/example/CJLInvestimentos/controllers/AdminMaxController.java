@@ -15,8 +15,10 @@ import com.example.CJLInvestimentos.dtos.response.PlanoResponse;
 import com.example.CJLInvestimentos.dtos.response.ProximaFaturaResponse;
 import com.example.CJLInvestimentos.dtos.response.UserResponse;
 import com.example.CJLInvestimentos.dtos.request.FaqRequest;
+import com.example.CJLInvestimentos.dtos.request.EnviarEmailApresentacaoRequest;
 import com.example.CJLInvestimentos.dtos.response.ChatConversaResponse;
 import com.example.CJLInvestimentos.dtos.response.ChatMensagemResponse;
+import com.example.CJLInvestimentos.dtos.response.EmailApresentacaoResponse;
 import com.example.CJLInvestimentos.dtos.response.FaqResponse;
 import com.example.CJLInvestimentos.entities.User;
 import com.example.CJLInvestimentos.repositories.UserRepository;
@@ -24,6 +26,7 @@ import com.example.CJLInvestimentos.services.AdminMaxDashboardService;
 import com.example.CJLInvestimentos.services.ChatService;
 import com.example.CJLInvestimentos.services.ConfiguracaoSistemaService;
 import com.example.CJLInvestimentos.services.CotacaoService;
+import com.example.CJLInvestimentos.services.EmailApresentacaoService;
 import com.example.CJLInvestimentos.services.EmpresaService;
 import com.example.CJLInvestimentos.services.FaqService;
 import com.example.CJLInvestimentos.services.FaturaPdfService;
@@ -59,6 +62,7 @@ public class AdminMaxController {
     private final UserRepository userRepository;
     private final AdminMaxDashboardService adminMaxDashboardService;
     private final ConfiguracaoSistemaService configuracaoSistemaService;
+    private final EmailApresentacaoService emailApresentacaoService;
 
     // === CONFIGURACAO DO SISTEMA ===
 
@@ -333,5 +337,26 @@ public class AdminMaxController {
     public ResponseEntity<Map<String, Long>> contarNaoLidasChat(@AuthenticationPrincipal UserDetails userDetails) {
         User admin = userRepository.findByEmail(userDetails.getUsername()).orElseThrow();
         return ResponseEntity.ok(Map.of("total", chatService.contarNaoLidasAdmin(admin.getId())));
+    }
+
+    // === EMAILS DE APRESENTAÇÃO ===
+
+    @PostMapping("/emails-apresentacao/enviar")
+    public ResponseEntity<List<EmailApresentacaoResponse>> enviarEmailApresentacao(
+            @Valid @RequestBody EnviarEmailApresentacaoRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User admin = userRepository.findByEmail(userDetails.getUsername()).orElseThrow();
+        return ResponseEntity.ok(emailApresentacaoService.enviar(request.getUserIds(), admin));
+    }
+
+    @GetMapping("/emails-apresentacao/historico")
+    public ResponseEntity<List<EmailApresentacaoResponse>> historicoEmailApresentacao() {
+        return ResponseEntity.ok(emailApresentacaoService.historico());
+    }
+
+    @GetMapping("/emails-apresentacao/preview/{userId}")
+    public ResponseEntity<Map<String, String>> previewEmailApresentacao(@PathVariable Long userId) {
+        String html = emailApresentacaoService.preview(userId);
+        return ResponseEntity.ok(Map.of("html", html));
     }
 }

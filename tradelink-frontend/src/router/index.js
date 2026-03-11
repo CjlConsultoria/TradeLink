@@ -52,6 +52,7 @@ const routes = [
       { path: 'planos', name: 'Planos', component: PlanosView },
       { path: 'faq', name: 'FaqAdmin', component: () => import('../views/admin-max/FaqAdminView.vue') },
       { path: 'chat', name: 'ChatAdmin', component: () => import('../views/admin-max/ChatAdminView.vue') },
+      { path: 'emails-apresentacao', name: 'EmailsApresentacao', component: () => import('../views/admin-max/EmailsApresentacaoView.vue') },
       { path: 'configuracoes', name: 'ConfiguracoesAdminMax', component: ConfiguracoesNotificacaoView }
     ]
   },

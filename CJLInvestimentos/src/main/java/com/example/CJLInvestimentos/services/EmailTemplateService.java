@@ -807,6 +807,165 @@ public class EmailTemplateService {
                 "Seu resumo semanal: " + resumo.getTotalOperacoes() + " operacoes, resultado " + resultadoFormatado, body);
     }
 
+    // ─── Templates de Apresentação / Onboarding ───
+
+    private String buildFeatureItem(String emoji, String titulo, String descricao) {
+        return """
+            <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="margin:6px 0;">
+              <tr>
+                <td style="width:36px; vertical-align:top; padding-top:2px; font-size:18px;">%s</td>
+                <td>
+                  <span style="font-weight:700; color:#1e293b; font-size:14px;">%s</span><br>
+                  <span style="color:#64748b; font-size:13px;">%s</span>
+                </td>
+              </tr>
+            </table>
+            """.formatted(emoji, titulo, descricao);
+    }
+
+    private String buildSectionHeader(String texto) {
+        return """
+            <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="margin:24px 0 12px;">
+              <tr>
+                <td style="border-bottom:2px solid #6366f1; padding-bottom:6px;">
+                  <span style="font-size:17px; font-weight:700; color:#1e293b;">%s</span>
+                </td>
+              </tr>
+            </table>
+            """.formatted(texto);
+    }
+
+    private String buildDownloadButtons(String linkPpt, String linkHtml) {
+        return """
+            <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="margin:20px 0;">
+              <tr>
+                <td align="center">
+                  <table role="presentation" cellspacing="0" cellpadding="0"><tr>
+                    <td class="btn" style="border-radius:10px; background:linear-gradient(135deg, #6366f1, #8b5cf6);">
+                      <a href="%s" target="_blank" style="display:inline-block; padding:12px 24px; color:#ffffff !important; text-decoration:none; font-weight:600; font-size:14px;">&#128202; Abrir Apresentacao</a>
+                    </td>
+                    <td style="width:12px;"></td>
+                    <td class="btn" style="border-radius:10px; background:linear-gradient(135deg, #0891B2, #0e7490);">
+                      <a href="%s" target="_blank" style="display:inline-block; padding:12px 24px; color:#ffffff !important; text-decoration:none; font-weight:600; font-size:14px;">&#127760; Baixar Guia Interativo</a>
+                    </td>
+                  </tr></table>
+                </td>
+              </tr>
+            </table>
+            """.formatted(linkPpt, linkHtml);
+    }
+
+    /** Template de apresentacao para CONSULTOR. */
+    public String buildApresentacaoConsultor(String nome, String linkPpt, String linkHtml) {
+        String body = "<h1 style=\"font-size:22px; color:#1e293b; margin:0 0 8px;\">Ola, " + escape(nome) + "! &#128075;</h1>"
+            + "<p style=\"color:#64748b; font-size:15px; margin:0 0 20px;\">Preparamos um guia completo para voce dominar o TradeLink e fazer a transicao da planilha para o sistema.</p>";
+
+        body += buildAlertBox("&#128640;",
+            "O TradeLink substitui suas planilhas por uma plataforma completa, segura e colaborativa. Tudo o que voce fazia em abas e formulas, agora esta automatizado.",
+            "rgba(99,102,241,0.06)", "rgba(99,102,241,0.15)");
+
+        body += buildSectionHeader("&#128203; Da Planilha para o Sistema");
+        body += buildInfoTable(new String[][]{
+            {"Resumo de cotacoes (aba Cotacoes)", "Dashboard com atualizacao em tempo real"},
+            {"Lista de clientes (aba Clientes)", "Gestao com convite por email e licencas"},
+            {"Saldo por carteira (aba Carteiras)", "Calculo automatico com graficos de alocacao"},
+            {"Operacoes (linhas manuais)", "Formulario com validacao e badges visuais"},
+            {"Notas e anotacoes", "Kanban de Recomendacoes com drag-and-drop"}
+        });
+
+        body += buildSectionHeader("&#9889; Suas Novas Ferramentas");
+        body += buildFeatureItem("&#128203;", "Kanban de Recomendacoes", "Arraste cards entre colunas ATIVA, EXECUTADA e CANCELADA para gerenciar recomendacoes visualmente.");
+        body += buildFeatureItem("&#128203;", "Copy Trading", "Replique recomendacoes em multiplas carteiras de uma vez, economizando horas de trabalho repetitivo.");
+        body += buildFeatureItem("&#9878;&#65039;", "Rebalanceamento", "Monitore a saude das carteiras com badges visuais (OK, ATENCAO, CRITICO) e edite alocacoes ideais.");
+        body += buildFeatureItem("&#128276;", "Alertas de Preco", "Configure alertas ACIMA ou ABAIXO e receba notificacao automatica quando o preco atingir.");
+        body += buildFeatureItem("&#127777;&#65039;", "Heat Map", "Veja todas as variacoes do mercado em uma grade colorida: verde (alta), vermelho (baixa).");
+        body += buildFeatureItem("&#9878;&#65039;", "Comparador de Moedas", "Compare ate 3 moedas em graficos sobrepostos por periodos de 7d, 30d, 90d ou 1 ano.");
+        body += buildFeatureItem("&#129518;", "Simulador", "Teste cenarios de investimento antes de recomendar ao cliente com analises what-if.");
+        body += buildFeatureItem("&#11088;", "Watchlist", "Favorite pares de moedas para acompanhamento rapido sem buscar na lista completa.");
+        body += buildFeatureItem("&#128172;", "Chat de Suporte", "Comunique-se com seus clientes e com o suporte diretamente dentro do sistema.");
+        body += buildFeatureItem("&#127769;", "Dark Mode", "Alterne entre modo claro e escuro com um clique. Preferencia salva automaticamente.");
+
+        body += buildSectionHeader("&#128274; Seguranca");
+        body += "<p style=\"color:#475569; font-size:14px;\">O sistema conta com autenticacao JWT, verificacao 2FA por email (OTP), controle de acesso por perfil e ativacao de conta por token. Seus dados e os de seus clientes estao protegidos.</p>";
+
+        body += buildDownloadButtons(linkPpt, linkHtml);
+
+        body += buildButton("Acessar o TradeLink", APP_URL + "/consultor");
+
+        return wrapInLayout("Guia do Consultor - TradeLink",
+            "Seu guia completo para dominar o TradeLink", body);
+    }
+
+    /** Template de apresentacao para CLIENTE (com consultor). */
+    public String buildApresentacaoCliente(String nome, String consultorNome, String linkPpt, String linkHtml) {
+        String body = "<h1 style=\"font-size:22px; color:#1e293b; margin:0 0 8px;\">Ola, " + escape(nome) + "! &#128075;</h1>"
+            + "<p style=\"color:#64748b; font-size:15px; margin:0 0 20px;\">Seu consultor <strong>" + escape(consultorNome) + "</strong> preparou este guia para voce conhecer o TradeLink e acompanhar seus investimentos.</p>";
+
+        body += buildAlertBox("&#128176;",
+            "O TradeLink e sua plataforma pessoal para acompanhar portfolio, receber recomendacoes e monitorar o mercado — tudo em um so lugar.",
+            "rgba(16,185,129,0.06)", "rgba(16,185,129,0.15)");
+
+        body += buildSectionHeader("&#128202; Seu Dashboard");
+        body += "<p style=\"color:#475569; font-size:14px; margin:0 0 12px;\">Ao fazer login, voce vera um painel com saldo total, rentabilidade, recomendacoes pendentes do consultor e alertas ativos. Tudo consolidado em uma unica tela.</p>";
+
+        body += buildSectionHeader("&#128188; O que voce pode fazer");
+        body += buildFeatureItem("&#128188;", "Ver Carteiras", "Acompanhe as carteiras que seu consultor gerencia para voce, com saldos e operacoes detalhadas.");
+        body += buildFeatureItem("&#128203;", "Recomendacoes", "Receba recomendacoes do consultor e aceite ou recuse diretamente no sistema.");
+        body += buildFeatureItem("&#128193;", "Meu Portfolio", "Visualize todos os seus ativos, alocacao percentual e valor total investido.");
+        body += buildFeatureItem("&#128200;", "Performance", "Acompanhe rentabilidade acumulada, ROI por periodo e performance por moeda.");
+        body += buildFeatureItem("&#127919;", "Metas", "Defina objetivos financeiros com valor-alvo e prazo, e acompanhe o progresso com barras visuais.");
+
+        body += buildSectionHeader("&#128295; Ferramentas de Mercado");
+        body += buildFeatureItem("&#128276;", "Alertas de Preco", "Configure alertas para ser notificado quando uma moeda atingir o preco desejado.");
+        body += buildFeatureItem("&#127777;&#65039;", "Heat Map", "Veja as variacoes do mercado em grade colorida.");
+        body += buildFeatureItem("&#9878;&#65039;", "Comparador", "Compare ate 3 moedas lado a lado.");
+        body += buildFeatureItem("&#129518;", "Simulador", "Teste cenarios de investimento.");
+        body += buildFeatureItem("&#11088;", "Watchlist", "Favorite moedas para acompanhamento rapido.");
+
+        body += buildDownloadButtons(linkPpt, linkHtml);
+
+        body += buildButton("Acessar o TradeLink", APP_URL + "/cliente");
+
+        return wrapInLayout("Guia do Cliente - TradeLink",
+            "Conheca o TradeLink: seu portal de investimentos", body);
+    }
+
+    /** Template de apresentacao para CLIENTE AUTO-GESTAO. */
+    public String buildApresentacaoClienteAutoGestao(String nome, String linkPpt, String linkHtml) {
+        String body = "<h1 style=\"font-size:22px; color:#1e293b; margin:0 0 8px;\">Ola, " + escape(nome) + "! &#128075;</h1>"
+            + "<p style=\"color:#64748b; font-size:15px; margin:0 0 20px;\">Bem-vindo ao TradeLink! Como investidor auto-gestao, voce tem acesso completo a todas as ferramentas para gerenciar seus proprios investimentos.</p>";
+
+        body += buildAlertBox("&#128640;",
+            "Voce tem total autonomia: crie carteiras, gerencie seu portfolio, defina metas e utilize todas as ferramentas de mercado sem depender de um consultor.",
+            "rgba(16,185,129,0.06)", "rgba(16,185,129,0.15)");
+
+        body += buildSectionHeader("&#128202; Seu Dashboard");
+        body += "<p style=\"color:#475569; font-size:14px; margin:0 0 12px;\">Ao fazer login, voce vera um painel com saldo total, rentabilidade e alertas ativos. Menu simplificado e direto para gerenciar tudo.</p>";
+
+        body += buildSectionHeader("&#128188; Gerenciamento Completo");
+        body += buildFeatureItem("&#128193;", "Meu Portfolio", "Adicione e remova ativos, visualize alocacao percentual e valor total investido.");
+        body += buildFeatureItem("&#128188;", "Carteiras", "Crie e gerencie suas proprias carteiras com calculos automaticos de saldo e graficos.");
+        body += buildFeatureItem("&#128200;", "Performance", "Acompanhe ROI, rentabilidade acumulada e resultado por par de moeda.");
+        body += buildFeatureItem("&#127919;", "Metas", "Defina objetivos financeiros com prazo e acompanhe o progresso visualmente.");
+
+        body += buildSectionHeader("&#128295; Ferramentas de Mercado");
+        body += buildFeatureItem("&#128276;", "Alertas de Preco", "Configure ate 20 alertas para ser notificado automaticamente.");
+        body += buildFeatureItem("&#127777;&#65039;", "Heat Map", "Visao panoramica do mercado com grade colorida.");
+        body += buildFeatureItem("&#9878;&#65039;", "Comparador", "Compare ate 3 moedas em graficos sobrepostos.");
+        body += buildFeatureItem("&#129518;", "Simulador", "Teste cenarios de investimento antes de aplicar.");
+        body += buildFeatureItem("&#11088;", "Watchlist", "Favorite moedas para acompanhamento rapido.");
+
+        body += buildSectionHeader("&#128176; Assinatura & Faturas");
+        body += "<p style=\"color:#475569; font-size:14px; margin:0 0 12px;\">Gerencie sua assinatura diretamente no sistema. Visualize faturas pendentes e pagas, faca pagamentos via Stripe e acompanhe o status em tempo real.</p>";
+
+        body += buildDownloadButtons(linkPpt, linkHtml);
+
+        body += buildButton("Acessar o TradeLink", APP_URL + "/cliente");
+
+        return wrapInLayout("Guia do Investidor - TradeLink",
+            "Conheca o TradeLink: sua plataforma de investimentos auto-gestao", body);
+    }
+
     private static String escape(String s) {
         if (s == null) return "";
         return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");

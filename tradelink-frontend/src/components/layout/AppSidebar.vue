@@ -60,6 +60,7 @@ const menuItems = computed(() => {
         { to: '/admin-max/planos', label: 'Planos', icon: '💰' },
         { to: '/admin-max/faq', label: 'FAQ', icon: '❓' },
         { to: '/admin-max/chat', label: 'Chat Suporte', icon: '💬' },
+        { to: '/admin-max/emails-apresentacao', label: 'Emails', icon: '📧' },
         { to: '/admin-max/configuracoes', label: 'Configurações', icon: '⚙️' }
       ]
     case 'Admin':
