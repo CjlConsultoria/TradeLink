@@ -33,7 +33,32 @@
       "Bash(./mvnw.cmd compile -q)",
       "Bash(cmd.exe /c \"cd /d C:\\\\GIT\\\\TradeLink\\\\tradelink-frontend && npm run build\")",
       "Bash(powershell.exe -Command \"cd ''C:\\\\GIT\\\\TradeLink\\\\tradelink-frontend''; npm run build 2>&1\")",
-      "Bash(powershell.exe -Command \"cd ''C:\\\\GIT\\\\TradeLink\\\\CJLInvestimentos''; ./mvnw compile -q 2>&1\")"
+      "Bash(powershell.exe -Command \"cd ''C:\\\\GIT\\\\TradeLink\\\\CJLInvestimentos''; ./mvnw compile -q 2>&1\")",
+      "Bash(xargs ls -la)",
+      "Bash(ls -la \"C:\\\\GIT\\\\TradeLink\\\\tradelink-frontend\\\\src\"\" 2>/dev/null || ls -la \"C:GITTradeLinktradelink-frontend \")",
+      "Bash(xargs grep -l \"senha\\\\|password\\\\|reset\\\\|forgot\")",
+      "Bash(xargs grep -l \"relatorio\\\\|export\\\\|pdf\\\\|PDF\")",
+      "Bash(xargs grep -i \"rate\\\\|throttle\\\\|bucket4j\\\\|resilience4j\\\\|ratelimit\")",
+      "Bash(xargs grep -l \"AdminMax\")",
+      "Bash(dir \"C:\\\\GIT\\\\TradeLink\\\\tradelink-frontend\\\\public\"\")",
+      "Bash(npm install vuedraggable@next)",
+      "Bash(grep -E \"\\\\.js$\")",
+      "Bash(xargs grep:*)",
+      "Bash(find /c/GIT/TradeLink -name CHANGELOG* -o -name README* -o -name FEATURES*)",
+      "Bash(npm list:*)",
+      "Bash(npm install:*)",
+      "Bash(node create-presentation.js)",
+      "Bash(python \"C:\\\\Users\\\\ritad\\\\AppData\\\\Roaming\\\\Claude\\\\local-agent-mode-sessions\\\\skills-plugin\\\\a8016e34-a4ba-4315-afcc-0332866d3f4a\\\\d9138375-f56c-432e-84ec-85fec249c285\\\\skills\\\\pptx\\\\scripts\\\\office\\\\soffice.py\" --headless --convert-to pdf TradeLink-Guia-Completo.pptx)",
+      "Bash(ls /c/Python*/python.exe)",
+      "Read(//c/Users/ritad/AppData/Local/Programs/Python/**)",
+      "Bash(python3 \"C:\\\\Users\\\\ritad\\\\AppData\\\\Roaming\\\\Claude\\\\local-agent-mode-sessions\\\\skills-plugin\\\\a8016e34-a4ba-4315-afcc-0332866d3f4a\\\\d9138375-f56c-432e-84ec-85fec249c285\\\\skills\\\\pptx\\\\scripts\\\\office\\\\soffice.py\" --headless --convert-to pdf TradeLink-Guia-Completo.pptx)",
+      "Bash(node -e \":*)",
+      "Bash(find /c/GIT/TradeLink/CJLInvestimentos -name *.sql -o -name *schema* -o -name *migration*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(ls C:GITTradeLink*.pptx)",
+      "Bash(node create-apresentacoes.js)"
     ]
   }
 }

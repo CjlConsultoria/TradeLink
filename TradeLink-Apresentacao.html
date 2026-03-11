@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TradeLink — Guia Completo</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--navy:#1e1b4b;--navy-light:#312e81;--indigo:#6366f1;--indigo-light:#e0e7ff;--white:#fff;--gray-50:#f9fafb;--gray-100:#f3f4f6;--gray-200:#e5e7eb;--gray-500:#6b7280;--gray-700:#374151;--gray-900:#111827;--emerald:#10b981;--amber:#f59e0b;--blue:#3b82f6;--red:#ef4444;--teal:#14b8a6}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--gray-50);color:var(--gray-900);line-height:1.6}
+.hero{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-light) 100%);color:var(--white);padding:4rem 2rem;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 50%,rgba(99,102,241,0.15) 0%,transparent 50%)}
+.hero h1{font-size:clamp(2rem,5vw,3.5rem);font-weight:800;letter-spacing:-0.03em;margin-bottom:.5rem}
+.hero p{font-size:clamp(1rem,2vw,1.25rem);color:#a5b4fc;max-width:600px;margin:0 auto}
+nav.sticky-nav{position:sticky;top:0;z-index:50;background:var(--white);border-bottom:1px solid var(--gray-200);box-shadow:0 1px 3px rgba(0,0,0,0.08);padding:0 1rem;overflow-x:auto}
+nav.sticky-nav ul{display:flex;gap:.5rem;list-style:none;max-width:1100px;margin:0 auto;padding:.5rem 0}
+nav.sticky-nav a{display:block;padding:.5rem .75rem;font-size:.8125rem;font-weight:500;color:var(--gray-500);text-decoration:none;border-radius:6px;white-space:nowrap;transition:all .2s}
+nav.sticky-nav a:hover{background:var(--indigo-light);color:var(--indigo)}
+.container{max-width:1100px;margin:0 auto;padding:2rem 1rem}
+section{margin-bottom:3rem}
+.section-title{font-size:1.75rem;font-weight:700;color:var(--gray-900);margin-bottom:.5rem;letter-spacing:-0.02em}
+.section-subtitle{font-size:1rem;color:var(--gray-500);margin-bottom:1.5rem}
+.card{background:var(--white);border-radius:12px;padding:1.5rem;box-shadow:0 1px 3px rgba(0,0,0,0.08);border:1px solid var(--gray-200)}
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-bottom:2rem}
+.stat-card{background:var(--white);border-radius:12px;padding:1.25rem;box-shadow:0 1px 3px rgba(0,0,0,0.08);border:1px solid var(--gray-200);text-align:center}
+.stat-card .value{font-size:1.75rem;font-weight:800}
+.stat-card .label{font-size:.75rem;color:var(--gray-500);text-transform:uppercase;letter-spacing:.05em;margin-top:.25rem}
+.browser-frame{background:var(--white);border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.12);border:1px solid var(--gray-200);margin:1.5rem 0}
+.browser-bar{background:var(--gray-100);padding:.5rem 1rem;display:flex;align-items:center;gap:.75rem;border-bottom:1px solid var(--gray-200)}
+.browser-dots{display:flex;gap:6px}
+.browser-dots span{width:10px;height:10px;border-radius:50%}
+.browser-url{flex:1;background:var(--white);border-radius:4px;padding:4px 10px;font-size:.75rem;color:var(--gray-500);border:1px solid var(--gray-200)}
+.browser-content{padding:1rem;background:var(--gray-50);min-height:200px}
+.mapping-table{width:100%;border-collapse:collapse;border-radius:8px;overflow:hidden}
+.mapping-table th{background:var(--navy);color:var(--white);padding:.75rem 1rem;text-align:left;font-size:.875rem}
+.mapping-table td{padding:.625rem 1rem;font-size:.8125rem;border-bottom:1px solid var(--gray-200)}
+.mapping-table tr:nth-child(even){background:var(--gray-50)}
+.mapping-table .old{color:var(--red);font-weight:500}
+.mapping-table .new{color:var(--emerald);font-weight:500}
+.feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem}
+.feature-card{background:var(--white);border-radius:12px;padding:1.5rem;box-shadow:0 1px 3px rgba(0,0,0,0.08);border:1px solid var(--gray-200);transition:transform .2s,box-shadow .2s}
+.feature-card:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,0.12)}
+.feature-card h3{font-size:1rem;font-weight:600;margin-bottom:.5rem}
+.feature-card p{font-size:.8125rem;color:var(--gray-500);line-height:1.5}
+.badge{display:inline-block;padding:.25rem .75rem;border-radius:9999px;font-size:.75rem;font-weight:600}
+.badge-blue{background:#dbeafe;color:#1d4ed8}
+.badge-green{background:#d1fae5;color:#065f46}
+.badge-amber{background:#fef3c7;color:#92400e}
+.badge-red{background:#fee2e2;color:#991b1b}
+.kanban{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.75rem}
+.kanban-col{background:var(--gray-50);border-radius:8px;padding:.75rem}
+.kanban-header{padding:.5rem;border-radius:6px;color:var(--white);text-align:center;font-size:.8125rem;font-weight:600;margin-bottom:.5rem}
+.kanban-card{background:var(--white);border-radius:6px;padding:.625rem;margin-bottom:.5rem;box-shadow:0 1px 2px rgba(0,0,0,0.06);font-size:.8125rem;border:1px solid var(--gray-200)}
+.heatmap-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem}
+.heat-item{border-radius:8px;padding:1rem;text-align:center;color:var(--white);font-weight:700;font-size:.875rem}
+.heat-green{background:var(--emerald)}
+.heat-red{background:var(--red)}
+.heat-light-green{background:#34d399}
+.heat-light-red{background:#fca5a5;color:var(--gray-700)}
+.progress-bar{width:100%;height:8px;background:var(--gray-200);border-radius:4px;overflow:hidden;margin:.5rem 0}
+.progress-fill{height:100%;border-radius:4px;transition:width .5s ease}
+.security-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem}
+.security-card{display:flex;gap:.75rem;padding:1rem;background:var(--white);border-radius:10px;border:1px solid var(--gray-200);box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+.security-icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;flex-shrink:0}
+footer{background:var(--navy);color:#a5b4fc;padding:2rem;text-align:center;font-size:.875rem}
+@media(max-width:640px){.hero{padding:2.5rem 1rem}.container{padding:1.5rem .75rem}.heatmap-grid{grid-template-columns:repeat(2,1fr)}.kanban{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <p style="font-size:3rem;margin-bottom:.5rem">◈</p>
+  <h1>TradeLink</h1>
+  <p>Plataforma Completa de Gestão de Investimentos</p>
+</div>
+
+<nav class="sticky-nav">
+  <ul>
+    <li><a href="#overview">Visão Geral</a></li>
+    <li><a href="#mapping">Planilha → Sistema</a></li>
+    <li><a href="#dashboard">Dashboard</a></li>
+    <li><a href="#kanban">Kanban</a></li>
+    <li><a href="#copy">Copy Trading</a></li>
+    <li><a href="#portfolio">Portfolio</a></li>
+    <li><a href="#performance">Performance</a></li>
+    <li><a href="#metas">Metas</a></li>
+    <li><a href="#heatmap">Heat Map</a></li>
+    <li><a href="#alertas">Alertas</a></li>
+    <li><a href="#seguranca">Segurança</a></li>
+  </ul>
+</nav>
+
+<div class="container">
+
+  <!-- Visão Geral -->
+  <section id="overview">
+    <h2 class="section-title">Visão Geral</h2>
+    <p class="section-subtitle">Tudo o que você precisa para gerenciar investimentos de forma profissional</p>
+    <div class="feature-grid">
+      <div class="feature-card"><h3>📊 Gestão Centralizada</h3><p>Gerencie todos os clientes, carteiras e recomendações em uma plataforma única e intuitiva.</p></div>
+      <div class="feature-card"><h3>⚡ Automatização</h3><p>Copy Trading, Rebalanceamento automático e alertas inteligentes que economizam horas do seu dia.</p></div>
+      <div class="feature-card"><h3>🔍 Transparência</h3><p>Clientes acompanham performance, metas e recomendações em tempo real, fortalecendo a confiança.</p></div>
+      <div class="feature-card"><h3>🔒 Segurança</h3><p>Autenticação OTP, criptografia ponta a ponta e controle granular de acesso por perfil.</p></div>
+    </div>
+  </section>
+
+  <!-- Planilha vs Sistema -->
+  <section id="mapping">
+    <h2 class="section-title">Planilha → Sistema</h2>
+    <p class="section-subtitle">Veja como suas rotinas da planilha funcionam agora no TradeLink</p>
+    <div class="browser-frame">
+      <div class="browser-bar">
+        <div class="browser-dots"><span style="background:#ff5f57"></span><span style="background:#febc2e"></span><span style="background:#28c840"></span></div>
+        <div class="browser-url">tradelink.app/migração</div>
+      </div>
+      <div class="browser-content" style="padding:0">
+        <table class="mapping-table">
+          <thead><tr><th style="width:50%">❌ Antes (Planilha)</th><th>✅ Agora (TradeLink)</th></tr></thead>
+          <tbody>
+            <tr><td class="old">Cadastro de clientes no Excel</td><td class="new">Tela de Clientes com cadastro automático</td></tr>
+            <tr><td class="old">Carteiras em planilha separada</td><td class="new">Módulo Carteiras com ativos em tempo real</td></tr>
+            <tr><td class="old">Recomendações via WhatsApp</td><td class="new">Kanban de Recomendações + notificações</td></tr>
+            <tr><td class="old">Controle de performance manual</td><td class="new">Dashboard com gráficos automáticos</td></tr>
+            <tr><td class="old">Metas anotadas no papel</td><td class="new">Módulo Metas com progresso visual</td></tr>
+            <tr><td class="old">Alertas via e-mail manual</td><td class="new">Alertas de Preço automáticos no sistema</td></tr>
+            <tr><td class="old">Relatórios montados à mão</td><td class="new">Relatórios PDF gerados automaticamente</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Dashboard -->
+  <section id="dashboard">
+    <h2 class="section-title">Dashboard</h2>
+    <p class="section-subtitle">Visão geral completa em uma única tela</p>
+    <div class="browser-frame">
+      <div class="browser-bar">
+        <div class="browser-dots"><span style="background:#ff5f57"></span><span style="background:#febc2e"></span><span style="background:#28c840"></span></div>
+        <div class="browser-url">tradelink.app/dashboard</div>
+      </div>
+      <div class="browser-content">
+        <div class="stats-row">
+          <div class="stat-card"><div class="value" style="color:var(--indigo)">156</div><div class="label">Clientes ativos</div></div>
+          <div class="stat-card"><div class="value" style="color:var(--emerald)">R$ 45M</div><div class="label">Capital sob gestão</div></div>
+          <div class="stat-card"><div class="value" style="color:var(--blue)">+12.5%</div><div class="label">Rentabilidade média</div></div>
+          <div class="stat-card"><div class="value" style="color:var(--amber)">23</div><div class="label">Recomendações</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div class="card"><h3 style="font-size:.875rem;font-weight:600;margin-bottom:.75rem">Evolução do Capital</h3>
+            <svg viewBox="0 0 400 120" style="width:100%"><polyline fill="none" stroke="var(--indigo)" stroke-width="2.5" points="10,100 60,85 120,70 180,55 240,40 300,35 360,20 390,15"/><polyline fill="none" stroke="var(--gray-200)" stroke-width="1.5" stroke-dasharray="4" points="10,95 60,88 120,80 180,72 240,64 300,56 360,48 390,44"/></svg>
+          </div>
+          <div class="card"><h3 style="font-size:.875rem;font-weight:600;margin-bottom:.75rem">Distribuição</h3>
+            <div style="width:120px;height:120px;margin:0 auto;border-radius:50%;background:conic-gradient(var(--indigo) 0% 30%,var(--emerald) 30% 50%,var(--amber) 50% 70%,var(--blue) 70% 85%,var(--teal) 85% 100%)"></div>
+            <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.75rem;justify-content:center;font-size:.75rem">
+              <span><span style="color:var(--indigo)">●</span> Ações 30%</span>
+              <span><span style="color:var(--emerald)">●</span> FIIs 20%</span>
+              <span><span style="color:var(--amber)">●</span> RF 20%</span>
+              <span><span style="color:var(--blue)">●</span> Cripto 15%</span>
+              <span><span style="color:var(--teal)">●</span> Intl 15%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Kanban -->
+  <section id="kanban">
+    <h2 class="section-title">Kanban de Recomendações</h2>
+    <p class="section-subtitle">Gerencie sugestões de compra e venda visualmente</p>
+    <div class="browser-frame">
+      <div class="browser-bar">
+        <div class="browser-dots"><span style="background:#ff5f57"></span><span style="background:#febc2e"></span><span style="background:#28c840"></span></div>
+        <div class="browser-url">tradelink.app/kanban</div>
+      </div>
+      <div class="browser-content">
+        <div class="kanban">
+          <div class="kanban-col">
+            <div class="kanban-header" style="background:var(--amber)">Pendente</div>
+            <div class="kanban-card"><strong>PETR4</strong> — Comprar<br><small style="color:var(--gray-500)">R$ 38,50 • Ações</small></div>
+            <div class="kanban-card"><strong>VALE3</strong> — Comprar<br><small style="color:var(--gray-500)">R$ 62,30 • Ações</small></div>
+          </div>
+          <div class="kanban-col">
+            <div class="kanban-header" style="background:var(--blue)">Em Análise</div>
+            <div class="kanban-card"><strong>ITUB4</strong> — Vender<br><small style="color:var(--gray-500)">R$ 28,90 • Ações</small></div>
+          </div>
+          <div class="kanban-col">
+            <div class="kanban-header" style="background:var(--emerald)">Aceita</div>
+            <div class="kanban-card"><strong>WEGE3</strong> — Comprar<br><small style="color:var(--gray-500)">R$ 35,20 • Ações</small></div>
+            <div class="kanban-card"><strong>ABEV3</strong> — Comprar<br><small style="color:var(--gray-500)">R$ 12,80 • Ações</small></div>
+          </div>
+          <div class="kanban-col">
+            <div class="kanban-header" style="background:var(--red)">Recusada</div>
+            <div class="kanban-card"><strong>MGLU3</strong> — Vender<br><small style="color:var(--gray-500)">R$ 8,50 • Ações</small></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Copy Trading -->
+  <section id="copy">
+    <h2 class="section-title">Copy Trading</h2>
+    <p class="section-subtitle">Replique operações automaticamente para múltiplos clientes</p>
+    <div class="feature-grid" style="grid-template-columns:repeat(3,1fr)">
+      <div class="feature-card" style="text-align:center;border-top:3px solid var(--indigo)">
+        <div style="font-size:2rem;margin-bottom:.5rem">1️⃣</div>
+        <h3>Crie a Carteira Modelo</h3>
+        <p>Monte a carteira com os ativos e alocações ideais</p>
+      </div>
+      <div class="feature-card" style="text-align:center;border-top:3px solid var(--emerald)">
+        <div style="font-size:2rem;margin-bottom:.5rem">2️⃣</div>
+        <h3>Vincule os Clientes</h3>
+        <p>Selecione quais clientes seguirão esta carteira</p>
+      </div>
+      <div class="feature-card" style="text-align:center;border-top:3px solid var(--amber)">
+        <div style="font-size:2rem;margin-bottom:.5rem">3️⃣</div>
+        <h3>Automatize</h3>
+        <p>Alterações são replicadas automaticamente para todos</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Portfolio -->
+  <section id="portfolio">
+    <h2 class="section-title">Portfolio do Cliente</h2>
+    <p class="section-subtitle">Acompanhamento completo do patrimônio</p>
+    <div class="browser-frame">
+      <div class="browser-bar">
+        <div class="browser-dots"><span style="background:#ff5f57"></span><span style="background:#febc2e"></span><span style="background:#28c840"></span></div>
+        <div class="browser-url">tradelink.app/portfolio</div>
+      </div>
+      <div class="browser-content">
+        <div class="stats-row">
+          <div class="stat-card"><div class="value" style="color:var(--indigo)">R$ 285K</div><div class="label">Patrimônio</div></div>
+          <div class="stat-card"><div class="value" style="color:var(--emerald)">+18.3%</div><div class="label">Rentabilidade</div></div>
+          <div class="stat-card"><div class="value" style="color:var(--blue)">12</div><div class="label">Ativos</div></div>
+          <div class="stat-card"><div class="value" style="color:var(--amber)">3</div><div class="label">Carteiras</div></div>
+        </div>
+        <table class="mapping-table">
+          <thead><tr><th>Ativo</th><th>Tipo</th><th>Valor</th><th>Rent.</th></tr></thead>
+          <tbody>
+            <tr><td><strong>PETR4</strong></td><td>Ações</td><td>R$ 45.000</td><td style="color:var(--emerald);font-weight:600">+12.5%</td></tr>
+            <tr><td><strong>XPML11</strong></td><td>FIIs</td><td>R$ 52.000</td><td style="color:var(--emerald);font-weight:600">+15.1%</td></tr>
+            <tr><td><strong>Tesouro IPCA+</strong></td><td>Renda Fixa</td><td>R$ 80.000</td><td style="color:var(--emerald);font-weight:600">+6.8%</td></tr>
+            <tr><td><strong>BTC</strong></td><td>Cripto</td><td>R$ 25.000</td><td style="color:var(--emerald);font-weight:600">+45.2%</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Performance -->
+  <section id="performance">
+    <h2 class="section-title">Performance</h2>
+    <p class="section-subtitle">Análise detalhada de resultados com comparativos</p>
+    <div class="browser-frame">
+      <div class="browser-bar">
+        <div class="browser-dots"><span style="background:#ff5f57"></span><span style="background:#febc2e"></span><span style="background:#28c840"></span></div>
+        <div class="browser-url">tradelink.app/performance</div>
+      </div>
+      <div class="browser-content">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div class="card">
+            <h3 style="font-size:.875rem;font-weight:600;margin-bottom:.75rem">Rentabilidade Acumulada</h3>
+            <svg viewBox="0 0 400 140" style="width:100%">
+              <polyline fill="none" stroke="var(--indigo)" stroke-width="2.5" points="10,120 50,105 100,95 150,80 200,60 250,55 300,40 350,30 390,20"/>
+              <polyline fill="none" stroke="var(--amber)" stroke-width="1.5" stroke-dasharray="5" points="10,118 50,110 100,102 150,94 200,86 250,78 300,70 350,62 390,55"/>
+              <polyline fill="none" stroke="var(--gray-200)" stroke-width="1.5" stroke-dasharray="3" points="10,115 50,108 100,100 150,92 200,84 250,76 300,68 350,60 390,52"/>
+            </svg>
+            <div style="display:flex;gap:1rem;font-size:.75rem;margin-top:.5rem">
+              <span><span style="color:var(--indigo)">━</span> Carteira +22.5%</span>
+              <span><span style="color:var(--amber)">╌</span> CDI +12.8%</span>
+              <span style="color:var(--gray-500)">┈ IBOV +15.2%</span>
+            </div>
+          </div>
+          <div class="card">
+            <h3 style="font-size:.875rem;font-weight:600;margin-bottom:.75rem">Rentabilidade Mensal</h3>
+            <div style="display:flex;align-items:flex-end;gap:4px;height:100px">
+              <div style="flex:1;background:var(--indigo);border-radius:3px 3px 0 0;height:60%"></div>
+              <div style="flex:1;background:var(--indigo);border-radius:3px 3px 0 0;height:45%"></div>
+              <div style="flex:1;background:var(--indigo);border-radius:3px 3px 0 0;height:80%"></div>
+              <div style="flex:1;background:var(--red);border-radius:3px 3px 0 0;height:20%"></div>
+              <div style="flex:1;background:var(--indigo);border-radius:3px 3px 0 0;height:70%"></div>
+              <div style="flex:1;background:var(--indigo);border-radius:3px 3px 0 0;height:55%"></div>
+              <div style="flex:1;background:var(--indigo);border-radius:3px 3px 0 0;height:90%"></div>
+              <div style="flex:1;background:var(--indigo);border-radius:3px 3px 0 0;height:65%"></div>
+              <div style="flex:1;background:var(--red);border-radius:3px 3px 0 0;height:15%"></div>
+              <div style="flex:1;background:var(--indigo);border-radius:3px 3px 0 0;height:75%"></div>
+              <div style="flex:1;background:var(--indigo);border-radius:3px 3px 0 0;height:85%"></div>
+              <div style="flex:1;background:var(--emerald);border-radius:3px 3px 0 0;height:95%"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:.625rem;color:var(--gray-500);margin-top:.25rem"><span>Jan</span><span>Fev</span><span>Mar</span><span>Abr</span><span>Mai</span><span>Jun</span><span>Jul</span><span>Ago</span><span>Set</span><span>Out</span><span>Nov</span><span>Dez</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Metas -->
+  <section id="metas">
+    <h2 class="section-title">Metas Financeiras</h2>
+    <p class="section-subtitle">Defina e acompanhe seus objetivos de forma visual</p>
+    <div style="display:grid;gap:1rem">
+      <div class="card" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+        <div style="flex:1;min-width:150px"><strong>🏠 Casa Própria</strong><br><small style="color:var(--gray-500)">R$ 120K / R$ 500K</small></div>
+        <div style="flex:2;min-width:200px"><div class="progress-bar"><div class="progress-fill" style="width:24%;background:var(--indigo)"></div></div></div>
+        <span class="badge badge-blue">24%</span>
+      </div>
+      <div class="card" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+        <div style="flex:1;min-width:150px"><strong>🏖️ Aposentadoria</strong><br><small style="color:var(--gray-500)">R$ 285K / R$ 1M</small></div>
+        <div style="flex:2;min-width:200px"><div class="progress-bar"><div class="progress-fill" style="width:28.5%;background:var(--emerald)"></div></div></div>
+        <span class="badge badge-green">28.5%</span>
+      </div>
+      <div class="card" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+        <div style="flex:1;min-width:150px"><strong>🛡️ Reserva Emergência</strong><br><small style="color:var(--gray-500)">R$ 45K / R$ 50K</small></div>
+        <div style="flex:2;min-width:200px"><div class="progress-bar"><div class="progress-fill" style="width:90%;background:var(--teal)"></div></div></div>
+        <span class="badge badge-green">90%</span>
+      </div>
+      <div class="card" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+        <div style="flex:1;min-width:150px"><strong>✈️ Viagem Europa</strong><br><small style="color:var(--gray-500)">R$ 8K / R$ 25K</small></div>
+        <div style="flex:2;min-width:200px"><div class="progress-bar"><div class="progress-fill" style="width:32%;background:var(--amber)"></div></div></div>
+        <span class="badge badge-amber">32%</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- HeatMap -->
+  <section id="heatmap">
+    <h2 class="section-title">Heat Map de Cotações</h2>
+    <p class="section-subtitle">Visualize o mercado em tempo real</p>
+    <div class="browser-frame">
+      <div class="browser-bar">
+        <div class="browser-dots"><span style="background:#ff5f57"></span><span style="background:#febc2e"></span><span style="background:#28c840"></span></div>
+        <div class="browser-url">tradelink.app/heatmap</div>
+      </div>
+      <div class="browser-content">
+        <div class="heatmap-grid">
+          <div class="heat-item heat-green" style="grid-column:span 2;padding:1.5rem">PETR4<br>+2.5%</div>
+          <div class="heat-item heat-red">VALE3<br>-1.2%</div>
+          <div class="heat-item heat-light-green">ITUB4<br>+0.8%</div>
+          <div class="heat-item heat-red">MGLU3<br>-4.5%</div>
+          <div class="heat-item heat-light-green">ABEV3<br>+1.1%</div>
+          <div class="heat-item heat-light-red">BBDC4<br>-0.3%</div>
+          <div class="heat-item heat-green">RENT3<br>+2.8%</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Alertas -->
+  <section id="alertas">
+    <h2 class="section-title">Alertas de Preço</h2>
+    <p class="section-subtitle">Configure notificações inteligentes para seus ativos</p>
+    <div style="display:grid;gap:.75rem">
+      <div class="card" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+        <strong style="min-width:80px">PETR4</strong>
+        <span style="flex:1;color:var(--gray-500);font-size:.875rem;min-width:200px">Preço acima de R$ 40,00</span>
+        <span class="badge badge-green">Ativo</span>
+      </div>
+      <div class="card" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+        <strong style="min-width:80px">VALE3</strong>
+        <span style="flex:1;color:var(--gray-500);font-size:.875rem;min-width:200px">Preço abaixo de R$ 58,00</span>
+        <span class="badge badge-amber">Disparado</span>
+      </div>
+      <div class="card" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+        <strong style="min-width:80px">ITUB4</strong>
+        <span style="flex:1;color:var(--gray-500);font-size:.875rem;min-width:200px">Variação > 5% no dia</span>
+        <span class="badge badge-green">Ativo</span>
+      </div>
+      <div class="card" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+        <strong style="min-width:80px">BTC</strong>
+        <span style="flex:1;color:var(--gray-500);font-size:.875rem;min-width:200px">Preço acima de $70.000</span>
+        <span class="badge badge-green">Ativo</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Segurança -->
+  <section id="seguranca">
+    <h2 class="section-title">Segurança</h2>
+    <p class="section-subtitle">Proteção em todos os níveis da plataforma</p>
+    <div class="security-grid">
+      <div class="security-card">
+        <div class="security-icon" style="background:var(--indigo-light)">🔐</div>
+        <div><h3 style="font-size:.875rem;font-weight:600">Autenticação OTP</h3><p style="font-size:.8125rem;color:var(--gray-500)">Código de verificação enviado por email para cada login</p></div>
+      </div>
+      <div class="security-card">
+        <div class="security-icon" style="background:#d1fae5">🛡️</div>
+        <div><h3 style="font-size:.875rem;font-weight:600">Criptografia</h3><p style="font-size:.8125rem;color:var(--gray-500)">Dados criptografados em trânsito e em repouso</p></div>
+      </div>
+      <div class="security-card">
+        <div class="security-icon" style="background:#dbeafe">👤</div>
+        <div><h3 style="font-size:.875rem;font-weight:600">Controle de Acesso</h3><p style="font-size:.8125rem;color:var(--gray-500)">Perfis com permissões específicas por papel</p></div>
+      </div>
+      <div class="security-card">
+        <div class="security-icon" style="background:#fef3c7">📋</div>
+        <div><h3 style="font-size:.875rem;font-weight:600">Auditoria</h3><p style="font-size:.8125rem;color:var(--gray-500)">Registro completo de todas as ações</p></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <p style="font-size:1.5rem;margin-bottom:.5rem">◈</p>
+  <p><strong>TradeLink</strong> — Transformando a gestão de investimentos</p>
+  <p style="margin-top:.5rem;color:var(--gray-500)">Dúvidas? Fale conosco pelo chat de suporte na plataforma.</p>
+</footer>
+
+</body>
+</html>
