@@ -128,6 +128,26 @@
         </div>
       </div>
 
+      <!-- Configuracao do Sistema -->
+      <div class="card p-6 mb-6">
+        <h3 class="section-title mb-4">Configuração do Sistema</h3>
+        <div class="flex items-center justify-between p-4 rounded-lg border border-gray-200">
+          <div>
+            <p class="font-medium text-gray-900">Autenticação em Dois Fatores (2FA)</p>
+            <p class="text-sm text-gray-500 mt-0.5">Exige código OTP por e-mail no login (exceto AdminMax)</p>
+          </div>
+          <button type="button" @click="toggle2FA"
+            class="relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            :class="doisFatoresAtivo ? 'bg-indigo-600' : 'bg-gray-300'">
+            <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform"
+              :class="doisFatoresAtivo ? 'translate-x-6' : 'translate-x-1'"></span>
+          </button>
+        </div>
+        <p class="text-xs mt-2" :class="doisFatoresAtivo ? 'text-indigo-600' : 'text-amber-600'">
+          {{ doisFatoresAtivo ? '🔒 2FA ativo — login seguro com código por e-mail' : '⚠️ 2FA desativado — login direto com senha (ambiente de testes)' }}
+        </p>
+      </div>
+
       <!-- Atalhos rapidos -->
       <div class="card p-6">
         <h3 class="section-title mb-4">Atalhos</h3>
@@ -167,10 +187,14 @@ import {
   Legend
 } from 'chart.js'
 import empresaApi from '../../api/empresaApi'
+import api from '../../api/axiosInstance'
+import { useToast } from '../../composables/useToast'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend)
 
+const toast = useToast()
 const loading = ref(true)
+const doisFatoresAtivo = ref(true)
 const stats = ref({
   totalEmpresas: 0,
   empresasAtivas: 0,
@@ -351,12 +375,27 @@ const pieChartOptions = {
   }
 }
 
+async function toggle2FA() {
+  try {
+    const novoValor = !doisFatoresAtivo.value
+    await api.put('/admin-max/config-sistema/2fa', { ativo: novoValor })
+    doisFatoresAtivo.value = novoValor
+    toast.success(novoValor ? '2FA ativado' : '2FA desativado')
+  } catch (e) {
+    toast.error('Erro ao alterar 2FA')
+  }
+}
+
 onMounted(async () => {
   try {
-    const res = await empresaApi.dashboardStats()
-    stats.value = res.data
+    const [statsRes, configRes] = await Promise.all([
+      empresaApi.dashboardStats(),
+      api.get('/admin-max/config-sistema')
+    ])
+    stats.value = statsRes.data
+    doisFatoresAtivo.value = configRes.data.doisFatoresAtivo
   } catch (e) {
-    console.error('Erro ao carregar dashboard stats:', e)
+    console.error('Erro ao carregar dashboard:', e)
   } finally {
     loading.value = false
   }

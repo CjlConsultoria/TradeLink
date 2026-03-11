@@ -18,6 +18,7 @@ import com.example.CJLInvestimentos.repositories.UserRepository;
 import com.example.CJLInvestimentos.security.LoginRateLimiter;
 import com.example.CJLInvestimentos.services.AutoCadastroService;
 import com.example.CJLInvestimentos.services.AutoGestaoService;
+import com.example.CJLInvestimentos.services.ConfiguracaoSistemaService;
 import com.example.CJLInvestimentos.services.FaturaService;
 import com.example.CJLInvestimentos.services.JwtService;
 import com.example.CJLInvestimentos.services.LoginLogService;
@@ -58,6 +59,7 @@ public class AuthController {
     private final OtpService otpService;
     private final LoginRateLimiter rateLimiter;
     private final LoginLogService loginLogService;
+    private final ConfiguracaoSistemaService configuracaoSistemaService;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
@@ -132,8 +134,8 @@ public class AuthController {
         // Login bem-sucedido: resetar rate limiter
         rateLimiter.resetAttempts(email);
 
-        // 2FA: AdminMax faz login direto, demais precisam verificar OTP
-        if (user.getRole() != Role.AdminMax) {
+        // 2FA: AdminMax faz login direto; demais precisam verificar OTP (se 2FA global estiver ativo)
+        if (user.getRole() != Role.AdminMax && configuracaoSistemaService.isDoisFatoresAtivo()) {
             otpService.generateAndSend(user);
             loginLogService.registrar(user.getId(), email, ip, userAgent, true, "2FA enviado");
             return ResponseEntity.ok(AuthResponse.builder()

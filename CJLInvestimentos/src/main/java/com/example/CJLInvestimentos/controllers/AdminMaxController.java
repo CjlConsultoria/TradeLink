@@ -22,6 +22,7 @@ import com.example.CJLInvestimentos.entities.User;
 import com.example.CJLInvestimentos.repositories.UserRepository;
 import com.example.CJLInvestimentos.services.AdminMaxDashboardService;
 import com.example.CJLInvestimentos.services.ChatService;
+import com.example.CJLInvestimentos.services.ConfiguracaoSistemaService;
 import com.example.CJLInvestimentos.services.CotacaoService;
 import com.example.CJLInvestimentos.services.EmpresaService;
 import com.example.CJLInvestimentos.services.FaqService;
@@ -57,6 +58,22 @@ public class AdminMaxController {
     private final ChatService chatService;
     private final UserRepository userRepository;
     private final AdminMaxDashboardService adminMaxDashboardService;
+    private final ConfiguracaoSistemaService configuracaoSistemaService;
+
+    // === CONFIGURACAO DO SISTEMA ===
+
+    @GetMapping("/config-sistema")
+    public ResponseEntity<Map<String, Object>> getConfigSistema() {
+        var config = configuracaoSistemaService.get();
+        return ResponseEntity.ok(Map.of("doisFatoresAtivo", Boolean.TRUE.equals(config.getDoisFatoresAtivo())));
+    }
+
+    @PutMapping("/config-sistema/2fa")
+    public ResponseEntity<Map<String, Object>> toggle2FA(@RequestBody Map<String, Boolean> body) {
+        boolean ativo = body != null && Boolean.TRUE.equals(body.get("ativo"));
+        configuracaoSistemaService.setDoisFatoresAtivo(ativo);
+        return ResponseEntity.ok(Map.of("doisFatoresAtivo", ativo));
+    }
 
     // === DASHBOARD ===
 
