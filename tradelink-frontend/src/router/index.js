@@ -37,6 +37,8 @@ const routes = [
   { path: '/precos', name: 'Precos', component: PrecosView, meta: { public: true } },
   { path: '/acesso-bloqueado', name: 'AcessoBloqueado', component: AcessoBloqueadoView, meta: { requiresAuth: true } },
   { path: '/verify-otp', name: 'VerifyOtp', component: () => import('../views/auth/VerifyOtpView.vue'), meta: { public: true } },
+  { path: '/forgot-password', name: 'ForgotPassword', component: () => import('../views/auth/ForgotPasswordView.vue'), meta: { public: true } },
+  { path: '/reset-password', name: 'ResetPassword', component: () => import('../views/auth/ResetPasswordView.vue'), meta: { public: true } },
   { path: '/', redirect: '/login' },
   {
     path: '/admin-max',
@@ -66,6 +68,7 @@ const routes = [
       { path: 'cotacoes', name: 'CotacoesConsultor', component: CotacoesView },
       { path: 'cotacoes/:moeda/:parMoeda', name: 'CotacaoDetailConsultor', component: CotacaoDetailView },
       { path: 'relatorios', name: 'RelatoriosConsultor', component: RelatoriosView },
+      { path: 'alertas-preco', name: 'AlertasPrecoConsultor', component: () => import('../views/cliente/AlertasPrecoView.vue') },
       { path: 'faturas', name: 'FaturasConsultor', component: () => import('../views/consultor/FaturasView.vue') },
       { path: 'faq', name: 'FaqConsultor', component: () => import('../views/common/FaqInternaView.vue') },
       { path: 'configuracoes', name: 'ConfiguracoesConsultor', component: ConfiguracoesNotificacaoView }
@@ -83,6 +86,7 @@ const routes = [
       { path: 'cotacoes', name: 'CotacoesCliente', component: CotacoesClienteView },
       { path: 'cotacoes/:moeda/:parMoeda', name: 'CotacaoDetailCliente', component: CotacaoDetailView },
       { path: 'relatorios', name: 'RelatoriosCliente', component: RelatoriosClienteView },
+      { path: 'alertas-preco', name: 'AlertasPrecoCliente', component: () => import('../views/cliente/AlertasPrecoView.vue') },
       { path: 'faturas', name: 'FaturasCliente', component: () => import('../views/cliente/FaturasClienteView.vue') },
       { path: 'faq', name: 'FaqCliente', component: () => import('../views/common/FaqInternaView.vue') },
       { path: 'configuracoes', name: 'ConfiguracoesCliente', component: ConfiguracoesNotificacaoView }

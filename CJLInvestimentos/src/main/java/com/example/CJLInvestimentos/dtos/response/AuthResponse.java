@@ -34,4 +34,6 @@ public class AuthResponse {
     private Boolean autoCadastro;
     /** true quando login requer verificação 2FA (OTP por e-mail). */
     private Boolean requires2FA;
+    /** Refresh token para renovação silenciosa de sessão (7 dias). */
+    private String refreshToken;
 }

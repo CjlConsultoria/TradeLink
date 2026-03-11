@@ -62,6 +62,9 @@
         </form>
 
         <div class="login-card__links">
+          <p class="login-card__forgot">
+            <router-link to="/forgot-password" class="login-card__link login-card__link--subtle">Esqueci minha senha</router-link>
+          </p>
           <p class="login-card__hint">Use suas credenciais fornecidas pela sua empresa.</p>
           <p class="login-card__signup">
             Não tem conta? <router-link to="/cadastro" class="login-card__link">Cadastre-se gratuitamente</router-link>
@@ -338,6 +341,11 @@ async function handleLogin() {
 .login-card__links {
   margin-top: 1.25rem;
   text-align: center;
+}
+
+.login-card__forgot {
+  margin: 0 0 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .login-card__hint {

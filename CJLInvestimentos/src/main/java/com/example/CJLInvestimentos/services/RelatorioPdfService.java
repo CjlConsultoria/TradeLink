@@ -8,6 +8,7 @@ import com.lowagie.text.pdf.PdfWriter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -19,19 +20,70 @@ import java.util.Locale;
 @Slf4j
 public class RelatorioPdfService {
 
+    // ── Design System TradeLink ──────────────────────────────────────
+    private static final Color INDIGO       = new Color(99, 102, 241);   // #6366f1
+    private static final Color INDIGO_DARK  = new Color(79, 70, 229);    // #4f46e5
+    private static final Color INDIGO_LIGHT = new Color(238, 242, 255);  // #eef2ff
+    private static final Color SLATE_900    = new Color(30, 41, 59);     // #1e293b
+    private static final Color SLATE_700    = new Color(51, 65, 85);     // #334155
+    private static final Color SLATE_500    = new Color(100, 116, 139);  // #64748b
+    private static final Color SLATE_200    = new Color(226, 232, 240);  // #e2e8f0
+    private static final Color SLATE_50     = new Color(248, 250, 252);  // #f8fafc
+
+    private static final Locale PT_BR = new Locale("pt", "BR");
     private static final DateTimeFormatter DATA_HORA_FMT =
-            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm", new Locale("pt", "BR"));
+            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm", PT_BR);
     private static final DateTimeFormatter DATA_FMT =
-            DateTimeFormatter.ofPattern("dd/MM/yyyy", new Locale("pt", "BR"));
+            DateTimeFormatter.ofPattern("dd/MM/yyyy", PT_BR);
+
+    // ── Fonts ────────────────────────────────────────────────────────
+    private static final Font FONT_BRAND     = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18, Color.WHITE);
+    private static final Font FONT_BRAND_SUB = FontFactory.getFont(FontFactory.HELVETICA, 9, new Color(199, 210, 254));
+    private static final Font FONT_TITULO    = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, SLATE_900);
+    private static final Font FONT_SUBTITULO = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, SLATE_900);
+    private static final Font FONT_NORMAL    = FontFactory.getFont(FontFactory.HELVETICA, 9, SLATE_700);
+    private static final Font FONT_HEADER    = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8, Color.WHITE);
+    private static final Font FONT_CELL      = FontFactory.getFont(FontFactory.HELVETICA, 8, SLATE_700);
+    private static final Font FONT_SMALL     = FontFactory.getFont(FontFactory.HELVETICA, 8, SLATE_500);
 
     private static String fmt(BigDecimal v) {
         if (v == null) return "-";
-        return String.format(new Locale("pt", "BR"), "R$ %,.2f", v);
+        return String.format(PT_BR, "R$ %,.2f", v);
     }
 
     private static String fmt(LocalDateTime dt) {
         if (dt == null) return "-";
         return dt.format(DATA_HORA_FMT);
+    }
+
+    // ── Header TradeLink (indigo bar) ────────────────────────────────
+    private static void addTradelinkHeader(Document doc) throws DocumentException {
+        PdfPTable bar = new PdfPTable(1);
+        bar.setWidthPercentage(100f);
+        bar.setSpacingAfter(16f);
+        PdfPCell cell = new PdfPCell();
+        cell.setBackgroundColor(INDIGO);
+        cell.setPadding(14f);
+        cell.setBorder(Rectangle.NO_BORDER);
+        cell.addElement(new Paragraph("TradeLink", FONT_BRAND));
+        cell.addElement(new Paragraph("Plataforma de investimentos e consultoria", FONT_BRAND_SUB));
+        bar.addCell(cell);
+        doc.add(bar);
+    }
+
+    // ── Rodapé padrão ────────────────────────────────────────────────
+    private static void addRodape(Document doc) throws DocumentException {
+        PdfPTable footerBar = new PdfPTable(1);
+        footerBar.setWidthPercentage(100f);
+        footerBar.setSpacingBefore(20f);
+        PdfPCell cell = new PdfPCell();
+        cell.setBorder(Rectangle.TOP);
+        cell.setBorderColor(SLATE_200);
+        cell.setBorderWidth(0.5f);
+        cell.setPaddingTop(6f);
+        cell.addElement(new Paragraph("Documento gerado automaticamente pelo TradeLink. Este relatório não constitui recomendação de investimento.", FONT_SMALL));
+        footerBar.addCell(cell);
+        doc.add(footerBar);
     }
 
     /** PDF: Relatório de operações do cliente (histórico). */
@@ -43,28 +95,32 @@ public class RelatorioPdfService {
             PdfWriter.getInstance(doc, baos);
             doc.open();
 
-            Font titulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14);
-            Font normal = FontFactory.getFont(FontFactory.HELVETICA, 8);
+            addTradelinkHeader(doc);
 
-            doc.add(new Paragraph("Relatório de operações — Cliente", titulo));
-            doc.add(new Paragraph("Período: " + (dataDe != null ? dataDe : "início") + " a " + (dataAte != null ? dataAte : "hoje"), normal));
+            doc.add(new Paragraph("Relatório de Operações — Cliente", FONT_TITULO));
+            doc.add(new Paragraph("Período: " + (dataDe != null ? dataDe : "início") + " a " + (dataAte != null ? dataAte : "hoje"), FONT_NORMAL));
             doc.add(new Paragraph(" "));
 
             PdfPTable table = new PdfPTable(7);
             table.setWidthPercentage(100f);
             table.setWidths(new float[]{1.2f, 1.2f, 1.2f, 0.8f, 1f, 0.8f, 1.2f});
-            addHeader(table, normal, "Data", "Carteira", "Par", "Tipo", "Preço", "Qtd", "Valor");
+            addHeader(table, "Data", "Carteira", "Par", "Tipo", "Preço", "Qtd", "Valor");
+
+            int row = 0;
             for (RelatorioClienteOperacaoResponse op : operacoes) {
-                addCell(table, fmt(op.getDataExecucao()), normal);
-                addCell(table, op.getCarteiraNome() != null ? op.getCarteiraNome() : "-", normal);
-                addCell(table, op.getRecomendacaoMoedaPar() != null ? op.getRecomendacaoMoedaPar() : "-", normal);
-                addCell(table, op.getTipo() != null ? op.getTipo().name() : "-", normal);
-                addCell(table, fmt(op.getPrecoExecutado()), normal);
-                addCell(table, op.getQuantidade() != null ? op.getQuantidade().toPlainString() : "-", normal);
-                addCell(table, fmt(op.getValorOperacao()), normal);
+                Color bg = (row++ % 2 == 0) ? Color.WHITE : SLATE_50;
+                addCell(table, fmt(op.getDataExecucao()), bg);
+                addCell(table, op.getCarteiraNome() != null ? op.getCarteiraNome() : "-", bg);
+                addCell(table, op.getRecomendacaoMoedaPar() != null ? op.getRecomendacaoMoedaPar() : "-", bg);
+                addCell(table, op.getTipo() != null ? op.getTipo().name() : "-", bg);
+                addCell(table, fmt(op.getPrecoExecutado()), bg);
+                addCell(table, op.getQuantidade() != null ? op.getQuantidade().toPlainString() : "-", bg);
+                addCell(table, fmt(op.getValorOperacao()), bg);
             }
             doc.add(table);
-            doc.add(new Paragraph("Total de operações: " + operacoes.size(), normal));
+            doc.add(new Paragraph("Total de operações: " + operacoes.size(), FONT_SMALL));
+
+            addRodape(doc);
             doc.close();
             return baos.toByteArray();
         } catch (DocumentException e) {
@@ -82,40 +138,44 @@ public class RelatorioPdfService {
             PdfWriter.getInstance(doc, baos);
             doc.open();
 
-            Font titulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14);
-            Font subtitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11);
-            Font normal = FontFactory.getFont(FontFactory.HELVETICA, 10);
+            addTradelinkHeader(doc);
 
-            doc.add(new Paragraph("Resumo de ganhos e perdas — Cliente", titulo));
-            doc.add(new Paragraph("Período: " + (dataDe != null ? dataDe : "início") + " a " + (dataAte != null ? dataAte : "hoje"), normal));
+            doc.add(new Paragraph("Resumo de Ganhos e Perdas — Cliente", FONT_TITULO));
+            doc.add(new Paragraph("Período: " + (dataDe != null ? dataDe : "início") + " a " + (dataAte != null ? dataAte : "hoje"), FONT_NORMAL));
             doc.add(new Paragraph(" "));
 
-            doc.add(new Paragraph("Totais", subtitulo));
+            doc.add(new Paragraph("Totais", FONT_SUBTITULO));
             PdfPTable totais = new PdfPTable(2);
             totais.setWidthPercentage(60f);
-            addRow(totais, "Total investido (compras):", fmt(resumo != null ? resumo.getValorTotalCompras() : null), normal);
-            addRow(totais, "Total vendido:", fmt(resumo != null ? resumo.getValorTotalVendas() : null), normal);
-            addRow(totais, "Resultado (ganho/perda):", fmt(resumo != null ? resumo.getResultado() : null), normal);
-            addRow(totais, "Operações (compras/vendas):", (resumo != null ? resumo.getTotalCompras() : 0) + " / " + (resumo != null ? resumo.getTotalVendas() : 0), normal);
+            addInfoRow(totais, "Total investido (compras):", fmt(resumo != null ? resumo.getValorTotalCompras() : null));
+            addInfoRow(totais, "Total vendido:", fmt(resumo != null ? resumo.getValorTotalVendas() : null));
+            addInfoRow(totais, "Resultado (ganho/perda):", fmt(resumo != null ? resumo.getResultado() : null));
+            addInfoRow(totais, "Operações (compras/vendas):", (resumo != null ? resumo.getTotalCompras() : 0) + " / " + (resumo != null ? resumo.getTotalVendas() : 0));
             doc.add(totais);
             doc.add(new Paragraph(" "));
 
             List<ResumoRelatorioClienteResponse.PerdaGanhoPorMoeda> porMoeda = resumo != null && resumo.getPerdasGanhosPorMoeda() != null
                     ? resumo.getPerdasGanhosPorMoeda() : List.of();
-            doc.add(new Paragraph("Resultado por moeda/par", subtitulo));
+            doc.add(new Paragraph("Resultado por Moeda/Par", FONT_SUBTITULO));
+            doc.add(new Paragraph(" "));
             PdfPTable tableMoeda = new PdfPTable(4);
             tableMoeda.setWidthPercentage(100f);
-            addHeader(tableMoeda, normal, "Par", "Total compras", "Total vendas", "Resultado");
+            addHeader(tableMoeda, "Par", "Total compras", "Total vendas", "Resultado");
+
+            int row = 0;
             for (ResumoRelatorioClienteResponse.PerdaGanhoPorMoeda item : porMoeda) {
-                addCell(tableMoeda, item.getMoedaPar() != null ? item.getMoedaPar() : "-", normal);
-                addCell(tableMoeda, fmt(item.getValorTotalCompras()), normal);
-                addCell(tableMoeda, fmt(item.getValorTotalVendas()), normal);
-                addCell(tableMoeda, fmt(item.getResultado()), normal);
+                Color bg = (row++ % 2 == 0) ? Color.WHITE : SLATE_50;
+                addCell(tableMoeda, item.getMoedaPar() != null ? item.getMoedaPar() : "-", bg);
+                addCell(tableMoeda, fmt(item.getValorTotalCompras()), bg);
+                addCell(tableMoeda, fmt(item.getValorTotalVendas()), bg);
+                addCell(tableMoeda, fmt(item.getResultado()), bg);
             }
             doc.add(tableMoeda);
             if (porMoeda.isEmpty()) {
-                doc.add(new Paragraph("Nenhum dado por moeda no período.", normal));
+                doc.add(new Paragraph("Nenhum dado por moeda no período.", FONT_NORMAL));
             }
+
+            addRodape(doc);
             doc.close();
             return baos.toByteArray();
         } catch (DocumentException e) {
@@ -133,30 +193,34 @@ public class RelatorioPdfService {
             PdfWriter.getInstance(doc, baos);
             doc.open();
 
-            Font titulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14);
-            Font normal = FontFactory.getFont(FontFactory.HELVETICA, 7);
+            addTradelinkHeader(doc);
 
-            doc.add(new Paragraph("Relatório de operações — Consultor", titulo));
-            doc.add(new Paragraph("Período: " + (dataDe != null ? dataDe : "início") + " a " + (dataAte != null ? dataAte : "hoje"), normal));
+            doc.add(new Paragraph("Relatório de Operações — Consultor", FONT_TITULO));
+            doc.add(new Paragraph("Período: " + (dataDe != null ? dataDe : "início") + " a " + (dataAte != null ? dataAte : "hoje"), FONT_NORMAL));
             doc.add(new Paragraph(" "));
 
             PdfPTable table = new PdfPTable(9);
             table.setWidthPercentage(100f);
             table.setWidths(new float[]{1.2f, 1f, 1f, 1f, 0.7f, 0.9f, 0.6f, 1f, 0.5f});
-            addHeader(table, normal, "Data", "Cliente", "Carteira", "Par", "Tipo", "Preço", "Qtd", "Valor", "Res.");
+            addHeader(table, "Data", "Cliente", "Carteira", "Par", "Tipo", "Preço", "Qtd", "Valor", "Res.");
+
+            int row = 0;
             for (RelatorioConsultorResponse op : operacoes) {
-                addCell(table, fmt(op.getDataExecucao()), normal);
-                addCell(table, op.getClienteNome() != null ? op.getClienteNome() : "-", normal);
-                addCell(table, op.getCarteiraNome() != null ? op.getCarteiraNome() : "-", normal);
-                addCell(table, op.getRecomendacaoMoedaPar() != null ? op.getRecomendacaoMoedaPar() : "-", normal);
-                addCell(table, op.getTipo() != null ? op.getTipo().name() : "-", normal);
-                addCell(table, fmt(op.getPrecoExecutado()), normal);
-                addCell(table, op.getQuantidade() != null ? op.getQuantidade().toPlainString() : "-", normal);
-                addCell(table, fmt(op.getValorOperacao()), normal);
-                addCell(table, Boolean.TRUE.equals(op.getRecomendacaoResolvidaPeloCliente()) ? "Sim" : "-", normal);
+                Color bg = (row++ % 2 == 0) ? Color.WHITE : SLATE_50;
+                addCell(table, fmt(op.getDataExecucao()), bg);
+                addCell(table, op.getClienteNome() != null ? op.getClienteNome() : "-", bg);
+                addCell(table, op.getCarteiraNome() != null ? op.getCarteiraNome() : "-", bg);
+                addCell(table, op.getRecomendacaoMoedaPar() != null ? op.getRecomendacaoMoedaPar() : "-", bg);
+                addCell(table, op.getTipo() != null ? op.getTipo().name() : "-", bg);
+                addCell(table, fmt(op.getPrecoExecutado()), bg);
+                addCell(table, op.getQuantidade() != null ? op.getQuantidade().toPlainString() : "-", bg);
+                addCell(table, fmt(op.getValorOperacao()), bg);
+                addCell(table, Boolean.TRUE.equals(op.getRecomendacaoResolvidaPeloCliente()) ? "Sim" : "-", bg);
             }
             doc.add(table);
-            doc.add(new Paragraph("Total de operações: " + operacoes.size(), normal));
+            doc.add(new Paragraph("Total de operações: " + operacoes.size(), FONT_SMALL));
+
+            addRodape(doc);
             doc.close();
             return baos.toByteArray();
         } catch (DocumentException e) {
@@ -174,89 +238,120 @@ public class RelatorioPdfService {
             PdfWriter.getInstance(doc, baos);
             doc.open();
 
-            Font titulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14);
-            Font subtitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11);
-            Font normal = FontFactory.getFont(FontFactory.HELVETICA, 9);
+            addTradelinkHeader(doc);
 
-            doc.add(new Paragraph("Resumo completo — Consultor", titulo));
-            doc.add(new Paragraph("Período: " + (dataDe != null ? dataDe : "início") + " a " + (dataAte != null ? dataAte : "hoje"), normal));
+            doc.add(new Paragraph("Resumo Completo — Consultor", FONT_TITULO));
+            doc.add(new Paragraph("Período: " + (dataDe != null ? dataDe : "início") + " a " + (dataAte != null ? dataAte : "hoje"), FONT_NORMAL));
             doc.add(new Paragraph(" "));
 
             long totalOp = resumo != null && resumo.getTotalOperacoes() != null ? resumo.getTotalOperacoes() : 0;
             long totalC = resumo != null && resumo.getTotalCompras() != null ? resumo.getTotalCompras() : 0;
             long totalV = resumo != null && resumo.getTotalVendas() != null ? resumo.getTotalVendas() : 0;
-            doc.add(new Paragraph("Totais: " + totalOp + " operações (" + totalC + " compras, " + totalV + " vendas)", subtitulo));
-            doc.add(new Paragraph(" "));
 
+            // Summary highlight box
+            PdfPTable sumBox = new PdfPTable(1);
+            sumBox.setWidthPercentage(100f);
+            sumBox.setSpacingAfter(16f);
+            PdfPCell sumCell = new PdfPCell(new Phrase(
+                    totalOp + " operações  ·  " + totalC + " compras  ·  " + totalV + " vendas",
+                    FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, INDIGO_DARK)));
+            sumCell.setPadding(10f);
+            sumCell.setBackgroundColor(INDIGO_LIGHT);
+            sumCell.setBorderWidth(0.5f);
+            sumCell.setBorderColor(INDIGO);
+            sumBox.addCell(sumCell);
+            doc.add(sumBox);
+
+            // Por carteira
             if (resumo != null && resumo.getPorCarteira() != null && !resumo.getPorCarteira().isEmpty()) {
-                doc.add(new Paragraph("Por carteira", subtitulo));
+                doc.add(new Paragraph("Por Carteira", FONT_SUBTITULO));
+                doc.add(new Paragraph(" "));
                 PdfPTable t = new PdfPTable(2);
                 t.setWidthPercentage(80f);
-                addHeader(t, normal, "Carteira", "Operações");
+                addHeader(t, "Carteira", "Operações");
+                int row = 0;
                 for (ResumoRelatorioResponse.ResumoPorCarteira r : resumo.getPorCarteira()) {
-                    addCell(t, r.getCarteiraNome() != null ? r.getCarteiraNome() : "-", normal);
-                    addCell(t, String.valueOf(r.getTotal() != null ? r.getTotal() : 0), normal);
+                    Color bg = (row++ % 2 == 0) ? Color.WHITE : SLATE_50;
+                    addCell(t, r.getCarteiraNome() != null ? r.getCarteiraNome() : "-", bg);
+                    addCell(t, String.valueOf(r.getTotal() != null ? r.getTotal() : 0), bg);
                 }
                 doc.add(t);
                 doc.add(new Paragraph(" "));
             }
 
+            // Por cliente
             if (resumo != null && resumo.getPorCliente() != null && !resumo.getPorCliente().isEmpty()) {
-                doc.add(new Paragraph("Por cliente", subtitulo));
+                doc.add(new Paragraph("Por Cliente", FONT_SUBTITULO));
+                doc.add(new Paragraph(" "));
                 PdfPTable t = new PdfPTable(2);
                 t.setWidthPercentage(80f);
-                addHeader(t, normal, "Cliente", "Operações");
+                addHeader(t, "Cliente", "Operações");
+                int row = 0;
                 for (ResumoRelatorioResponse.ResumoPorCliente r : resumo.getPorCliente()) {
-                    addCell(t, r.getClienteNome() != null ? r.getClienteNome() : "-", normal);
-                    addCell(t, String.valueOf(r.getTotal() != null ? r.getTotal() : 0), normal);
+                    Color bg = (row++ % 2 == 0) ? Color.WHITE : SLATE_50;
+                    addCell(t, r.getClienteNome() != null ? r.getClienteNome() : "-", bg);
+                    addCell(t, String.valueOf(r.getTotal() != null ? r.getTotal() : 0), bg);
                 }
                 doc.add(t);
                 doc.add(new Paragraph(" "));
             }
 
+            // Por moeda
             if (resumo != null && resumo.getPorMoeda() != null && !resumo.getPorMoeda().isEmpty()) {
-                doc.add(new Paragraph("Por moeda/par", subtitulo));
+                doc.add(new Paragraph("Por Moeda/Par", FONT_SUBTITULO));
+                doc.add(new Paragraph(" "));
                 PdfPTable t = new PdfPTable(2);
                 t.setWidthPercentage(60f);
-                addHeader(t, normal, "Par", "Operações");
+                addHeader(t, "Par", "Operações");
+                int row = 0;
                 for (ResumoRelatorioResponse.ResumoPorMoeda r : resumo.getPorMoeda()) {
-                    addCell(t, r.getMoedaPar() != null ? r.getMoedaPar() : "-", normal);
-                    addCell(t, String.valueOf(r.getTotal() != null ? r.getTotal() : 0), normal);
+                    Color bg = (row++ % 2 == 0) ? Color.WHITE : SLATE_50;
+                    addCell(t, r.getMoedaPar() != null ? r.getMoedaPar() : "-", bg);
+                    addCell(t, String.valueOf(r.getTotal() != null ? r.getTotal() : 0), bg);
                 }
                 doc.add(t);
                 doc.add(new Paragraph(" "));
             }
 
+            // Recomendações resolvidas
             if (resumo != null && resumo.getRecomendacoesResolvidas() != null && !resumo.getRecomendacoesResolvidas().isEmpty()) {
-                doc.add(new Paragraph("Recomendações marcadas como resolvidas pelos clientes", subtitulo));
+                doc.add(new Paragraph("Recomendações Resolvidas pelos Clientes", FONT_SUBTITULO));
+                doc.add(new Paragraph(" "));
                 PdfPTable t = new PdfPTable(4);
                 t.setWidthPercentage(100f);
-                addHeader(t, normal, "Data", "Cliente", "Carteira", "Par");
+                addHeader(t, "Data", "Cliente", "Carteira", "Par");
+                int row = 0;
                 for (ResumoRelatorioResponse.RecomendacaoResolvidaItem r : resumo.getRecomendacoesResolvidas()) {
-                    addCell(t, r.getResolvidoEm() != null ? r.getResolvidoEm().format(DATA_HORA_FMT) : "-", normal);
-                    addCell(t, r.getClienteNome() != null ? r.getClienteNome() : "-", normal);
-                    addCell(t, r.getCarteiraNome() != null ? r.getCarteiraNome() : "-", normal);
-                    addCell(t, r.getRecomendacaoMoedaPar() != null ? r.getRecomendacaoMoedaPar() : "-", normal);
+                    Color bg = (row++ % 2 == 0) ? Color.WHITE : SLATE_50;
+                    addCell(t, r.getResolvidoEm() != null ? r.getResolvidoEm().format(DATA_HORA_FMT) : "-", bg);
+                    addCell(t, r.getClienteNome() != null ? r.getClienteNome() : "-", bg);
+                    addCell(t, r.getCarteiraNome() != null ? r.getCarteiraNome() : "-", bg);
+                    addCell(t, r.getRecomendacaoMoedaPar() != null ? r.getRecomendacaoMoedaPar() : "-", bg);
                 }
                 doc.add(t);
                 doc.add(new Paragraph(" "));
             }
 
+            // Perdas e ganhos
             if (resumo != null && resumo.getPerdasGanhosPorClienteMoeda() != null && !resumo.getPerdasGanhosPorClienteMoeda().isEmpty()) {
-                doc.add(new Paragraph("Perdas e ganhos por cliente e moeda (vendas − compras)", subtitulo));
+                doc.add(new Paragraph("Perdas e Ganhos por Cliente e Moeda", FONT_SUBTITULO));
+                doc.add(new Paragraph(" "));
                 PdfPTable t = new PdfPTable(5);
                 t.setWidthPercentage(100f);
-                addHeader(t, normal, "Cliente", "Par", "Compras", "Vendas", "Resultado");
+                addHeader(t, "Cliente", "Par", "Compras", "Vendas", "Resultado");
+                int row = 0;
                 for (ResumoRelatorioResponse.PerdaGanhoClienteMoeda r : resumo.getPerdasGanhosPorClienteMoeda()) {
-                    addCell(t, r.getClienteNome() != null ? r.getClienteNome() : "-", normal);
-                    addCell(t, r.getMoedaPar() != null ? r.getMoedaPar() : "-", normal);
-                    addCell(t, fmt(r.getValorTotalCompras()), normal);
-                    addCell(t, fmt(r.getValorTotalVendas()), normal);
-                    addCell(t, fmt(r.getResultado()), normal);
+                    Color bg = (row++ % 2 == 0) ? Color.WHITE : SLATE_50;
+                    addCell(t, r.getClienteNome() != null ? r.getClienteNome() : "-", bg);
+                    addCell(t, r.getMoedaPar() != null ? r.getMoedaPar() : "-", bg);
+                    addCell(t, fmt(r.getValorTotalCompras()), bg);
+                    addCell(t, fmt(r.getValorTotalVendas()), bg);
+                    addCell(t, fmt(r.getResultado()), bg);
                 }
                 doc.add(t);
             }
 
+            addRodape(doc);
             doc.close();
             return baos.toByteArray();
         } catch (DocumentException e) {
@@ -265,20 +360,40 @@ public class RelatorioPdfService {
         }
     }
 
-    private static void addHeader(PdfPTable table, Font font, String... headers) {
+    // ── Helpers ──────────────────────────────────────────────────────
+
+    private static void addHeader(PdfPTable table, String... headers) {
         for (String h : headers) {
-            PdfPCell c = new PdfPCell(new Phrase(h, font));
-            c.setBackgroundColor(new java.awt.Color(0xE5, 0xE7, 0xEB));
+            PdfPCell c = new PdfPCell(new Phrase(h, FONT_HEADER));
+            c.setBackgroundColor(INDIGO);
+            c.setPadding(5);
+            c.setHorizontalAlignment(Element.ALIGN_CENTER);
+            c.setBorderWidth(0.5f);
+            c.setBorderColor(INDIGO_DARK);
             table.addCell(c);
         }
     }
 
-    private static void addRow(PdfPTable table, String label, String value, Font font) {
-        table.addCell(new PdfPCell(new Phrase(label != null ? label : "-", font)));
-        table.addCell(new PdfPCell(new Phrase(value != null ? value : "-", font)));
+    private static void addInfoRow(PdfPTable table, String label, String value) {
+        PdfPCell c1 = new PdfPCell(new Phrase(label, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, SLATE_700)));
+        c1.setPadding(5);
+        c1.setBorderWidth(0.5f);
+        c1.setBorderColor(SLATE_200);
+        table.addCell(c1);
+
+        PdfPCell c2 = new PdfPCell(new Phrase(value != null ? value : "-", FontFactory.getFont(FontFactory.HELVETICA, 10, SLATE_900)));
+        c2.setPadding(5);
+        c2.setBorderWidth(0.5f);
+        c2.setBorderColor(SLATE_200);
+        table.addCell(c2);
     }
 
-    private static void addCell(PdfPTable table, String text, Font font) {
-        table.addCell(new PdfPCell(new Phrase(text != null ? text : "-", font)));
+    private static void addCell(PdfPTable table, String text, Color bg) {
+        PdfPCell c = new PdfPCell(new Phrase(text != null ? text : "-", FONT_CELL));
+        c.setPadding(4);
+        c.setBorderWidth(0.5f);
+        c.setBorderColor(SLATE_200);
+        c.setBackgroundColor(bg);
+        table.addCell(c);
     }
 }

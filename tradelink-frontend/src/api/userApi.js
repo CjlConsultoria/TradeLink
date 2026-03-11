@@ -68,5 +68,8 @@ export default {
   },
   trocarSenha(senhaAtual, novaSenha) {
     return api.put('/me/senha', { senhaAtual, novaSenha })
+  },
+  loginHistory(limit = 20) {
+    return api.get('/me/login-history', { params: { limit } })
   }
 }

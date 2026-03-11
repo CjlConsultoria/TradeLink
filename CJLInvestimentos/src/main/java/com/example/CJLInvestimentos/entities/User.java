@@ -138,6 +138,24 @@ public class User implements UserDetails {
     @Column(length = 18)
     private String cnpj;
 
+    // --- Campos de recuperação de senha ---
+
+    @Column(name = "token_reset_senha", length = 128, unique = true)
+    private String tokenResetSenha;
+
+    @Column(name = "token_reset_senha_expiracao")
+    private LocalDateTime tokenResetSenhaExpiracao;
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    void prePersist() {
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.singleton(() -> "ROLE_" + role.name());

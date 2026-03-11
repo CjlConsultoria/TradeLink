@@ -21,5 +21,14 @@ export default {
   },
   resendOtp(data) {
     return api.post('/auth/resend-otp', data)
+  },
+  forgotPassword(data) {
+    return api.post('/auth/forgot-password', data)
+  },
+  resetPassword(data) {
+    return api.post('/auth/reset-password', data)
+  },
+  refresh(data) {
+    return api.post('/auth/refresh', data)
   }
 }

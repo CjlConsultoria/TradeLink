@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Repository
@@ -18,4 +19,9 @@ public interface OtpCodeRepository extends JpaRepository<OtpCode, Long> {
     @Transactional
     @Query("DELETE FROM OtpCode o WHERE o.userId = :userId AND o.used = false")
     void deleteByUserIdAndUsedFalse(Long userId);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Transactional
+    @Query("DELETE FROM OtpCode o WHERE o.expiresAt < :now OR o.used = true")
+    int deleteExpiredOrUsed(LocalDateTime now);
 }

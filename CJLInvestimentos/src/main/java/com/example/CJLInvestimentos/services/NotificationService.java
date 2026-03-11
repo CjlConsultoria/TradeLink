@@ -33,14 +33,17 @@ public class NotificationService {
     private final JavaMailSender mailSender;
     private final PushSubscriptionRepository pushSubscriptionRepository;
     private final EmailTemplateService emailTemplateService;
+    private final NotificacaoInAppService notificacaoInAppService;
 
     public NotificationService(
             @org.springframework.beans.factory.annotation.Autowired(required = false) JavaMailSender mailSender,
             PushSubscriptionRepository pushSubscriptionRepository,
-            EmailTemplateService emailTemplateService) {
+            EmailTemplateService emailTemplateService,
+            NotificacaoInAppService notificacaoInAppService) {
         this.mailSender = mailSender;
         this.pushSubscriptionRepository = pushSubscriptionRepository;
         this.emailTemplateService = emailTemplateService;
+        this.notificacaoInAppService = notificacaoInAppService;
     }
 
     @Value("${app.notificacao.telegram.bot-token:}")
@@ -224,6 +227,13 @@ public class NotificationService {
     public void notificarUsuario(Empresa empresa, User usuario, String titulo, String corpo, String htmlBody) {
         if (empresa == null || usuario == null) return;
 
+        // Criar notificacao in-app
+        try {
+            notificacaoInAppService.criar(usuario, titulo, corpo, "SISTEMA", null);
+        } catch (Exception e) {
+            log.warn("Falha ao criar notificacao in-app para usuario id={}: {}", usuario.getId(), e.getMessage());
+        }
+
         if (Boolean.TRUE.equals(empresa.getNotificacaoEmail()) && usuario.getEmail() != null && !usuario.getEmail().isBlank()) {
             if (htmlBody != null && !htmlBody.isBlank()) {
                 enviarEmailHtml(usuario.getEmail(), titulo, htmlBody);
@@ -339,6 +349,12 @@ public class NotificationService {
         enviarEmailHtml(para, "Bem-vindo ao TradeLink! Seu trial gratuito comecou", html);
     }
 
+    /** Envia e-mail de recuperação de senha. Sempre envia, ignora config da empresa. */
+    public void enviarEmailResetSenha(String para, String nome, String token) {
+        String html = emailTemplateService.buildResetSenha(nome, token);
+        enviarEmailHtml(para, "Redefinir Senha - TradeLink", html);
+    }
+
     /** Envia e-mail com codigo OTP para autenticacao de dois fatores. Sempre envia, ignora config da empresa. */
     public void enviarEmailOtp(String para, String nome, String code) {
         String html = emailTemplateService.buildOtp(nome, code);
@@ -354,5 +370,12 @@ public class NotificationService {
                 nomeCliente, tipoOp, quantidade, ativo, precoExecutado, carteiraNome);
         String html = emailTemplateService.buildOperacaoRegistrada(nomeCliente, carteiraNome, tipoOp, ativo, quantidade, precoExecutado);
         notificarUsuario(empresa, consultor, titulo, corpo, html);
+    }
+
+    /** Envia e-mail de alerta de preco (para usuarios sem empresa / auto-gestao). */
+    public void enviarEmailAlertaPreco(String para, String nome, String par,
+                                        String tipoAlerta, String precoAlerta, String precoAtual) {
+        String html = emailTemplateService.buildAlertaPreco(nome, par, tipoAlerta, precoAlerta, precoAtual);
+        enviarEmailHtml(para, "Alerta de Preco: " + par + " - TradeLink", html);
     }
 }

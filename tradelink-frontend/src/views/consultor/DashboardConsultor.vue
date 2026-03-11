@@ -1,7 +1,7 @@
 <template>
   <div>
     <h2 class="page-title">Dashboard · Consultor</h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" data-onboarding="cards">
       <router-link to="/consultor/carteiras" class="card p-6 block hover:border-indigo-300">
         <p class="text-sm text-gray-500">Carteiras</p>
         <p class="text-3xl font-bold text-indigo-600 mt-1">{{ carteiras.length }}</p>
@@ -15,10 +15,12 @@
         <p class="text-3xl font-bold text-green-600 mt-1">{{ cotacaoStore.cotacoes.length }}</p>
       </router-link>
     </div>
-    <CotacoesDashboardSection titulo="Cotações em tempo real" :show-refresh="true" />
+    <div data-onboarding="cotacoes">
+      <CotacoesDashboardSection titulo="Cotações em tempo real" :show-refresh="true" />
+    </div>
 
     <!-- Saude dos Portfolios -->
-    <div class="card p-6 mb-8">
+    <div class="card p-6 mb-8" data-onboarding="saude">
       <div class="flex items-center justify-between mb-4">
         <h3 class="section-title">Saude dos Portfolios</h3>
         <router-link to="/consultor/rebalanceamento"
@@ -29,7 +31,7 @@
       <SaudeClientesGrid />
     </div>
 
-    <div class="card p-6">
+    <div class="card p-6" data-onboarding="carteiras">
       <div class="flex items-center justify-between mb-4">
         <h3 class="section-title">Minhas Carteiras</h3>
         <router-link to="/consultor/carteiras" class="text-sm text-indigo-600 hover:underline">Ver todas</router-link>
@@ -53,18 +55,61 @@
         </div>
       </div>
     </div>
+
+    <!-- Onboarding Overlay -->
+    <OnboardingOverlay
+      :active="onboarding.active.value"
+      :step="onboarding.step.value"
+      :current-step="onboarding.currentStep.value"
+      :total-steps="onboarding.totalSteps.value"
+      :is-first="onboarding.isFirst.value"
+      :is-last="onboarding.isLast.value"
+      @next="onboarding.next()"
+      @prev="onboarding.prev()"
+      @skip="onboarding.skip()"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useCotacaoStore } from '../../stores/cotacao'
+import { useOnboarding } from '../../composables/useOnboarding'
 import carteiraApi from '../../api/carteiraApi'
 import userApi from '../../api/userApi'
 import CotacoesDashboardSection from '../../components/cotacao/CotacoesDashboardSection.vue'
 import SaudeClientesGrid from '../../components/rebalanceamento/SaudeClientesGrid.vue'
+import OnboardingOverlay from '../../components/common/OnboardingOverlay.vue'
 
 const cotacaoStore = useCotacaoStore()
+
+const onboarding = useOnboarding('consultor-dashboard', [
+  {
+    target: '[data-onboarding="cards"]',
+    title: 'Metricas principais',
+    message: 'Veja rapidamente o total de carteiras, clientes e cotacoes disponiveis na plataforma.',
+    position: 'bottom'
+  },
+  {
+    target: '[data-onboarding="cotacoes"]',
+    title: 'Cotacoes em tempo real',
+    message: 'Acompanhe as cotacoes atualizadas automaticamente. Use o botao de atualizar para forcar uma nova consulta.',
+    position: 'bottom'
+  },
+  {
+    target: '[data-onboarding="saude"]',
+    title: 'Saude dos Portfolios',
+    message: 'Monitore a saude de cada cliente. Vermelho indica portfolios que precisam de atencao urgente.',
+    position: 'top'
+  },
+  {
+    target: '[data-onboarding="carteiras"]',
+    title: 'Suas Carteiras',
+    message: 'Gerencie todas as suas carteiras aqui. Clique em uma carteira para ver detalhes e criar recomendacoes.',
+    position: 'top'
+  }
+])
+
 const carteiras = ref([])
 const clientes = ref([])
 const filtros = ref({ nome: '' })
@@ -94,6 +139,7 @@ onMounted(async () => {
     carteiras.value = cartRes.data
     clientes.value = cliRes.data
   } catch (e) { console.error(e) }
+  onboarding.autoStart(1000)
 })
 onUnmounted(() => cotacaoStore.stopPolling())
 </script>

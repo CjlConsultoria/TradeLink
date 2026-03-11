@@ -12,6 +12,7 @@
       </div>
     </div>
     <div class="app-header__right">
+      <NotificationBell />
       <span class="app-header__user" :title="user?.nome">{{ user?.nome }}</span>
       <span class="app-header__badge" :class="roleBadge">{{ roleLabel }}</span>
       <button type="button" @click="handleLogout" class="app-header__logout">Sair</button>
@@ -23,6 +24,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
+import NotificationBell from './NotificationBell.vue'
 import { useToast } from '../../composables/useToast'
 
 defineEmits(['toggle-sidebar'])

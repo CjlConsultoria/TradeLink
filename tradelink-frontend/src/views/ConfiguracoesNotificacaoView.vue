@@ -10,6 +10,9 @@
       <button type="button" @click="abaAtiva = 'senha'"
         :class="abaAtiva === 'senha' ? 'border-b-2 border-indigo-600 text-indigo-600 font-medium' : 'text-gray-500 hover:text-gray-700'"
         class="pb-2 px-1 text-sm">Alterar senha</button>
+      <button type="button" @click="abaAtiva = 'acessos'; carregarHistorico()"
+        :class="abaAtiva === 'acessos' ? 'border-b-2 border-indigo-600 text-indigo-600 font-medium' : 'text-gray-500 hover:text-gray-700'"
+        class="pb-2 px-1 text-sm">Historico de acessos</button>
     </div>
 
     <LoadingSpinner v-if="loading" />
@@ -83,6 +86,48 @@
           </template>
         </div>
       </div>
+
+      <!-- Aba Historico de Acessos -->
+      <div v-show="abaAtiva === 'acessos'" class="space-y-4 max-w-2xl">
+        <div class="card p-6">
+          <h3 class="section-title">Historico de acessos</h3>
+          <p class="text-sm text-gray-500 mb-4">Ultimos logins realizados na sua conta.</p>
+
+          <div v-if="loadingHistorico" class="text-center py-4">
+            <span class="text-sm text-gray-400">Carregando...</span>
+          </div>
+
+          <div v-else-if="historicoAcessos.length === 0" class="text-center py-4">
+            <span class="text-sm text-gray-400">Nenhum registro de acesso encontrado.</span>
+          </div>
+
+          <div v-else class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="border-b border-gray-200 text-left text-gray-500">
+                  <th class="pb-2 pr-4 font-medium">Data/Hora</th>
+                  <th class="pb-2 pr-4 font-medium">IP</th>
+                  <th class="pb-2 pr-4 font-medium">Status</th>
+                  <th class="pb-2 font-medium">Detalhes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="log in historicoAcessos" :key="log.id" class="border-b border-gray-100">
+                  <td class="py-2 pr-4 text-gray-700 whitespace-nowrap">{{ formatDate(log.dataHora) }}</td>
+                  <td class="py-2 pr-4 text-gray-600 font-mono text-xs">{{ log.ip || '-' }}</td>
+                  <td class="py-2 pr-4">
+                    <span v-if="log.sucesso"
+                      class="inline-block px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">Sucesso</span>
+                    <span v-else
+                      class="inline-block px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-medium">Falha</span>
+                  </td>
+                  <td class="py-2 text-gray-500 text-xs">{{ log.motivoFalha || '-' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </template>
   </div>
 </template>
@@ -109,6 +154,29 @@ const senhaAtual = ref('')
 const novaSenha = ref('')
 const salvandoSenha = ref(false)
 const erroSenha = ref('')
+const historicoAcessos = ref([])
+const loadingHistorico = ref(false)
+
+function formatDate(dateStr) {
+  if (!dateStr) return '-'
+  try {
+    const d = new Date(dateStr)
+    return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  } catch { return dateStr }
+}
+
+async function carregarHistorico() {
+  if (historicoAcessos.value.length > 0) return // já carregado
+  loadingHistorico.value = true
+  try {
+    const res = await userApi.loginHistory()
+    historicoAcessos.value = res.data || []
+  } catch (e) {
+    console.error('Erro ao carregar historico:', e)
+  } finally {
+    loadingHistorico.value = false
+  }
+}
 
 async function load() {
   loading.value = true

@@ -22,6 +22,27 @@ export const useAuthStore = defineStore('auth', () => {
     }
   })
 
+  function saveAuthData(data) {
+    token.value = data.token
+    user.value = {
+      id: data.userId,
+      nome: data.nome,
+      role: data.role,
+      empresaId: data.empresaId,
+      clienteExcluido: data.clienteExcluido || false,
+      autoGestaoAtiva: data.autoGestaoAtiva || false,
+      trialAtivo: data.trialAtivo || false,
+      trialFim: data.trialFim || null,
+      precisaEscolherPlano: data.precisaEscolherPlano || false,
+      autoCadastro: data.autoCadastro || false
+    }
+    localStorage.setItem('token', data.token)
+    localStorage.setItem('user', JSON.stringify(user.value))
+    if (data.refreshToken) {
+      localStorage.setItem('refreshToken', data.refreshToken)
+    }
+  }
+
   async function login(email, senha) {
     const response = await authApi.login({ email, senha })
     const data = response.data
@@ -29,42 +50,14 @@ export const useAuthStore = defineStore('auth', () => {
     if (data.requires2FA) {
       return data
     }
-    token.value = data.token
-    user.value = {
-      id: data.userId,
-      nome: data.nome,
-      role: data.role,
-      empresaId: data.empresaId,
-      clienteExcluido: data.clienteExcluido || false,
-      autoGestaoAtiva: data.autoGestaoAtiva || false,
-      trialAtivo: data.trialAtivo || false,
-      trialFim: data.trialFim || null,
-      precisaEscolherPlano: data.precisaEscolherPlano || false,
-      autoCadastro: data.autoCadastro || false
-    }
-    localStorage.setItem('token', data.token)
-    localStorage.setItem('user', JSON.stringify(user.value))
+    saveAuthData(data)
     return data
   }
 
   async function verifyOtp(userId, code) {
     const response = await authApi.verifyOtp({ userId, code })
     const data = response.data
-    token.value = data.token
-    user.value = {
-      id: data.userId,
-      nome: data.nome,
-      role: data.role,
-      empresaId: data.empresaId,
-      clienteExcluido: data.clienteExcluido || false,
-      autoGestaoAtiva: data.autoGestaoAtiva || false,
-      trialAtivo: data.trialAtivo || false,
-      trialFim: data.trialFim || null,
-      precisaEscolherPlano: data.precisaEscolherPlano || false,
-      autoCadastro: data.autoCadastro || false
-    }
-    localStorage.setItem('token', data.token)
-    localStorage.setItem('user', JSON.stringify(user.value))
+    saveAuthData(data)
     return data
   }
 
@@ -72,6 +65,7 @@ export const useAuthStore = defineStore('auth', () => {
     token.value = null
     user.value = null
     localStorage.removeItem('token')
+    localStorage.removeItem('refreshToken')
     localStorage.removeItem('user')
   }
 

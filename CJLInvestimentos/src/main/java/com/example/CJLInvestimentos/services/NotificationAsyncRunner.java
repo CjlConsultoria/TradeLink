@@ -1,5 +1,6 @@
 package com.example.CJLInvestimentos.services;
 
+import com.example.CJLInvestimentos.entities.AlertaPreco;
 import com.example.CJLInvestimentos.entities.Carteira;
 import com.example.CJLInvestimentos.entities.Recomendacao;
 import com.example.CJLInvestimentos.entities.User;
@@ -13,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -166,6 +168,15 @@ public class NotificationAsyncRunner {
     }
 
     @Async
+    public void enviarEmailResetSenhaAsync(String email, String nome, String token) {
+        try {
+            notificationService.enviarEmailResetSenha(email, nome, token);
+        } catch (Exception e) {
+            log.warn("Falha ao enviar e-mail de reset de senha em background: {}", e.getMessage());
+        }
+    }
+
+    @Async
     public void enviarEmailOtpAsync(String email, String nome, String code) {
         try {
             notificationService.enviarEmailOtp(email, nome, code);
@@ -189,6 +200,32 @@ public class NotificationAsyncRunner {
                     rec.getCarteira().getNome(), tipoOp, ativo, quantidade, precoExecutado);
         } catch (Exception e) {
             log.warn("Falha ao notificar operacao registrada em background: {}", e.getMessage());
+        }
+    }
+
+    @Async
+    public void notificarAlertaPrecoAsync(User user, AlertaPreco alerta, BigDecimal precoAtual) {
+        try {
+            String par = alerta.getMoeda() + "/" + alerta.getParMoeda();
+            String tipo = alerta.getTipoAlerta().name().equals("ACIMA") ? "atingiu ou ultrapassou" : "caiu abaixo de";
+            String titulo = "Alerta de Preco: " + par;
+            String corpo = String.format(
+                    "O par %s %s o valor definido de %s. Preco atual: %s.",
+                    par, tipo, alerta.getPrecoAlerta().toPlainString(), precoAtual.toPlainString());
+
+            // Notificar via todos os canais disponiveis
+            if (user.getEmpresa() != null) {
+                notificationService.notificarUsuario(user.getEmpresa(), user, titulo, corpo);
+            } else {
+                // Usuario sem empresa (auto-gestao) — notificar via email direto
+                notificationService.enviarEmailAlertaPreco(user.getEmail(),
+                        user.getNome() != null ? user.getNome() : "Usuario",
+                        par, alerta.getTipoAlerta().name(),
+                        alerta.getPrecoAlerta().toPlainString(),
+                        precoAtual.toPlainString());
+            }
+        } catch (Exception e) {
+            log.warn("Falha ao notificar alerta de preco em background: {}", e.getMessage());
         }
     }
 }

@@ -8,7 +8,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Monta o HTML dos e-mails (layout responsivo com design premium).
+ * Monta o HTML dos e-mails (layout responsivo com design premium — tema CLARO).
+ * Paleta: background #f1f5f9, card #ffffff, texto #1e293b, accent #6366f1.
  */
 @Service
 public class EmailTemplateService {
@@ -16,7 +17,7 @@ public class EmailTemplateService {
     private static final String APP_NAME = "TradeLink";
     private static final String APP_URL = "https://tradelink-grun.onrender.com";
 
-    /** Layout base responsivo (table-based para clientes de e-mail). */
+    /** Layout base responsivo (table-based para clientes de e-mail) — TEMA CLARO. */
     public String wrapInLayout(String title, String preheader, String bodyContent) {
         return """
             <!DOCTYPE html>
@@ -42,28 +43,28 @@ public class EmailTemplateService {
                 }
               </style>
             </head>
-            <body style="margin:0; padding:0; background-color:#0f172a; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+            <body style="margin:0; padding:0; background-color:#f1f5f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
               <span class="preheader">%s</span>
-              <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="background-color:#0f172a;">
+              <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="background-color:#f1f5f9;">
                 <tr><td align="center" style="padding: 32px 16px;">
                   <!-- Logo -->
                   <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px; width:100%%;">
                     <tr><td align="center" style="padding-bottom:24px;">
                       <table role="presentation" cellspacing="0" cellpadding="0"><tr>
                         <td style="background:linear-gradient(135deg, #6366f1, #8b5cf6); width:40px; height:40px; border-radius:10px; text-align:center; vertical-align:middle; font-size:20px; color:#fff;">&#9651;</td>
-                        <td style="padding-left:12px; color:#f1f5f9; font-size:22px; font-weight:700; letter-spacing:-0.5px;">%s</td>
+                        <td style="padding-left:12px; color:#1e293b; font-size:22px; font-weight:700; letter-spacing:-0.5px;">%s</td>
                       </tr></table>
                     </td></tr>
                   </table>
                   <!-- Card -->
-                  <table class="wrapper" role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px; width:100%%; background-color:#1e293b; border-radius:16px; border:1px solid rgba(99,102,241,0.15);">
+                  <table class="wrapper" role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px; width:100%%; background-color:#ffffff; border-radius:16px; border:1px solid #e2e8f0; box-shadow:0 1px 3px rgba(0,0,0,0.06);">
                     <tr>
-                      <td class="content" style="padding: 36px 32px; color:#e2e8f0; font-size:16px; line-height:1.7;">
+                      <td class="content" style="padding: 36px 32px; color:#334155; font-size:16px; line-height:1.7;">
                         %s
                       </td>
                     </tr>
                     <tr>
-                      <td style="padding: 20px 32px; border-top: 1px solid rgba(255,255,255,0.06); color:#64748b; font-size:12px; border-radius: 0 0 16px 16px; line-height:1.6;">
+                      <td style="padding: 20px 32px; border-top: 1px solid #e2e8f0; color:#94a3b8; font-size:12px; border-radius: 0 0 16px 16px; line-height:1.6;">
                         Este e-mail foi enviado automaticamente pelo TradeLink.<br>
                         Se voce nao esperava este e-mail, pode ignora-lo com seguranca.
                       </td>
@@ -81,7 +82,7 @@ public class EmailTemplateService {
             );
     }
 
-    // ─── Helpers visuais ───
+    // ─── Helpers visuais (tema claro) ───
 
     private String buildButton(String text, String url, String bgColor) {
         return """
@@ -98,15 +99,15 @@ public class EmailTemplateService {
     }
 
     private String buildInfoRow(String label, String value, boolean highlighted) {
-        String bg = highlighted ? "background-color:rgba(99,102,241,0.08);" : "";
+        String bg = highlighted ? "background-color:#f8fafc;" : "";
         return """
-            <tr style="%s"><td style="padding:12px 16px; color:#94a3b8; font-size:14px; font-weight:500; width:40%%;">%s</td><td style="padding:12px 16px; color:#f1f5f9; font-size:14px; font-weight:600;">%s</td></tr>
+            <tr style="%s"><td style="padding:12px 16px; color:#64748b; font-size:14px; font-weight:500; width:40%%;">%s</td><td style="padding:12px 16px; color:#1e293b; font-size:14px; font-weight:600;">%s</td></tr>
             """.formatted(bg, label, value);
     }
 
     private String buildInfoTable(String[][] rows) {
         StringBuilder sb = new StringBuilder();
-        sb.append("<table role=\"presentation\" width=\"100%%\" cellspacing=\"0\" cellpadding=\"0\" style=\"margin:16px 0; border:1px solid rgba(255,255,255,0.08); border-radius:10px; overflow:hidden;\">");
+        sb.append("<table role=\"presentation\" width=\"100%%\" cellspacing=\"0\" cellpadding=\"0\" style=\"margin:16px 0; border:1px solid #e2e8f0; border-radius:10px; overflow:hidden;\">");
         for (int i = 0; i < rows.length; i++) {
             sb.append(buildInfoRow(rows[i][0], rows[i][1], i % 2 == 0));
         }
@@ -126,27 +127,27 @@ public class EmailTemplateService {
               <tr><td style="background:%s; border:1px solid %s; border-radius:10px; padding:16px 20px;">
                 <table role="presentation" cellspacing="0" cellpadding="0"><tr>
                   <td style="font-size:20px; vertical-align:top; padding-right:12px;">%s</td>
-                  <td style="color:#f1f5f9; font-size:14px; line-height:1.6;">%s</td>
+                  <td style="color:#334155; font-size:14px; line-height:1.6;">%s</td>
                 </tr></table>
               </td></tr>
             </table>
             """.formatted(bgColor, borderColor, icon, message);
     }
 
-    // ─── Templates existentes (melhorados) ───
+    // ─── Templates (tema claro) ───
 
     public String buildNovoUsuario(String nome, String email, String roleDisplay) {
         String roleBadge;
         if (roleDisplay.toLowerCase().contains("cliente")) {
-            roleBadge = buildBadge("Cliente", "rgba(34,197,94,0.15)", "#22c55e");
+            roleBadge = buildBadge("Cliente", "rgba(34,197,94,0.12)", "#16a34a");
         } else {
-            roleBadge = buildBadge("Consultor", "rgba(99,102,241,0.15)", "#a5b4fc");
+            roleBadge = buildBadge("Consultor", "rgba(99,102,241,0.12)", "#6366f1");
         }
 
         String body = """
             <p style="margin:0 0 8px; font-size:14px; color:#94a3b8;">Bem-vindo(a)</p>
-            <h2 style="margin:0 0 20px; color:#f1f5f9; font-size:24px; font-weight:700;">Ola, %s!</h2>
-            <p style="margin:0 0 20px; color:#cbd5e1;">Sua conta no <strong style="color:#a5b4fc;">TradeLink</strong> foi criada com sucesso. Voce esta cadastrado como:</p>
+            <h2 style="margin:0 0 20px; color:#1e293b; font-size:24px; font-weight:700;">Ola, %s!</h2>
+            <p style="margin:0 0 20px; color:#475569;">Sua conta no <strong style="color:#6366f1;">TradeLink</strong> foi criada com sucesso. Voce esta cadastrado como:</p>
             <p style="margin:0 0 24px;">%s</p>
             """.formatted(escape(nome), roleBadge);
 
@@ -158,7 +159,7 @@ public class EmailTemplateService {
         body += buildButton("Acessar o TradeLink", APP_URL + "/login");
 
         body += """
-            <p style="margin:16px 0 0; color:#64748b; font-size:13px;">Se voce nao solicitou este cadastro, ignore este e-mail.</p>
+            <p style="margin:16px 0 0; color:#94a3b8; font-size:13px;">Se voce nao solicitou este cadastro, ignore este e-mail.</p>
             """;
 
         return wrapInLayout("Bem-vindo ao TradeLink", "Sua conta foi criada com sucesso.", body);
@@ -166,14 +167,14 @@ public class EmailTemplateService {
 
     public String buildSenhaAlterada(String nome) {
         String body = """
-            <h2 style="margin:0 0 20px; color:#f1f5f9; font-size:22px; font-weight:700;">Senha Alterada</h2>
-            <p style="margin:0 0 16px; color:#cbd5e1;">Ola, <strong style="color:#f1f5f9;">%s</strong>!</p>
-            <p style="margin:0 0 20px; color:#cbd5e1;">A senha da sua conta no TradeLink foi alterada com sucesso.</p>
+            <h2 style="margin:0 0 20px; color:#1e293b; font-size:22px; font-weight:700;">Senha Alterada</h2>
+            <p style="margin:0 0 16px; color:#475569;">Ola, <strong style="color:#1e293b;">%s</strong>!</p>
+            <p style="margin:0 0 20px; color:#475569;">A senha da sua conta no TradeLink foi alterada com sucesso.</p>
             """.formatted(escape(nome));
 
         body += buildAlertBox("&#9888;&#65039;",
-                "<strong style='color:#fbbf24;'>Nao foi voce?</strong><br>Se voce nao alterou a senha, entre em contato com o administrador do sistema imediatamente.",
-                "rgba(245,158,11,0.08)", "rgba(245,158,11,0.2)");
+                "<strong style='color:#d97706;'>Nao foi voce?</strong><br>Se voce nao alterou a senha, entre em contato com o administrador do sistema imediatamente.",
+                "rgba(245,158,11,0.06)", "rgba(245,158,11,0.25)");
 
         body += buildButton("Acessar o TradeLink", APP_URL + "/login");
 
@@ -189,14 +190,14 @@ public class EmailTemplateService {
 
         boolean isCompra = "COMPRA".equalsIgnoreCase(tipoStr);
         String tipoBadge = isCompra
-                ? buildBadge("COMPRA", "rgba(34,197,94,0.15)", "#22c55e")
-                : buildBadge("VENDA", "rgba(239,68,68,0.15)", "#ef4444");
+                ? buildBadge("COMPRA", "rgba(34,197,94,0.12)", "#16a34a")
+                : buildBadge("VENDA", "rgba(239,68,68,0.12)", "#dc2626");
 
         String body = """
             <p style="margin:0 0 8px; font-size:14px; color:#94a3b8;">Nova recomendacao</p>
-            <h2 style="margin:0 0 8px; color:#f1f5f9; font-size:24px; font-weight:700;">%s / %s</h2>
+            <h2 style="margin:0 0 8px; color:#1e293b; font-size:24px; font-weight:700;">%s / %s</h2>
             <p style="margin:0 0 20px;">%s</p>
-            <p style="margin:0 0 16px; color:#cbd5e1;">Seu consultor criou uma nova recomendacao para a sua carteira. Confira os detalhes abaixo e execute quando estiver pronto.</p>
+            <p style="margin:0 0 16px; color:#475569;">Seu consultor criou uma nova recomendacao para a sua carteira. Confira os detalhes abaixo e execute quando estiver pronto.</p>
             """.formatted(escape(moeda), escape(par), tipoBadge);
 
         body += buildInfoTable(new String[][]{
@@ -208,7 +209,7 @@ public class EmailTemplateService {
 
         body += buildAlertBox("&#128161;",
                 "Acesse o sistema para ver todos os detalhes, incluindo quantidade sugerida e observacoes do consultor.",
-                "rgba(99,102,241,0.06)", "rgba(99,102,241,0.15)");
+                "rgba(99,102,241,0.05)", "rgba(99,102,241,0.15)");
 
         body += buildButton("Ver Recomendacao", APP_URL + "/cliente");
 
@@ -219,7 +220,7 @@ public class EmailTemplateService {
     public String buildClienteResolveu(String nomeCliente, String moeda, String par, String carteiraNome) {
         String body = """
             <p style="margin:0 0 8px; font-size:14px; color:#94a3b8;">Recomendacao resolvida</p>
-            <h2 style="margin:0 0 20px; color:#f1f5f9; font-size:22px; font-weight:700;">%s resolveu uma recomendacao</h2>
+            <h2 style="margin:0 0 20px; color:#1e293b; font-size:22px; font-weight:700;">%s resolveu uma recomendacao</h2>
             """.formatted(escape(nomeCliente));
 
         body += buildInfoTable(new String[][]{
@@ -243,26 +244,26 @@ public class EmailTemplateService {
                                          List<String[]> ativos) {
         String body = """
             <p style="margin:0 0 8px; font-size:14px; color:#94a3b8;">Alerta de Portfolio</p>
-            <h2 style="margin:0 0 8px; color:#ef4444; font-size:24px; font-weight:700;">&#9888; Portfolio Critico</h2>
-            <p style="margin:0 0 16px; color:#cbd5e1;">O portfolio de <strong style="color:#f1f5f9;">%s</strong> na carteira <strong style="color:#a5b4fc;">%s</strong> esta em estado <strong style="color:#ef4444;">critico</strong> e necessita de atencao imediata.</p>
+            <h2 style="margin:0 0 8px; color:#dc2626; font-size:24px; font-weight:700;">&#9888; Portfolio Critico</h2>
+            <p style="margin:0 0 16px; color:#475569;">O portfolio de <strong style="color:#1e293b;">%s</strong> na carteira <strong style="color:#6366f1;">%s</strong> esta em estado <strong style="color:#dc2626;">critico</strong> e necessita de atencao imediata.</p>
             """.formatted(escape(nomeCliente), escape(carteiraNome));
 
         body += buildAlertBox("&#128680;",
-                "<strong style='color:#ef4444;'>" + totalDesvios + " ativo(s) fora da margem</strong><br>Maior desvio: <strong>" + escape(maiorDesvio) + "</strong>",
-                "rgba(239,68,68,0.08)", "rgba(239,68,68,0.25)");
+                "<strong style='color:#dc2626;'>" + totalDesvios + " ativo(s) fora da margem</strong><br>Maior desvio: <strong>" + escape(maiorDesvio) + "</strong>",
+                "rgba(239,68,68,0.06)", "rgba(239,68,68,0.2)");
 
         if (ativos != null && !ativos.isEmpty()) {
-            body += "<table role=\"presentation\" width=\"100%%\" cellspacing=\"0\" cellpadding=\"0\" style=\"margin:16px 0; border:1px solid rgba(255,255,255,0.08); border-radius:10px; overflow:hidden;\">";
-            body += "<tr style=\"background:rgba(99,102,241,0.08);\"><td style=\"padding:10px 16px; color:#94a3b8; font-size:13px; font-weight:600;\">Ativo</td><td style=\"padding:10px 16px; color:#94a3b8; font-size:13px; font-weight:600;\">Atual</td><td style=\"padding:10px 16px; color:#94a3b8; font-size:13px; font-weight:600;\">Ideal</td><td style=\"padding:10px 16px; color:#94a3b8; font-size:13px; font-weight:600;\">Acao</td></tr>";
+            body += "<table role=\"presentation\" width=\"100%%\" cellspacing=\"0\" cellpadding=\"0\" style=\"margin:16px 0; border:1px solid #e2e8f0; border-radius:10px; overflow:hidden;\">";
+            body += "<tr style=\"background:#f8fafc;\"><td style=\"padding:10px 16px; color:#64748b; font-size:13px; font-weight:600;\">Ativo</td><td style=\"padding:10px 16px; color:#64748b; font-size:13px; font-weight:600;\">Atual</td><td style=\"padding:10px 16px; color:#64748b; font-size:13px; font-weight:600;\">Ideal</td><td style=\"padding:10px 16px; color:#64748b; font-size:13px; font-weight:600;\">Acao</td></tr>";
             for (String[] row : ativos) {
                 String acaoBadge = "COMPRAR".equalsIgnoreCase(row[3])
-                        ? buildBadge("COMPRAR", "rgba(34,197,94,0.15)", "#22c55e")
+                        ? buildBadge("COMPRAR", "rgba(34,197,94,0.12)", "#16a34a")
                         : "VENDER".equalsIgnoreCase(row[3])
-                            ? buildBadge("VENDER", "rgba(239,68,68,0.15)", "#ef4444")
+                            ? buildBadge("VENDER", "rgba(239,68,68,0.12)", "#dc2626")
                             : buildBadge("OK", "rgba(148,163,184,0.1)", "#94a3b8");
-                body += "<tr><td style=\"padding:10px 16px; color:#f1f5f9; font-size:14px; font-weight:600;\">" + escape(row[0]) +
-                        "</td><td style=\"padding:10px 16px; color:#f1f5f9; font-size:14px;\">" + escape(row[1]) +
-                        "</td><td style=\"padding:10px 16px; color:#94a3b8; font-size:14px;\">" + escape(row[2]) +
+                body += "<tr><td style=\"padding:10px 16px; color:#1e293b; font-size:14px; font-weight:600;\">" + escape(row[0]) +
+                        "</td><td style=\"padding:10px 16px; color:#1e293b; font-size:14px;\">" + escape(row[1]) +
+                        "</td><td style=\"padding:10px 16px; color:#64748b; font-size:14px;\">" + escape(row[2]) +
                         "</td><td style=\"padding:10px 16px;\">" + acaoBadge + "</td></tr>";
             }
             body += "</table>";
@@ -278,8 +279,8 @@ public class EmailTemplateService {
     public String buildRecomendacoesGeradas(int totalRecomendacoes, int totalClientes, String carteiraNome) {
         String body = """
             <p style="margin:0 0 8px; font-size:14px; color:#94a3b8;">Rebalanceamento</p>
-            <h2 style="margin:0 0 20px; color:#f1f5f9; font-size:22px; font-weight:700;">Recomendacoes Geradas com Sucesso</h2>
-            <p style="margin:0 0 20px; color:#cbd5e1;">O rebalanceamento foi executado e as recomendacoes foram criadas automaticamente.</p>
+            <h2 style="margin:0 0 20px; color:#1e293b; font-size:22px; font-weight:700;">Recomendacoes Geradas com Sucesso</h2>
+            <p style="margin:0 0 20px; color:#475569;">O rebalanceamento foi executado e as recomendacoes foram criadas automaticamente.</p>
             """;
 
         // Metricas em linha
@@ -288,17 +289,17 @@ public class EmailTemplateService {
               <tr>
                 <td class="metric-cell" style="width:50%%; padding-right:8px;">
                   <table role="presentation" width="100%%" cellspacing="0" cellpadding="0">
-                    <tr><td style="background:rgba(99,102,241,0.1); border:1px solid rgba(99,102,241,0.2); border-radius:10px; padding:20px; text-align:center;">
-                      <span style="display:block; font-size:28px; font-weight:800; color:#a5b4fc;">%d</span>
-                      <span style="display:block; font-size:13px; color:#94a3b8; margin-top:4px;">Recomendacoes</span>
+                    <tr><td style="background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.15); border-radius:10px; padding:20px; text-align:center;">
+                      <span style="display:block; font-size:28px; font-weight:800; color:#6366f1;">%d</span>
+                      <span style="display:block; font-size:13px; color:#64748b; margin-top:4px;">Recomendacoes</span>
                     </td></tr>
                   </table>
                 </td>
                 <td class="metric-cell" style="width:50%%; padding-left:8px;">
                   <table role="presentation" width="100%%" cellspacing="0" cellpadding="0">
-                    <tr><td style="background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.2); border-radius:10px; padding:20px; text-align:center;">
-                      <span style="display:block; font-size:28px; font-weight:800; color:#22c55e;">%d</span>
-                      <span style="display:block; font-size:13px; color:#94a3b8; margin-top:4px;">Clientes Impactados</span>
+                    <tr><td style="background:rgba(34,197,94,0.06); border:1px solid rgba(34,197,94,0.15); border-radius:10px; padding:20px; text-align:center;">
+                      <span style="display:block; font-size:28px; font-weight:800; color:#16a34a;">%d</span>
+                      <span style="display:block; font-size:13px; color:#64748b; margin-top:4px;">Clientes Impactados</span>
                     </td></tr>
                   </table>
                 </td>
@@ -307,12 +308,12 @@ public class EmailTemplateService {
             """.formatted(totalRecomendacoes, totalClientes);
 
         if (carteiraNome != null) {
-            body += "<p style=\"margin:0 0 16px; color:#94a3b8; font-size:14px;\">Carteira: <strong style=\"color:#f1f5f9;\">" + escape(carteiraNome) + "</strong></p>";
+            body += "<p style=\"margin:0 0 16px; color:#64748b; font-size:14px;\">Carteira: <strong style=\"color:#1e293b;\">" + escape(carteiraNome) + "</strong></p>";
         }
 
         body += buildAlertBox("&#128276;",
                 "Os clientes serao notificados automaticamente sobre as novas recomendacoes (se as notificacoes estiverem ativadas).",
-                "rgba(99,102,241,0.06)", "rgba(99,102,241,0.15)");
+                "rgba(99,102,241,0.05)", "rgba(99,102,241,0.15)");
 
         body += buildButton("Ver Recomendacoes", APP_URL + "/consultor");
 
@@ -326,14 +327,14 @@ public class EmailTemplateService {
         boolean isAporte = "APORTE".equalsIgnoreCase(tipo);
         String icon = isAporte ? "&#128176;" : "&#128184;";
         String tipoBadge = isAporte
-                ? buildBadge("APORTE", "rgba(34,197,94,0.15)", "#22c55e")
-                : buildBadge("SAQUE", "rgba(239,68,68,0.15)", "#ef4444");
+                ? buildBadge("APORTE", "rgba(34,197,94,0.12)", "#16a34a")
+                : buildBadge("SAQUE", "rgba(239,68,68,0.12)", "#dc2626");
 
         String body = """
             <p style="margin:0 0 8px; font-size:14px; color:#94a3b8;">Movimentacao</p>
-            <h2 style="margin:0 0 8px; color:#f1f5f9; font-size:22px; font-weight:700;">%s Nova Movimentacao</h2>
+            <h2 style="margin:0 0 8px; color:#1e293b; font-size:22px; font-weight:700;">%s Nova Movimentacao</h2>
             <p style="margin:0 0 16px;">%s</p>
-            <p style="margin:0 0 20px; color:#cbd5e1;">O cliente <strong style="color:#f1f5f9;">%s</strong> registrou uma movimentacao na carteira <strong style="color:#a5b4fc;">%s</strong>.</p>
+            <p style="margin:0 0 20px; color:#475569;">O cliente <strong style="color:#1e293b;">%s</strong> registrou uma movimentacao na carteira <strong style="color:#6366f1;">%s</strong>.</p>
             """.formatted(icon, tipoBadge, escape(nomeCliente), escape(carteiraNome));
 
         body += buildInfoTable(new String[][]{
@@ -347,7 +348,7 @@ public class EmailTemplateService {
         if (isAporte) {
             body += buildAlertBox("&#128161;",
                     "Apos o aporte, a alocacao do cliente pode ter mudado. Considere executar um novo rebalanceamento.",
-                    "rgba(99,102,241,0.06)", "rgba(99,102,241,0.15)");
+                    "rgba(99,102,241,0.05)", "rgba(99,102,241,0.15)");
         }
 
         body += buildButton("Ver Carteira", APP_URL + "/consultor");
@@ -362,12 +363,12 @@ public class EmailTemplateService {
                                            String precoExecutado) {
         boolean isCompra = "COMPRA".equalsIgnoreCase(tipoOp);
         String tipoBadge = isCompra
-                ? buildBadge("COMPRA", "rgba(34,197,94,0.15)", "#22c55e")
-                : buildBadge("VENDA", "rgba(239,68,68,0.15)", "#ef4444");
+                ? buildBadge("COMPRA", "rgba(34,197,94,0.12)", "#16a34a")
+                : buildBadge("VENDA", "rgba(239,68,68,0.12)", "#dc2626");
 
         String body = """
             <p style="margin:0 0 8px; font-size:14px; color:#94a3b8;">Operacao Executada</p>
-            <h2 style="margin:0 0 8px; color:#f1f5f9; font-size:22px; font-weight:700;">%s Executou uma Operacao</h2>
+            <h2 style="margin:0 0 8px; color:#1e293b; font-size:22px; font-weight:700;">%s Executou uma Operacao</h2>
             <p style="margin:0 0 16px;">%s</p>
             """.formatted(escape(nomeCliente), tipoBadge);
 
@@ -392,8 +393,8 @@ public class EmailTemplateService {
                                       int operacoesSemanais) {
         String body = """
             <p style="margin:0 0 8px; font-size:14px; color:#94a3b8;">Resumo Semanal</p>
-            <h2 style="margin:0 0 8px; color:#f1f5f9; font-size:22px; font-weight:700;">Ola, %s!</h2>
-            <p style="margin:0 0 20px; color:#cbd5e1;">Aqui esta o resumo semanal dos seus clientes no TradeLink.</p>
+            <h2 style="margin:0 0 8px; color:#1e293b; font-size:22px; font-weight:700;">Ola, %s!</h2>
+            <p style="margin:0 0 20px; color:#475569;">Aqui esta o resumo semanal dos seus clientes no TradeLink.</p>
             """.formatted(escape(nomeConsultor));
 
         // Metricas 2x2
@@ -402,17 +403,17 @@ public class EmailTemplateService {
               <tr>
                 <td class="metric-cell" style="width:50%%; padding:4px 4px 4px 0;">
                   <table role="presentation" width="100%%" cellspacing="0" cellpadding="0">
-                    <tr><td style="background:rgba(99,102,241,0.1); border-radius:10px; padding:16px; text-align:center;">
-                      <span style="display:block; font-size:24px; font-weight:800; color:#a5b4fc;">%d</span>
-                      <span style="display:block; font-size:12px; color:#94a3b8; margin-top:2px;">Total Clientes</span>
+                    <tr><td style="background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.12); border-radius:10px; padding:16px; text-align:center;">
+                      <span style="display:block; font-size:24px; font-weight:800; color:#6366f1;">%d</span>
+                      <span style="display:block; font-size:12px; color:#64748b; margin-top:2px;">Total Clientes</span>
                     </td></tr>
                   </table>
                 </td>
                 <td class="metric-cell" style="width:50%%; padding:4px 0 4px 4px;">
                   <table role="presentation" width="100%%" cellspacing="0" cellpadding="0">
-                    <tr><td style="background:rgba(34,197,94,0.08); border-radius:10px; padding:16px; text-align:center;">
-                      <span style="display:block; font-size:24px; font-weight:800; color:#22c55e;">%s</span>
-                      <span style="display:block; font-size:12px; color:#94a3b8; margin-top:2px;">Valor Total</span>
+                    <tr><td style="background:rgba(34,197,94,0.06); border:1px solid rgba(34,197,94,0.12); border-radius:10px; padding:16px; text-align:center;">
+                      <span style="display:block; font-size:24px; font-weight:800; color:#16a34a;">%s</span>
+                      <span style="display:block; font-size:12px; color:#64748b; margin-top:2px;">Valor Total</span>
                     </td></tr>
                   </table>
                 </td>
@@ -420,17 +421,17 @@ public class EmailTemplateService {
               <tr>
                 <td class="metric-cell" style="width:50%%; padding:4px 4px 4px 0;">
                   <table role="presentation" width="100%%" cellspacing="0" cellpadding="0">
-                    <tr><td style="background:rgba(245,158,11,0.08); border-radius:10px; padding:16px; text-align:center;">
-                      <span style="display:block; font-size:24px; font-weight:800; color:#fbbf24;">%d</span>
-                      <span style="display:block; font-size:12px; color:#94a3b8; margin-top:2px;">Recomendacoes Ativas</span>
+                    <tr><td style="background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.12); border-radius:10px; padding:16px; text-align:center;">
+                      <span style="display:block; font-size:24px; font-weight:800; color:#d97706;">%d</span>
+                      <span style="display:block; font-size:12px; color:#64748b; margin-top:2px;">Recomendacoes Ativas</span>
                     </td></tr>
                   </table>
                 </td>
                 <td class="metric-cell" style="width:50%%; padding:4px 0 4px 4px;">
                   <table role="presentation" width="100%%" cellspacing="0" cellpadding="0">
-                    <tr><td style="background:rgba(59,130,246,0.08); border-radius:10px; padding:16px; text-align:center;">
-                      <span style="display:block; font-size:24px; font-weight:800; color:#3b82f6;">%d</span>
-                      <span style="display:block; font-size:12px; color:#94a3b8; margin-top:2px;">Operacoes na Semana</span>
+                    <tr><td style="background:rgba(59,130,246,0.06); border:1px solid rgba(59,130,246,0.12); border-radius:10px; padding:16px; text-align:center;">
+                      <span style="display:block; font-size:24px; font-weight:800; color:#2563eb;">%d</span>
+                      <span style="display:block; font-size:12px; color:#64748b; margin-top:2px;">Operacoes na Semana</span>
                     </td></tr>
                   </table>
                 </td>
@@ -442,26 +443,26 @@ public class EmailTemplateService {
         body += """
             <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="margin:12px 0;">
               <tr>
-                <td style="padding:8px 16px; border-radius:8px 8px 0 0; background:rgba(255,255,255,0.03);">
+                <td style="padding:8px 16px; border-radius:8px 8px 0 0; background:#f8fafc;">
                   <table role="presentation" width="100%%" cellspacing="0" cellpadding="0"><tr>
-                    <td style="color:#94a3b8; font-size:13px; font-weight:600;">Saude dos Portfolios</td>
+                    <td style="color:#64748b; font-size:13px; font-weight:600;">Saude dos Portfolios</td>
                   </tr></table>
                 </td>
               </tr>
               <tr>
-                <td style="padding:12px 16px; border:1px solid rgba(255,255,255,0.06); border-radius:0 0 8px 8px;">
+                <td style="padding:12px 16px; border:1px solid #e2e8f0; border-radius:0 0 8px 8px;">
                   <table role="presentation" width="100%%" cellspacing="0" cellpadding="0"><tr>
                     <td style="text-align:center;">
-                      <span style="color:#22c55e; font-weight:700; font-size:16px;">%d</span>
-                      <span style="color:#94a3b8; font-size:12px;"> OK</span>
+                      <span style="color:#16a34a; font-weight:700; font-size:16px;">%d</span>
+                      <span style="color:#64748b; font-size:12px;"> OK</span>
                     </td>
-                    <td style="text-align:center; border-left:1px solid rgba(255,255,255,0.06); border-right:1px solid rgba(255,255,255,0.06);">
-                      <span style="color:#f59e0b; font-weight:700; font-size:16px;">%d</span>
-                      <span style="color:#94a3b8; font-size:12px;"> Atencao</span>
+                    <td style="text-align:center; border-left:1px solid #e2e8f0; border-right:1px solid #e2e8f0;">
+                      <span style="color:#d97706; font-weight:700; font-size:16px;">%d</span>
+                      <span style="color:#64748b; font-size:12px;"> Atencao</span>
                     </td>
                     <td style="text-align:center;">
-                      <span style="color:#ef4444; font-weight:700; font-size:16px;">%d</span>
-                      <span style="color:#94a3b8; font-size:12px;"> Critico</span>
+                      <span style="color:#dc2626; font-weight:700; font-size:16px;">%d</span>
+                      <span style="color:#64748b; font-size:12px;"> Critico</span>
                     </td>
                   </tr></table>
                 </td>
@@ -471,7 +472,7 @@ public class EmailTemplateService {
 
         if (clientesCritico > 0) {
             body += buildAlertBox("&#128680;",
-                    "<strong style='color:#ef4444;'>" + clientesCritico + " cliente(s) em estado critico!</strong><br>Acesse o painel de rebalanceamento para analisar e gerar recomendacoes.",
+                    "<strong style='color:#dc2626;'>" + clientesCritico + " cliente(s) em estado critico!</strong><br>Acesse o painel de rebalanceamento para analisar e gerar recomendacoes.",
                     "rgba(239,68,68,0.06)", "rgba(239,68,68,0.2)");
         }
 
@@ -487,24 +488,24 @@ public class EmailTemplateService {
 
         String body = """
             <p style="margin:0 0 8px; font-size:14px; color:#94a3b8;">Convite</p>
-            <h2 style="margin:0 0 20px; color:#f1f5f9; font-size:24px; font-weight:700;">Voce foi convidado!</h2>
-            <p style="margin:0 0 20px; color:#cbd5e1;">
-                A empresa <strong style="color:#a5b4fc;">%s</strong> convidou voce para
-                acessar o <strong style="color:#a5b4fc;">TradeLink</strong>, a plataforma
+            <h2 style="margin:0 0 20px; color:#1e293b; font-size:24px; font-weight:700;">Voce foi convidado!</h2>
+            <p style="margin:0 0 20px; color:#475569;">
+                A empresa <strong style="color:#6366f1;">%s</strong> convidou voce para
+                acessar o <strong style="color:#6366f1;">TradeLink</strong>, a plataforma
                 de acompanhamento e controle de investimentos.</p>
-            <p style="margin:0 0 24px; color:#cbd5e1;">
+            <p style="margin:0 0 24px; color:#475569;">
                 Clique no botao abaixo para ativar sua conta e completar seu cadastro:</p>
             """.formatted(escape(empresaNome));
 
         body += buildButton("Ativar Minha Conta", activationUrl);
 
         body += buildAlertBox("&#9200;",
-                "Este convite expira em <strong style='color:#fbbf24;'>48 horas</strong>. "
+                "Este convite expira em <strong style='color:#d97706;'>48 horas</strong>. "
                 + "Caso o link expire, solicite um novo convite ao seu consultor.",
-                "rgba(245,158,11,0.08)", "rgba(245,158,11,0.2)");
+                "rgba(245,158,11,0.06)", "rgba(245,158,11,0.25)");
 
         body += """
-            <p style="margin:16px 0 0; color:#64748b; font-size:13px;">
+            <p style="margin:16px 0 0; color:#94a3b8; font-size:13px;">
                 Se voce nao esperava este convite, ignore este e-mail com seguranca.</p>
             """;
 
@@ -518,16 +519,16 @@ public class EmailTemplateService {
         String loginUrl = APP_URL + "/login";
 
         String body = """
-            <h1 style="margin:0 0 8px; font-size:22px; color:#f1f5f9;">
+            <h1 style="margin:0 0 8px; font-size:22px; color:#1e293b;">
                 Alteracao na sua conta</h1>
-            <p style="margin:0 0 24px; color:#94a3b8; font-size:15px;">
-                Ola, <strong style="color:#e2e8f0;">%s</strong></p>
+            <p style="margin:0 0 24px; color:#64748b; font-size:15px;">
+                Ola, <strong style="color:#1e293b;">%s</strong></p>
 
-            <p style="margin:0 0 16px; color:#94a3b8; font-size:14px; line-height:1.6;">
+            <p style="margin:0 0 16px; color:#475569; font-size:14px; line-height:1.6;">
                 Informamos que seu consultor desvinculou sua conta do grupo de atendimento.
                 Seus dados e historico de investimentos estao preservados.</p>
 
-            <p style="margin:0 0 24px; color:#94a3b8; font-size:14px; line-height:1.6;">
+            <p style="margin:0 0 24px; color:#475569; font-size:14px; line-height:1.6;">
                 Ao fazer login, voce encontrara opcoes para continuar gerenciando seu portfolio
                 de forma independente ou baixar um relatorio completo com todo seu historico.</p>
             """.formatted(nomeDisplay);
@@ -536,10 +537,10 @@ public class EmailTemplateService {
 
         body += buildAlertBox("&#128274;",
                 "Seus dados estao seguros. Nenhuma informacao foi perdida neste processo.",
-                "rgba(99,102,241,0.08)", "rgba(99,102,241,0.2)");
+                "rgba(99,102,241,0.05)", "rgba(99,102,241,0.15)");
 
         body += """
-            <p style="margin:16px 0 0; color:#64748b; font-size:13px;">
+            <p style="margin:16px 0 0; color:#94a3b8; font-size:13px;">
                 Em caso de duvidas, entre em contato com o suporte do TradeLink.</p>
             """;
 
@@ -554,16 +555,16 @@ public class EmailTemplateService {
         String loginUrl = APP_URL + "/login";
 
         String body = """
-            <h1 style="margin:0 0 8px; font-size:22px; color:#f1f5f9;">
+            <h1 style="margin:0 0 8px; font-size:22px; color:#1e293b;">
                 Bem-vindo de volta!</h1>
-            <p style="margin:0 0 24px; color:#94a3b8; font-size:15px;">
-                Ola, <strong style="color:#e2e8f0;">%s</strong></p>
+            <p style="margin:0 0 24px; color:#64748b; font-size:15px;">
+                Ola, <strong style="color:#1e293b;">%s</strong></p>
 
-            <p style="margin:0 0 16px; color:#94a3b8; font-size:14px; line-height:1.6;">
+            <p style="margin:0 0 16px; color:#475569; font-size:14px; line-height:1.6;">
                 Boa noticia! Sua conta foi vinculada ao grupo de atendimento de
-                <strong style="color:#e2e8f0;">%s</strong>.</p>
+                <strong style="color:#1e293b;">%s</strong>.</p>
 
-            <p style="margin:0 0 24px; color:#94a3b8; font-size:14px; line-height:1.6;">
+            <p style="margin:0 0 24px; color:#475569; font-size:14px; line-height:1.6;">
                 Voce agora tem acesso completo a todas as funcionalidades da plataforma,
                 incluindo carteiras, recomendacoes e acompanhamento profissional do seu portfolio.</p>
             """.formatted(nomeDisplay, empresaDisplay);
@@ -572,7 +573,7 @@ public class EmailTemplateService {
 
         body += buildAlertBox("&#127881;",
                 "Seu historico e dados foram preservados. Tudo continua como antes.",
-                "rgba(16,185,129,0.08)", "rgba(16,185,129,0.2)");
+                "rgba(16,185,129,0.06)", "rgba(16,185,129,0.2)");
 
         return wrapInLayout("Bem-vindo de volta ao TradeLink",
                 "Sua conta foi vinculada a " + empresaDisplay + ". Acesse a plataforma.", body);
@@ -584,9 +585,9 @@ public class EmailTemplateService {
         String trialFimStr = trialFim != null ? trialFim.toLocalDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "";
 
         String body = """
-            <h2 style="margin:0 0 16px 0; color:#f1f5f9; font-size:22px; font-weight:700;">Bem-vindo ao TradeLink!</h2>
-            <p style="margin:0 0 12px 0;">Ola, <strong>%s</strong>!</p>
-            <p style="margin:0 0 20px 0;">Sua conta como <strong>%s</strong> foi criada com sucesso.</p>
+            <h2 style="margin:0 0 16px 0; color:#1e293b; font-size:22px; font-weight:700;">Bem-vindo ao TradeLink!</h2>
+            <p style="margin:0 0 12px 0; color:#475569;">Ola, <strong style="color:#1e293b;">%s</strong>!</p>
+            <p style="margin:0 0 20px 0; color:#475569;">Sua conta como <strong>%s</strong> foi criada com sucesso.</p>
 
             <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="margin-bottom:24px;">
               <tr><td style="background:linear-gradient(135deg, #6366f1, #8b5cf6); border-radius:12px; padding:20px;">
@@ -598,8 +599,8 @@ public class EmailTemplateService {
               </td></tr>
             </table>
 
-            <p style="margin:0 0 8px 0; font-weight:600; color:#f1f5f9;">O que voce pode fazer:</p>
-            <ul style="margin:0 0 24px 0; padding-left:20px; color:#cbd5e1;">
+            <p style="margin:0 0 8px 0; font-weight:600; color:#1e293b;">O que voce pode fazer:</p>
+            <ul style="margin:0 0 24px 0; padding-left:20px; color:#475569;">
               <li style="margin-bottom:6px;">Gerenciar seu portfolio de investimentos</li>
               <li style="margin-bottom:6px;">Acompanhar cotacoes em tempo real</li>
               <li style="margin-bottom:6px;">Gerar relatorios detalhados</li>
@@ -631,7 +632,7 @@ public class EmailTemplateService {
         StringBuilder digits = new StringBuilder();
         digits.append("<table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" style=\"margin:24px auto;\"><tr>");
         for (char c : code.toCharArray()) {
-            digits.append("<td style=\"width:48px; height:56px; background:rgba(99,102,241,0.12); border:1px solid rgba(99,102,241,0.3); border-radius:10px; text-align:center; vertical-align:middle; margin:0 4px; font-size:28px; font-weight:800; color:#a5b4fc; letter-spacing:2px;\">")
+            digits.append("<td style=\"width:48px; height:56px; background:#f8fafc; border:2px solid #6366f1; border-radius:10px; text-align:center; vertical-align:middle; margin:0 4px; font-size:28px; font-weight:800; color:#6366f1; letter-spacing:2px;\">")
                   .append(c)
                   .append("</td><td style=\"width:8px;\"></td>");
         }
@@ -639,24 +640,84 @@ public class EmailTemplateService {
 
         String body = """
             <p style="margin:0 0 8px; font-size:14px; color:#94a3b8;">Verificacao de seguranca</p>
-            <h2 style="margin:0 0 20px; color:#f1f5f9; font-size:24px; font-weight:700;">Codigo de Verificacao</h2>
-            <p style="margin:0 0 8px; color:#cbd5e1;">Ola, <strong style="color:#f1f5f9;">%s</strong>!</p>
-            <p style="margin:0 0 24px; color:#cbd5e1;">Use o codigo abaixo para completar seu login no TradeLink:</p>
+            <h2 style="margin:0 0 20px; color:#1e293b; font-size:24px; font-weight:700;">Codigo de Verificacao</h2>
+            <p style="margin:0 0 8px; color:#475569;">Ola, <strong style="color:#1e293b;">%s</strong>!</p>
+            <p style="margin:0 0 24px; color:#475569;">Use o codigo abaixo para completar seu login no TradeLink:</p>
             %s
             """.formatted(nomeDisplay, digits.toString());
 
         body += buildAlertBox("&#9200;",
-                "Este codigo expira em <strong style='color:#fbbf24;'>5 minutos</strong>. "
+                "Este codigo expira em <strong style='color:#d97706;'>5 minutos</strong>. "
                 + "Se voce nao solicitou este codigo, ignore este e-mail.",
-                "rgba(245,158,11,0.08)", "rgba(245,158,11,0.2)");
+                "rgba(245,158,11,0.06)", "rgba(245,158,11,0.25)");
 
         body += """
-            <p style="margin:16px 0 0; color:#64748b; font-size:13px;">
+            <p style="margin:16px 0 0; color:#94a3b8; font-size:13px;">
                 Nao compartilhe este codigo com ninguem. A equipe do TradeLink nunca pedira seu codigo.</p>
             """;
 
         return wrapInLayout("Codigo de Verificacao - TradeLink",
                 "Seu codigo de verificacao TradeLink: " + code, body);
+    }
+
+    /** E-mail de recuperação de senha com link para redefinição. */
+    public String buildResetSenha(String nome, String token) {
+        String nomeDisplay = (nome != null && !nome.isBlank()) ? escape(nome) : "Usuario";
+        String resetUrl = APP_URL + "/reset-password?token=" + token;
+
+        String body = """
+            <p style="margin:0 0 8px; font-size:14px; color:#94a3b8;">Recuperacao de senha</p>
+            <h2 style="margin:0 0 20px; color:#1e293b; font-size:24px; font-weight:700;">Redefinir Senha</h2>
+            <p style="margin:0 0 8px; color:#475569;">Ola, <strong style="color:#1e293b;">%s</strong>!</p>
+            <p style="margin:0 0 24px; color:#475569;">Recebemos uma solicitacao para redefinir a senha da sua conta no TradeLink. Clique no botao abaixo para criar uma nova senha:</p>
+            """.formatted(nomeDisplay);
+
+        body += buildButton("Redefinir Minha Senha", resetUrl);
+
+        body += buildAlertBox("&#9200;",
+                "Este link expira em <strong style='color:#d97706;'>30 minutos</strong>. "
+                + "Se voce nao solicitou a redefinicao de senha, ignore este e-mail.",
+                "rgba(245,158,11,0.06)", "rgba(245,158,11,0.25)");
+
+        body += """
+            <p style="margin:16px 0 0; color:#94a3b8; font-size:13px;">
+                Se o botao nao funcionar, copie e cole o link abaixo no seu navegador:<br>
+                <a href="%s" style="color:#6366f1; word-break:break-all;">%s</a></p>
+            """.formatted(resetUrl, resetUrl);
+
+        return wrapInLayout("Redefinir Senha - TradeLink",
+                "Solicitacao de redefinicao de senha no TradeLink", body);
+    }
+
+    public String buildAlertaPreco(String nome, String par, String tipoAlerta,
+                                     String precoAlerta, String precoAtual) {
+        String nomeDisplay = (nome != null && !nome.isBlank()) ? escape(nome) : "Usuario";
+        String descricao = tipoAlerta.equals("ACIMA")
+                ? "atingiu ou ultrapassou o valor definido"
+                : "caiu abaixo do valor definido";
+
+        String body = """
+            <p style="margin:0 0 8px; font-size:14px; color:#94a3b8;">Alerta de Preco</p>
+            <h2 style="margin:0 0 20px; color:#1e293b; font-size:24px; font-weight:700;">%s</h2>
+            <p style="margin:0 0 8px; color:#475569;">Ola, <strong style="color:#1e293b;">%s</strong>!</p>
+            <p style="margin:0 0 24px; color:#475569;">O par <strong style="color:#1e293b;">%s</strong> %s.</p>
+            """.formatted(escape(par), nomeDisplay, escape(par), descricao);
+
+        body += buildInfoTable(new String[][] {
+                { "Par", par },
+                { "Tipo de Alerta", tipoAlerta.equals("ACIMA") ? "Preco Acima" : "Preco Abaixo" },
+                { "Preco Alvo", precoAlerta },
+                { "Preco Atual", precoAtual }
+        });
+
+        body += buildAlertBox("&#128200;",
+                "Este alerta foi desativado automaticamente. Acesse a plataforma para reativa-lo ou criar novos alertas.",
+                "rgba(99,102,241,0.06)", "rgba(99,102,241,0.25)");
+
+        body += buildButton("Ver Meus Alertas", APP_URL + "/cliente/alertas-preco");
+
+        return wrapInLayout("Alerta de Preco - TradeLink",
+                "Alerta de preco disparado: " + par, body);
     }
 
     private static String escape(String s) {

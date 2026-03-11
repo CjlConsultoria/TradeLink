@@ -3,7 +3,7 @@
     <h2 class="page-title">Dashboard</h2>
     <LoadingSpinner v-if="loading" />
     <template v-else>
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8" data-onboarding="cards">
         <router-link to="/cliente/carteiras" class="card p-6 block hover:border-indigo-300">
           <p class="text-sm text-gray-500">Carteiras</p>
           <p class="text-3xl font-bold text-indigo-600 mt-1">{{ dashboard?.totalCarteiras || 0 }}</p>
@@ -37,7 +37,7 @@
       </div>
 
       <!-- Resumo do Portfolio -->
-      <div v-if="portfolioResumo && portfolioResumo.ativos?.length" class="card p-6 mb-8">
+      <div v-if="portfolioResumo && portfolioResumo.ativos?.length" class="card p-6 mb-8" data-onboarding="portfolio">
         <div class="flex items-baseline justify-between mb-3">
           <h3 class="section-title mb-0">Meu Portfolio</h3>
           <router-link to="/cliente/portfolio" class="text-sm text-indigo-600 hover:underline">Ver detalhes</router-link>
@@ -90,7 +90,7 @@
       </div>
 
       <!-- Recomendacoes primeiro -->
-      <div ref="secaoRecomendacoesRef" class="card p-6 mb-8">
+      <div ref="secaoRecomendacoesRef" class="card p-6 mb-8" data-onboarding="recomendacoes">
         <h3 class="section-title">Recomendações</h3>
         <div class="flex flex-wrap gap-2 border-b border-gray-200 mb-4">
           <button v-for="t in abasRec" :key="t.id" type="button" @click="abaRec = t.id; carregar(0)"
@@ -199,6 +199,19 @@
         </div>
       </Teleport>
     </template>
+
+    <!-- Onboarding Overlay -->
+    <OnboardingOverlay
+      :active="onboarding.active.value"
+      :step="onboarding.step.value"
+      :current-step="onboarding.currentStep.value"
+      :total-steps="onboarding.totalSteps.value"
+      :is-first="onboarding.isFirst.value"
+      :is-last="onboarding.isLast.value"
+      @next="onboarding.next()"
+      @prev="onboarding.prev()"
+      @skip="onboarding.skip()"
+    />
   </div>
 </template>
 
@@ -211,14 +224,37 @@ import portfolioApi from '../../api/portfolioApi'
 import alocacaoApi from '../../api/alocacaoApi'
 import { formatCurrency, formatDate } from '../../utils/formatters'
 import { useToast } from '../../composables/useToast'
+import { useOnboarding } from '../../composables/useOnboarding'
 import CotacoesDashboardSection from '../../components/cotacao/CotacoesDashboardSection.vue'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import EmptyState from '../../components/common/EmptyState.vue'
 import StatusBadge from '../../components/common/StatusBadge.vue'
 import TipoBadge from '../../components/common/TipoBadge.vue'
+import OnboardingOverlay from '../../components/common/OnboardingOverlay.vue'
 import operacaoApi from '../../api/operacaoApi'
 
 const toast = useToast()
+
+const onboarding = useOnboarding('cliente-dashboard', [
+  {
+    target: '[data-onboarding="cards"]',
+    title: 'Visao geral',
+    message: 'Aqui voce ve um resumo rapido: total de carteiras, recomendacoes pendentes, resolvidas e cotacoes recentes.',
+    position: 'bottom'
+  },
+  {
+    target: '[data-onboarding="portfolio"]',
+    title: 'Seu Portfolio',
+    message: 'Acompanhe a composicao do seu portfolio com a barra de alocacao e veja quanto cada ativo representa.',
+    position: 'bottom'
+  },
+  {
+    target: '[data-onboarding="recomendacoes"]',
+    title: 'Recomendacoes',
+    message: 'Aqui ficam as recomendacoes do seu consultor. Voce pode registrar operacoes ou marcar como resolvida.',
+    position: 'top'
+  }
+])
 
 const portfolioResumo = ref(null)
 const saudeCarteiras = ref([])
@@ -382,6 +418,9 @@ onMounted(async () => {
         }
       }).catch(() => {})
     }
-  } catch (e) { console.error(e) } finally { loading.value = false }
+  } catch (e) { console.error(e) } finally {
+    loading.value = false
+    onboarding.autoStart(1000)
+  }
 })
 </script>

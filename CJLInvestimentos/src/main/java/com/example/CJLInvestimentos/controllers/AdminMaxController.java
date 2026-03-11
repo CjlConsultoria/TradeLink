@@ -7,6 +7,7 @@ import com.example.CJLInvestimentos.dtos.request.CriarFaturaRequest;
 import com.example.CJLInvestimentos.dtos.request.EmpresaRequest;
 import com.example.CJLInvestimentos.dtos.request.PlanoRequest;
 import com.example.CJLInvestimentos.dtos.request.RegisterRequest;
+import com.example.CJLInvestimentos.dtos.response.AdminMaxDashboardResponse;
 import com.example.CJLInvestimentos.dtos.response.EmpresaResponse;
 import com.example.CJLInvestimentos.dtos.response.FaturaResponse;
 import com.example.CJLInvestimentos.dtos.response.FaturasComProximaResponse;
@@ -19,6 +20,7 @@ import com.example.CJLInvestimentos.dtos.response.ChatMensagemResponse;
 import com.example.CJLInvestimentos.dtos.response.FaqResponse;
 import com.example.CJLInvestimentos.entities.User;
 import com.example.CJLInvestimentos.repositories.UserRepository;
+import com.example.CJLInvestimentos.services.AdminMaxDashboardService;
 import com.example.CJLInvestimentos.services.ChatService;
 import com.example.CJLInvestimentos.services.CotacaoService;
 import com.example.CJLInvestimentos.services.EmpresaService;
@@ -54,6 +56,14 @@ public class AdminMaxController {
     private final FaqService faqService;
     private final ChatService chatService;
     private final UserRepository userRepository;
+    private final AdminMaxDashboardService adminMaxDashboardService;
+
+    // === DASHBOARD ===
+
+    @GetMapping("/dashboard-stats")
+    public ResponseEntity<AdminMaxDashboardResponse> getDashboardStats() {
+        return ResponseEntity.ok(adminMaxDashboardService.getDashboardStats());
+    }
 
     // === PLANOS ===
 

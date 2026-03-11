@@ -1,6 +1,9 @@
 import api from './axiosInstance'
 
 export default {
+  dashboardStats() {
+    return api.get('/admin-max/dashboard-stats')
+  },
   listar(config = {}) {
     return api.get('/admin-max/empresas', config)
   },
