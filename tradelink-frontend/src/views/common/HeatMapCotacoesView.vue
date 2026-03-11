@@ -12,7 +12,7 @@
       </button>
     </div>
 
-    <div v-if="loading" class="text-center py-12 text-gray-400">Carregando cotações...</div>
+    <LoadingSpinner v-if="loading" text="Carregando cotações..." />
 
     <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
       <div v-for="c in cotacoesFiltradas" :key="c.moeda + c.parMoeda"
@@ -43,6 +43,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import cotacaoApi from '../../api/cotacaoApi'
+import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()

@@ -1,6 +1,8 @@
 <template>
   <div>
     <h2 class="page-title">Dashboard · Consultor</h2>
+    <LoadingSpinner v-if="loading" text="Carregando dashboard..." />
+    <template v-else>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" data-onboarding="cards">
       <router-link to="/consultor/carteiras" class="card p-6 block hover:border-indigo-300">
         <p class="text-sm text-gray-500">Carteiras</p>
@@ -56,6 +58,8 @@
       </div>
     </div>
 
+    </template>
+
     <!-- Onboarding Overlay -->
     <OnboardingOverlay
       :active="onboarding.active.value"
@@ -80,6 +84,7 @@ import userApi from '../../api/userApi'
 import CotacoesDashboardSection from '../../components/cotacao/CotacoesDashboardSection.vue'
 import SaudeClientesGrid from '../../components/rebalanceamento/SaudeClientesGrid.vue'
 import OnboardingOverlay from '../../components/common/OnboardingOverlay.vue'
+import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 
 const cotacaoStore = useCotacaoStore()
 
@@ -110,6 +115,7 @@ const onboarding = useOnboarding('consultor-dashboard', [
   }
 ])
 
+const loading = ref(true)
 const carteiras = ref([])
 const clientes = ref([])
 const filtros = ref({ nome: '' })
@@ -139,6 +145,7 @@ onMounted(async () => {
     carteiras.value = cartRes.data
     clientes.value = cliRes.data
   } catch (e) { console.error(e) }
+  finally { loading.value = false }
   onboarding.autoStart(1000)
 })
 onUnmounted(() => cotacaoStore.stopPolling())

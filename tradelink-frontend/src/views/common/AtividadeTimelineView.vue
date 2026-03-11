@@ -3,7 +3,7 @@
     <h2 class="page-title">Atividades Recentes</h2>
     <p class="text-sm text-gray-500 mb-6">Timeline com todas as suas ações na plataforma.</p>
 
-    <div v-if="loading" class="text-center py-12 text-gray-400">Carregando atividades...</div>
+    <LoadingSpinner v-if="loading" text="Carregando atividades..." />
 
     <div v-else-if="atividades.length === 0" class="card p-12 text-center">
       <p class="text-gray-400 text-lg">Nenhuma atividade registrada ainda.</p>
@@ -44,6 +44,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import atividadeApi from '../../api/atividadeApi'
+import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 
 const atividades = ref([])
 const loading = ref(true)

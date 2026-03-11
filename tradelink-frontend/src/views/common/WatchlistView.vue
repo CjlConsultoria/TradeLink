@@ -24,7 +24,7 @@
     </div>
 
     <!-- Lista de favoritos -->
-    <div v-if="loading" class="text-center py-12 text-gray-400">Carregando favoritos...</div>
+    <LoadingSpinner v-if="loading" text="Carregando favoritos..." />
 
     <div v-else-if="favoritosComCotacao.length === 0" class="card p-12 text-center">
       <p class="text-gray-400 text-lg mb-2">Nenhuma moeda favorita ainda</p>
@@ -64,6 +64,7 @@ import { useAuthStore } from '../../stores/auth'
 import { useToast } from '../../composables/useToast'
 import favoritoApi from '../../api/favoritoApi'
 import cotacaoApi from '../../api/cotacaoApi'
+import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()

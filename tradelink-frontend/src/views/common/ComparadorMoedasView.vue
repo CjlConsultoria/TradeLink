@@ -34,7 +34,7 @@
 
     <!-- Gráfico -->
     <div class="card p-6">
-      <div v-if="loadingChart" class="text-center py-12 text-gray-400">Carregando dados...</div>
+      <LoadingSpinner v-if="loadingChart" text="Carregando dados..." />
       <div v-else-if="datasets.length === 0" class="text-center py-12 text-gray-400">
         Selecione ao menos uma moeda acima para comparar.
       </div>
@@ -78,6 +78,7 @@
 <script setup>
 import { ref, onMounted, watch, nextTick, onUnmounted } from 'vue'
 import cotacaoApi from '../../api/cotacaoApi'
+import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import { Chart, registerables } from 'chart.js'
 Chart.register(...registerables)
 

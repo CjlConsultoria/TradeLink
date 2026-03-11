@@ -36,7 +36,7 @@
     <!-- Lista -->
     <div class="card p-6">
       <h3 class="section-title">FAQs cadastradas</h3>
-      <div v-if="loading" class="text-center py-6 text-gray-500">Carregando...</div>
+      <LoadingSpinner v-if="loading" size="sm" />
       <div v-else-if="faqs.length === 0" class="text-center py-6 text-gray-500">Nenhuma FAQ cadastrada.</div>
       <div v-else class="space-y-3">
         <div v-for="faq in faqs" :key="faq.id"
@@ -68,6 +68,7 @@ import { ref, onMounted } from 'vue'
 import api from '../../api/axiosInstance'
 import { useToast } from '../../composables/useToast'
 import { useConfirm } from '../../composables/useConfirm'
+import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 
 const toast = useToast()
 const { confirm } = useConfirm()

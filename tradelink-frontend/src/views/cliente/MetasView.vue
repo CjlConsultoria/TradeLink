@@ -10,7 +10,7 @@
       </button>
     </div>
 
-    <div v-if="loading" class="text-center py-12 text-gray-400">Carregando metas...</div>
+    <LoadingSpinner v-if="loading" text="Carregando metas..." />
 
     <div v-else-if="metas.length === 0" class="card p-12 text-center">
       <p class="text-4xl mb-3">🎯</p>
@@ -139,6 +139,7 @@
 import { ref, onMounted } from 'vue'
 import metaApi from '../../api/metaApi'
 import { useToast } from '../../composables/useToast'
+import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 
 const toast = useToast()
 const metas = ref([])

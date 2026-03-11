@@ -68,7 +68,7 @@
     <!-- Simulações rápidas -->
     <div v-if="moedasDisponiveis.length && !resultado" class="card p-6">
       <h3 class="section-title">Simulações Rápidas — R$ 1.000 investidos há 7 dias</h3>
-      <div v-if="loadingRapido" class="text-center py-8 text-gray-400">Calculando...</div>
+      <LoadingSpinner v-if="loadingRapido" size="sm" text="Calculando..." />
       <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
         <div v-for="s in simulacoesRapidas" :key="s.par"
           class="p-4 border rounded-lg cursor-pointer hover:border-indigo-300 transition-colors"
@@ -92,6 +92,7 @@
 <script setup>
 import { ref, onMounted, nextTick, onUnmounted } from 'vue'
 import cotacaoApi from '../../api/cotacaoApi'
+import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import { Chart, registerables } from 'chart.js'
 Chart.register(...registerables)
 

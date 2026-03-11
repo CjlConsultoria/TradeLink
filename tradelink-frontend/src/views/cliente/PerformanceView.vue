@@ -3,7 +3,7 @@
     <h2 class="page-title">Performance · ROI</h2>
     <p class="text-sm text-gray-500 mb-6">Acompanhe a evolução do seu patrimônio e retorno sobre investimento.</p>
 
-    <div v-if="loading" class="text-center py-12 text-gray-400">Carregando dados de performance...</div>
+    <LoadingSpinner v-if="loading" text="Carregando dados de performance..." />
 
     <template v-else>
       <!-- Cards de métricas -->
@@ -102,6 +102,7 @@
 <script setup>
 import { ref, onMounted, nextTick, onUnmounted } from 'vue'
 import operacaoApi from '../../api/operacaoApi'
+import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import { Chart, registerables } from 'chart.js'
 Chart.register(...registerables)
 

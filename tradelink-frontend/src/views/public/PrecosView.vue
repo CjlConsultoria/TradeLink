@@ -15,7 +15,12 @@
         <p class="precos-header__subtitle">Comece com 5 dias gratuitos. Cancele quando quiser.</p>
       </div>
 
-      <div class="precos-grid">
+      <div v-if="loading" class="text-center py-12">
+        <div class="loading-spinner__dot" style="width:2.5rem;height:2.5rem;border:3px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto;"></div>
+        <p class="text-white/70 text-sm mt-3">Carregando planos...</p>
+      </div>
+
+      <div v-else class="precos-grid">
         <!-- Plano Auto-Gestão (dinâmico) -->
         <div v-if="planoAutoGestao" class="precos-card precos-card--featured">
           <div class="precos-card__badge">Popular</div>
@@ -61,6 +66,7 @@
 import { ref, computed, onMounted } from 'vue'
 import publicApi from '../../api/publicApi'
 
+const loading = ref(true)
 const todosPlanos = ref([])
 const planoAutoGestao = computed(() => todosPlanos.value.find(p => p.tipo === 'AUTO_GESTAO'))
 const planosConsultor = computed(() => todosPlanos.value.filter(p => p.tipo !== 'AUTO_GESTAO'))
@@ -68,6 +74,7 @@ function formatPreco(v) { return Number(v).toFixed(2).replace('.', ',') }
 
 onMounted(async () => {
   try { const res = await publicApi.getPlanos(); todosPlanos.value = res.data || [] } catch {}
+  finally { loading.value = false }
 })
 </script>
 

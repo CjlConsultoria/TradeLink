@@ -1,7 +1,7 @@
 <template>
   <div>
     <h2 class="page-title">Kanban · Recomendações</h2>
-    <p class="text-sm text-gray-500 mb-6">Visualize e gerencie recomendações por status.</p>
+    <p class="text-sm text-gray-500 mb-6">Arraste os cards entre colunas para alterar o status. Reordene dentro de cada coluna.</p>
 
     <!-- Filtro por carteira -->
     <div class="flex flex-wrap gap-3 mb-6">
@@ -12,7 +12,7 @@
       <button type="button" @click="carregar" class="btn-primary text-sm px-4 py-2">Atualizar</button>
     </div>
 
-    <div v-if="loading" class="text-center py-12 text-gray-400">Carregando recomendações...</div>
+    <LoadingSpinner v-if="loading" />
 
     <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-4">
       <!-- Coluna ATIVA -->
@@ -22,36 +22,50 @@
           Ativas
           <span class="kanban-count">{{ ativas.length }}</span>
         </div>
-        <div class="kanban-body">
-          <div v-if="ativas.length === 0" class="text-center py-8 text-gray-400 text-sm">Nenhuma recomendação ativa</div>
-          <div v-for="r in ativas" :key="r.id" class="kanban-card border-l-indigo-500">
-            <div class="flex items-center justify-between">
-              <span class="font-bold text-sm">{{ r.moeda }}/{{ r.parMoeda }}</span>
-              <span class="px-2 py-0.5 rounded text-xs font-semibold"
-                :class="r.tipo === 'COMPRA' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'">
-                {{ r.tipo }}
-              </span>
+        <draggable
+          v-model="ativas"
+          group="kanban"
+          item-key="id"
+          class="kanban-body"
+          ghost-class="kanban-ghost"
+          drag-class="kanban-drag"
+          :animation="200"
+          @change="(e) => onDragChange(e, 'ATIVA')"
+        >
+          <template #item="{ element: r }">
+            <div class="kanban-card border-l-indigo-500" :data-id="r.id">
+              <div class="kanban-card__handle" title="Arraste para mover">⠿</div>
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-sm">{{ r.moeda }}/{{ r.parMoeda }}</span>
+                <span class="px-2 py-0.5 rounded text-xs font-semibold"
+                  :class="r.tipo === 'COMPRA' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'">
+                  {{ r.tipo }}
+                </span>
+              </div>
+              <div class="mt-2 grid grid-cols-2 gap-1 text-xs text-gray-500">
+                <span>Entrada: {{ formatCurrency(r.precoEntrada) }}</span>
+                <span>Alvo: {{ formatCurrency(r.precoAlvo) }}</span>
+                <span>Stop: {{ formatCurrency(r.stopLoss) }}</span>
+                <span v-if="r.quantidade">Qtd: {{ r.quantidade }}</span>
+              </div>
+              <p v-if="r.observacao" class="text-xs text-gray-400 mt-2 line-clamp-2">{{ r.observacao }}</p>
+              <div class="flex gap-1 mt-3">
+                <button type="button" @click="executar(r)" class="px-2 py-1 bg-emerald-50 text-emerald-600 rounded text-xs font-medium hover:bg-emerald-100">
+                  ✓ Executar
+                </button>
+                <button type="button" @click="cancelar(r)" class="px-2 py-1 bg-red-50 text-red-500 rounded text-xs font-medium hover:bg-red-100">
+                  ✕ Cancelar
+                </button>
+                <button type="button" @click="abrirCopy(r)" class="px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs font-medium hover:bg-blue-100">
+                  📋 Copiar
+                </button>
+              </div>
             </div>
-            <div class="mt-2 grid grid-cols-2 gap-1 text-xs text-gray-500">
-              <span>Entrada: {{ formatCurrency(r.precoEntrada) }}</span>
-              <span>Alvo: {{ formatCurrency(r.precoAlvo) }}</span>
-              <span>Stop: {{ formatCurrency(r.stopLoss) }}</span>
-              <span v-if="r.quantidade">Qtd: {{ r.quantidade }}</span>
-            </div>
-            <p v-if="r.observacao" class="text-xs text-gray-400 mt-2 line-clamp-2">{{ r.observacao }}</p>
-            <div class="flex gap-1 mt-3">
-              <button type="button" @click="executar(r)" class="px-2 py-1 bg-emerald-50 text-emerald-600 rounded text-xs font-medium hover:bg-emerald-100">
-                ✓ Executar
-              </button>
-              <button type="button" @click="cancelar(r)" class="px-2 py-1 bg-red-50 text-red-500 rounded text-xs font-medium hover:bg-red-100">
-                ✕ Cancelar
-              </button>
-              <button type="button" @click="abrirCopy(r)" class="px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs font-medium hover:bg-blue-100">
-                📋 Copiar
-              </button>
-            </div>
-          </div>
-        </div>
+          </template>
+          <template #footer>
+            <div v-if="ativas.length === 0" class="text-center py-8 text-gray-400 text-sm">Nenhuma recomendação ativa</div>
+          </template>
+        </draggable>
       </div>
 
       <!-- Coluna EXECUTADA -->
@@ -61,23 +75,37 @@
           Executadas
           <span class="kanban-count">{{ executadas.length }}</span>
         </div>
-        <div class="kanban-body">
-          <div v-if="executadas.length === 0" class="text-center py-8 text-gray-400 text-sm">Nenhuma recomendação executada</div>
-          <div v-for="r in executadas" :key="r.id" class="kanban-card border-l-emerald-500">
-            <div class="flex items-center justify-between">
-              <span class="font-bold text-sm">{{ r.moeda }}/{{ r.parMoeda }}</span>
-              <span class="px-2 py-0.5 rounded text-xs font-semibold"
-                :class="r.tipo === 'COMPRA' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'">
-                {{ r.tipo }}
-              </span>
+        <draggable
+          v-model="executadas"
+          group="kanban"
+          item-key="id"
+          class="kanban-body"
+          ghost-class="kanban-ghost"
+          drag-class="kanban-drag"
+          :animation="200"
+          @change="(e) => onDragChange(e, 'EXECUTADA')"
+        >
+          <template #item="{ element: r }">
+            <div class="kanban-card border-l-emerald-500" :data-id="r.id">
+              <div class="kanban-card__handle" title="Arraste para mover">⠿</div>
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-sm">{{ r.moeda }}/{{ r.parMoeda }}</span>
+                <span class="px-2 py-0.5 rounded text-xs font-semibold"
+                  :class="r.tipo === 'COMPRA' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'">
+                  {{ r.tipo }}
+                </span>
+              </div>
+              <div class="mt-2 grid grid-cols-2 gap-1 text-xs text-gray-500">
+                <span>Entrada: {{ formatCurrency(r.precoEntrada) }}</span>
+                <span>Alvo: {{ formatCurrency(r.precoAlvo) }}</span>
+              </div>
+              <p v-if="r.observacao" class="text-xs text-gray-400 mt-2 line-clamp-2">{{ r.observacao }}</p>
             </div>
-            <div class="mt-2 grid grid-cols-2 gap-1 text-xs text-gray-500">
-              <span>Entrada: {{ formatCurrency(r.precoEntrada) }}</span>
-              <span>Alvo: {{ formatCurrency(r.precoAlvo) }}</span>
-            </div>
-            <p v-if="r.observacao" class="text-xs text-gray-400 mt-2 line-clamp-2">{{ r.observacao }}</p>
-          </div>
-        </div>
+          </template>
+          <template #footer>
+            <div v-if="executadas.length === 0" class="text-center py-8 text-gray-400 text-sm">Nenhuma recomendação executada</div>
+          </template>
+        </draggable>
       </div>
 
       <!-- Coluna CANCELADA -->
@@ -87,23 +115,37 @@
           Canceladas
           <span class="kanban-count">{{ canceladas.length }}</span>
         </div>
-        <div class="kanban-body">
-          <div v-if="canceladas.length === 0" class="text-center py-8 text-gray-400 text-sm">Nenhuma recomendação cancelada</div>
-          <div v-for="r in canceladas" :key="r.id" class="kanban-card border-l-red-500 opacity-75">
-            <div class="flex items-center justify-between">
-              <span class="font-bold text-sm">{{ r.moeda }}/{{ r.parMoeda }}</span>
-              <span class="px-2 py-0.5 rounded text-xs font-semibold"
-                :class="r.tipo === 'COMPRA' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'">
-                {{ r.tipo }}
-              </span>
+        <draggable
+          v-model="canceladas"
+          group="kanban"
+          item-key="id"
+          class="kanban-body"
+          ghost-class="kanban-ghost"
+          drag-class="kanban-drag"
+          :animation="200"
+          @change="(e) => onDragChange(e, 'CANCELADA')"
+        >
+          <template #item="{ element: r }">
+            <div class="kanban-card border-l-red-500 opacity-75" :data-id="r.id">
+              <div class="kanban-card__handle" title="Arraste para mover">⠿</div>
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-sm">{{ r.moeda }}/{{ r.parMoeda }}</span>
+                <span class="px-2 py-0.5 rounded text-xs font-semibold"
+                  :class="r.tipo === 'COMPRA' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'">
+                  {{ r.tipo }}
+                </span>
+              </div>
+              <div class="mt-2 grid grid-cols-2 gap-1 text-xs text-gray-500">
+                <span>Entrada: {{ formatCurrency(r.precoEntrada) }}</span>
+                <span>Alvo: {{ formatCurrency(r.precoAlvo) }}</span>
+              </div>
+              <p v-if="r.observacao" class="text-xs text-gray-400 mt-2 line-clamp-2">{{ r.observacao }}</p>
             </div>
-            <div class="mt-2 grid grid-cols-2 gap-1 text-xs text-gray-500">
-              <span>Entrada: {{ formatCurrency(r.precoEntrada) }}</span>
-              <span>Alvo: {{ formatCurrency(r.precoAlvo) }}</span>
-            </div>
-            <p v-if="r.observacao" class="text-xs text-gray-400 mt-2 line-clamp-2">{{ r.observacao }}</p>
-          </div>
-        </div>
+          </template>
+          <template #footer>
+            <div v-if="canceladas.length === 0" class="text-center py-8 text-gray-400 text-sm">Nenhuma recomendação cancelada</div>
+          </template>
+        </draggable>
       </div>
     </div>
 
@@ -138,21 +180,24 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import draggable from 'vuedraggable'
 import carteiraApi from '../../api/carteiraApi'
 import recomendacaoApi from '../../api/recomendacaoApi'
 import api from '../../api/axiosInstance'
 import { useToast } from '../../composables/useToast'
+import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 
 const toast = useToast()
 const loading = ref(true)
 const carteiras = ref([])
-const recomendacoes = ref([])
 const carteiraId = ref('')
 const copyModal = ref({ show: false, rec: null, selectedIds: [] })
 
-const ativas = computed(() => recomendacoes.value.filter(r => r.status === 'ATIVA'))
-const executadas = computed(() => recomendacoes.value.filter(r => r.status === 'EXECUTADA'))
-const canceladas = computed(() => recomendacoes.value.filter(r => r.status === 'CANCELADA'))
+// Separate reactive arrays for each column (vuedraggable v-model)
+const ativas = ref([])
+const executadas = ref([])
+const canceladas = ref([])
+
 const carteirasDisponiveis = computed(() => {
   if (!copyModal.value.rec) return carteiras.value
   return carteiras.value.filter(c => c.id !== copyModal.value.rec.carteiraId)
@@ -181,15 +226,51 @@ async function carregar() {
         all.push(...(res.data || []))
       }
     }
-    recomendacoes.value = all
+    ativas.value = all.filter(r => r.status === 'ATIVA')
+    executadas.value = all.filter(r => r.status === 'EXECUTADA')
+    canceladas.value = all.filter(r => r.status === 'CANCELADA')
   } catch (e) { console.error(e) }
   finally { loading.value = false }
+}
+
+async function onDragChange(evt, targetStatus) {
+  // When an item is added to this column, update its status on the backend
+  if (evt.added) {
+    const rec = evt.added.element
+    const oldStatus = rec.status
+    rec.status = targetStatus // optimistic update
+
+    try {
+      if (targetStatus === 'EXECUTADA') {
+        await recomendacaoApi.executar(rec.id)
+        toast.success(`${rec.moeda}/${rec.parMoeda} executada`)
+      } else if (targetStatus === 'CANCELADA') {
+        await recomendacaoApi.cancelar(rec.id)
+        toast.success(`${rec.moeda}/${rec.parMoeda} cancelada`)
+      } else if (targetStatus === 'ATIVA') {
+        // Reativar — try backend, fallback to reload
+        try {
+          await recomendacaoApi.reativar(rec.id)
+          toast.success(`${rec.moeda}/${rec.parMoeda} reativada`)
+        } catch {
+          toast.warning('Reativação não suportada — recarregando')
+          await carregar()
+        }
+      }
+    } catch (e) {
+      toast.error('Erro ao mover card — recarregando')
+      rec.status = oldStatus
+      await carregar()
+    }
+  }
 }
 
 async function executar(r) {
   try {
     await recomendacaoApi.executar(r.id)
     r.status = 'EXECUTADA'
+    ativas.value = ativas.value.filter(x => x.id !== r.id)
+    executadas.value.unshift(r)
     toast.success('Recomendação executada')
   } catch (e) { toast.error('Erro ao executar') }
 }
@@ -198,6 +279,8 @@ async function cancelar(r) {
   try {
     await recomendacaoApi.cancelar(r.id)
     r.status = 'CANCELADA'
+    ativas.value = ativas.value.filter(x => x.id !== r.id)
+    canceladas.value.unshift(r)
     toast.success('Recomendação cancelada')
   } catch (e) { toast.error('Erro ao cancelar') }
 }
@@ -264,6 +347,7 @@ function formatCurrency(v) {
   gap: 0.5rem;
   overflow-y: auto;
   max-height: 600px;
+  min-height: 120px;
 }
 .kanban-card {
   padding: 0.75rem;
@@ -271,9 +355,42 @@ function formatCurrency(v) {
   border: 1px solid rgb(var(--tl-border));
   border-left: 3px solid;
   border-radius: 0.5rem;
-  transition: box-shadow 0.2s;
+  transition: box-shadow 0.2s, transform 0.15s;
+  cursor: grab;
+  position: relative;
 }
 .kanban-card:hover {
   box-shadow: var(--tl-shadow-md);
+}
+.kanban-card:active {
+  cursor: grabbing;
+}
+.kanban-card__handle {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  font-size: 1rem;
+  color: #cbd5e1;
+  cursor: grab;
+  line-height: 1;
+  user-select: none;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+.kanban-card:hover .kanban-card__handle {
+  opacity: 1;
+  color: #94a3b8;
+}
+/* Ghost = placeholder in the drop zone */
+.kanban-ghost {
+  opacity: 0.4;
+  background: #e0e7ff !important;
+  border: 2px dashed #6366f1 !important;
+  border-radius: 0.5rem;
+}
+/* Drag = the card being dragged */
+.kanban-drag {
+  transform: rotate(2deg);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
 }
 </style>

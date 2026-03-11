@@ -14,7 +14,7 @@
         class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20" />
     </div>
 
-    <div v-if="loading" class="text-center py-12 text-gray-400 text-sm">Carregando...</div>
+    <LoadingSpinner v-if="loading" text="Carregando perguntas..." />
 
     <div v-else-if="filteredFaqs.length === 0" class="text-center py-12">
       <p class="text-gray-400 text-sm">Nenhuma pergunta encontrada.</p>
@@ -48,6 +48,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import publicApi from '../../api/publicApi'
+import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 
 const loading = ref(true)
 const faqs = ref([])

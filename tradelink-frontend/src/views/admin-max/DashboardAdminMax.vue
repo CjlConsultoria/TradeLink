@@ -2,16 +2,7 @@
   <div>
     <h2 class="page-title">Dashboard</h2>
 
-    <!-- Loading state -->
-    <div v-if="loading" class="flex items-center justify-center py-20">
-      <div class="flex items-center gap-3 text-gray-500">
-        <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-        </svg>
-        Carregando...
-      </div>
-    </div>
+    <LoadingSpinner v-if="loading" text="Carregando dashboard..." />
 
     <template v-else>
       <!-- Cards de indicadores gerenciais -->
@@ -189,6 +180,7 @@ import {
 import empresaApi from '../../api/empresaApi'
 import api from '../../api/axiosInstance'
 import { useToast } from '../../composables/useToast'
+import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend)
 

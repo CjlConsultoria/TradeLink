@@ -144,7 +144,8 @@ function handleAction(action) {
 <style scoped>
 .sidebar {
   width: 16rem;
-  min-height: 100vh;
+  height: 100vh;
+  max-height: 100dvh;
   background: linear-gradient(180deg, #1e1b4b 0%, #312e81 100%);
   color: #e0e7ff;
   display: flex;
@@ -183,6 +184,7 @@ function handleAction(action) {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex-shrink: 0;
 }
 
 .sidebar__logo {
@@ -218,6 +220,23 @@ function handleAction(action) {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  overflow-y: auto;
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+.sidebar__nav::-webkit-scrollbar {
+  width: 4px;
+}
+.sidebar__nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar__nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+.sidebar__nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35);
 }
 
 .sidebar__link {

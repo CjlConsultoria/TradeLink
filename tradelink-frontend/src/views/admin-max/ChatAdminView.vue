@@ -13,7 +13,7 @@
             <option value="FECHADA">Fechadas</option>
           </select>
         </div>
-        <div v-if="loadingConversas" class="text-center py-4 text-gray-500">Carregando...</div>
+        <LoadingSpinner v-if="loadingConversas" size="sm" />
         <div v-else-if="conversasFiltradas.length === 0" class="text-center py-4 text-gray-400 text-sm">Nenhuma conversa.</div>
         <div v-else class="space-y-2">
           <button v-for="c in conversasFiltradas" :key="c.id" type="button"
@@ -77,6 +77,7 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import chatApi from '../../api/chatApi'
 import { useToast } from '../../composables/useToast'
+import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 
 const toast = useToast()
 const loadingConversas = ref(true)
