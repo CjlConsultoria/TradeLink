@@ -17,7 +17,8 @@
         <svg v-if="isDark" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
         <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
       </button>
-      <span class="app-header__user" :title="user?.nome">{{ user?.nome }}</span>
+      <!-- Desktop: nome + badge + sair -->
+      <span class="app-header__user">{{ user?.nome }}</span>
       <span class="app-header__badge" :class="roleBadge">{{ roleLabel }}</span>
       <button type="button" @click="handleLogout" class="app-header__logout">Sair</button>
     </div>
@@ -128,7 +129,7 @@ function handleLogout() {
   align-items: center;
   gap: 0.5rem;
   min-width: 0;
-  flex-shrink: 0;
+  flex-shrink: 1;
 }
 @media (min-width: 480px) {
   .app-header__right { gap: 0.75rem; }
@@ -142,9 +143,10 @@ function handleLogout() {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  display: none;
 }
 @media (min-width: 640px) {
-  .app-header__user { max-width: 12rem; font-size: 0.875rem; }
+  .app-header__user { display: inline; max-width: 12rem; font-size: 0.875rem; }
 }
 @media (min-width: 1024px) {
   .app-header__user { max-width: 20rem; }
@@ -155,6 +157,10 @@ function handleLogout() {
   font-weight: 500;
   padding: 0.25rem 0.625rem;
   border-radius: 9999px;
+  display: none;
+}
+@media (min-width: 640px) {
+  .app-header__badge { display: inline; }
 }
 .app-header__badge--admin-max { background: #f3e8ff; color: #6b21a8; }
 .app-header__badge--consultor { background: #dbeafe; color: #1d4ed8; }
@@ -162,15 +168,19 @@ function handleLogout() {
 .app-header__badge--default { background: #f3f4f6; color: #374151; }
 
 .app-header__logout {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   color: rgb(var(--tl-error));
   background: transparent;
   border: none;
-  padding: 0.375rem 0.75rem;
+  padding: 0.375rem 0.5rem;
   border-radius: var(--tl-radius-sm);
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
+  white-space: nowrap;
+}
+@media (min-width: 640px) {
+  .app-header__logout { font-size: 0.875rem; padding: 0.375rem 0.75rem; }
 }
 .app-header__logout:hover {
   background: #fef2f2;

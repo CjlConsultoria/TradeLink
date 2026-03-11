@@ -1,6 +1,7 @@
 <template>
   <div>
-    <div class="flex items-center justify-between mb-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
       <div>
         <h2 class="page-title mb-1">Emails de Apresentação</h2>
         <p class="text-sm text-gray-500">Envie guias de onboarding personalizados por perfil</p>
@@ -20,54 +21,56 @@
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6" v-if="!loadingUsuarios">
-      <div class="card p-4">
-        <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Disponível</p>
-        <p class="text-2xl font-bold text-gray-900 mt-1">{{ statsTotal }}</p>
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6" v-if="!loadingUsuarios">
+      <div class="card p-3 sm:p-4">
+        <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Total</p>
+        <p class="text-xl sm:text-2xl font-bold text-gray-900 mt-1">{{ statsTotal }}</p>
       </div>
-      <div class="card p-4">
+      <div class="card p-3 sm:p-4">
         <p class="text-xs font-medium text-blue-600 uppercase tracking-wide">Consultores</p>
-        <p class="text-2xl font-bold text-gray-900 mt-1">{{ statsConsultores }}</p>
+        <p class="text-xl sm:text-2xl font-bold text-gray-900 mt-1">{{ statsConsultores }}</p>
       </div>
-      <div class="card p-4">
+      <div class="card p-3 sm:p-4">
         <p class="text-xs font-medium text-emerald-600 uppercase tracking-wide">Clientes</p>
-        <p class="text-2xl font-bold text-gray-900 mt-1">{{ statsClientes }}</p>
+        <p class="text-xl sm:text-2xl font-bold text-gray-900 mt-1">{{ statsClientes }}</p>
       </div>
-      <div class="card p-4">
+      <div class="card p-3 sm:p-4">
         <p class="text-xs font-medium text-amber-600 uppercase tracking-wide">Auto-Gestão</p>
-        <p class="text-2xl font-bold text-gray-900 mt-1">{{ statsAutoGestao }}</p>
+        <p class="text-xl sm:text-2xl font-bold text-gray-900 mt-1">{{ statsAutoGestao }}</p>
       </div>
     </div>
 
     <!-- TAB: ENVIAR -->
     <div v-if="abaAtiva === 'enviar'">
       <!-- Barra de ações -->
-      <div class="card p-4 mb-4">
-        <div class="flex flex-wrap items-center gap-4">
-          <select v-model="filtroRole" class="input w-40">
-            <option value="">Todos os perfis</option>
-            <option value="Admin">Consultor</option>
-            <option value="Cliente">Cliente</option>
-          </select>
-          <div class="relative flex-1 min-w-[200px] max-w-md">
-            <input v-model="busca" type="text" placeholder="Buscar por nome ou e-mail..." class="input w-full pl-9" />
-            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      <div class="card p-3 sm:p-4 mb-4">
+        <div class="flex flex-col sm:flex-row gap-3 sm:items-center">
+          <div class="flex gap-2 flex-1">
+            <select v-model="filtroRole" class="input w-36 sm:w-40 flex-shrink-0">
+              <option value="">Todos os perfis</option>
+              <option value="Admin">Consultor</option>
+              <option value="Cliente">Cliente</option>
+            </select>
+            <div class="relative flex-1 min-w-0">
+              <input v-model="busca" type="text" placeholder="Buscar..." class="input w-full pl-9" />
+              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
           </div>
-          <div class="flex items-center gap-3 ml-auto">
-            <span class="text-sm text-gray-500">{{ selecionados.length }} selecionado(s)</span>
-            <button @click="selecionarTodos" class="btn btn-secondary whitespace-nowrap text-sm">
+          <div class="flex items-center gap-2 sm:gap-3 justify-between sm:justify-end">
+            <span class="text-xs sm:text-sm text-gray-500 whitespace-nowrap">{{ selecionados.length }} selecionado(s)</span>
+            <button @click="selecionarTodos" class="btn btn-secondary whitespace-nowrap text-xs sm:text-sm px-2.5 sm:px-3 py-1.5">
               {{ todosVisiveisSelecionados ? 'Desmarcar' : 'Selecionar' }} todos
             </button>
             <button
               @click="enviar"
               :disabled="selecionados.length === 0 || enviando"
-              class="btn btn-primary whitespace-nowrap"
+              class="btn btn-primary whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2"
             >
               <template v-if="enviando">
-                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                <svg class="animate-spin -ml-1 mr-1.5 h-3.5 w-3.5 text-white inline" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
                 Enviando...
               </template>
-              <template v-else>Enviar emails</template>
+              <template v-else>Enviar</template>
             </button>
           </div>
         </div>
@@ -82,31 +85,24 @@
           <p class="text-sm mt-1">Tente ajustar os filtros</p>
         </div>
         <template v-else>
-          <!-- Table Header -->
-          <div class="grid grid-cols-[40px_1fr_100px_120px_80px] gap-4 px-5 py-3 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          <!-- Desktop Table Header -->
+          <div class="hidden md:grid grid-cols-[40px_1fr_100px_120px_80px] gap-4 px-5 py-3 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider">
             <div></div>
             <div>Usuário</div>
             <div>Perfil</div>
             <div>Template</div>
             <div class="text-right">Ação</div>
           </div>
-          <!-- Rows -->
+
+          <!-- Desktop Rows -->
           <div
             v-for="u in usuariosPaginados" :key="u.id"
-            class="grid grid-cols-[40px_1fr_100px_120px_80px] gap-4 px-5 py-3 items-center border-b border-gray-100 transition-colors cursor-pointer"
-            :class="selecionados.includes(u.id)
-              ? 'bg-indigo-50/60'
-              : 'hover:bg-gray-50'"
+            class="hidden md:grid grid-cols-[40px_1fr_100px_120px_80px] gap-4 px-5 py-3 items-center border-b border-gray-100 transition-colors cursor-pointer"
+            :class="selecionados.includes(u.id) ? 'bg-indigo-50/60' : 'hover:bg-gray-50'"
             @click="toggleSelecionado(u.id)"
           >
             <div>
-              <input
-                type="checkbox"
-                :checked="selecionados.includes(u.id)"
-                @click.stop
-                @change="toggleSelecionado(u.id)"
-                class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-              />
+              <input type="checkbox" :checked="selecionados.includes(u.id)" @click.stop @change="toggleSelecionado(u.id)" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
             </div>
             <div class="min-w-0">
               <p class="text-sm font-medium text-gray-900 truncate">{{ u.nome || '(sem nome)' }}</p>
@@ -122,41 +118,44 @@
               <button @click.stop="abrirPreview(u.id)" class="text-xs text-indigo-600 hover:text-indigo-800 font-semibold">Preview</button>
             </div>
           </div>
+
+          <!-- Mobile Cards -->
+          <div class="md:hidden divide-y divide-gray-100">
+            <div
+              v-for="u in usuariosPaginados" :key="'m-' + u.id"
+              class="flex items-start gap-3 p-3 transition-colors cursor-pointer"
+              :class="selecionados.includes(u.id) ? 'bg-indigo-50/60' : 'hover:bg-gray-50'"
+              @click="toggleSelecionado(u.id)"
+            >
+              <input type="checkbox" :checked="selecionados.includes(u.id)" @click.stop @change="toggleSelecionado(u.id)" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 mt-1 flex-shrink-0" />
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-gray-900 truncate">{{ u.nome || '(sem nome)' }}</p>
+                <p class="text-xs text-gray-500 truncate mb-1.5">{{ u.email }}</p>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-[11px] px-2 py-0.5 rounded-full" :class="badgeRole(u.role)">{{ labelRole(u.role) }}</span>
+                  <span class="text-[11px] px-2 py-0.5 rounded-full font-medium" :class="badgeTemplate(detectarTemplate(u))">{{ labelTemplate(detectarTemplate(u)) }}</span>
+                </div>
+              </div>
+              <button @click.stop="abrirPreview(u.id)" class="text-xs text-indigo-600 hover:text-indigo-800 font-semibold flex-shrink-0 mt-1">Preview</button>
+            </div>
+          </div>
+
           <!-- Paginação -->
-          <div class="flex items-center justify-between px-5 py-3 bg-gray-50 border-t border-gray-200">
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-2 px-4 sm:px-5 py-3 bg-gray-50 border-t border-gray-200">
             <p class="text-xs text-gray-500">
-              Mostrando {{ paginaInicio + 1 }}–{{ Math.min(paginaFim, usuariosFiltrados.length) }} de {{ usuariosFiltrados.length }}
+              {{ paginaInicio + 1 }}–{{ Math.min(paginaFim, usuariosFiltrados.length) }} de {{ usuariosFiltrados.length }}
             </p>
             <div class="flex items-center gap-1">
-              <button
-                @click="pagina = pagina - 1"
-                :disabled="pagina <= 1"
-                class="px-3 py-1.5 text-xs font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
+              <button @click="pagina = pagina - 1" :disabled="pagina <= 1" class="px-2.5 sm:px-3 py-1.5 text-xs font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
                 Anterior
               </button>
               <template v-for="p in paginasVisiveis" :key="p">
-                <button
-                  v-if="p === '...'"
-                  disabled
-                  class="px-2 py-1.5 text-xs text-gray-400"
-                >...</button>
-                <button
-                  v-else
-                  @click="pagina = p"
-                  class="px-3 py-1.5 text-xs font-medium rounded-md border transition-colors"
-                  :class="pagina === p
-                    ? 'bg-indigo-600 text-white border-indigo-600'
-                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'"
-                >
+                <button v-if="p === '...'" disabled class="px-2 py-1.5 text-xs text-gray-400">...</button>
+                <button v-else @click="pagina = p" class="px-2.5 sm:px-3 py-1.5 text-xs font-medium rounded-md border transition-colors" :class="pagina === p ? 'bg-indigo-600 text-white border-indigo-600' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'">
                   {{ p }}
                 </button>
               </template>
-              <button
-                @click="pagina = pagina + 1"
-                :disabled="pagina >= totalPaginas"
-                class="px-3 py-1.5 text-xs font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
+              <button @click="pagina = pagina + 1" :disabled="pagina >= totalPaginas" class="px-2.5 sm:px-3 py-1.5 text-xs font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
                 Próxima
               </button>
             </div>
@@ -175,17 +174,17 @@
           <p class="text-sm mt-1">Selecione destinatários na aba "Enviar"</p>
         </div>
         <template v-else>
-          <!-- Table Header -->
-          <div class="grid grid-cols-[1fr_120px_140px_90px] gap-4 px-5 py-3 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          <!-- Desktop Table Header -->
+          <div class="hidden md:grid grid-cols-[1fr_120px_140px_90px] gap-4 px-5 py-3 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider">
             <div>Destinatário</div>
             <div>Template</div>
             <div>Enviado</div>
             <div class="text-right">Status</div>
           </div>
-          <!-- Rows -->
+          <!-- Desktop Rows -->
           <div
             v-for="h in historicoPaginado" :key="h.id"
-            class="grid grid-cols-[1fr_120px_140px_90px] gap-4 px-5 py-3 items-center border-b border-gray-100 hover:bg-gray-50 transition-colors"
+            class="hidden md:grid grid-cols-[1fr_120px_140px_90px] gap-4 px-5 py-3 items-center border-b border-gray-100 hover:bg-gray-50 transition-colors"
           >
             <div class="min-w-0">
               <p class="text-sm font-medium text-gray-900 truncate">{{ h.nomeDestinatario || '(sem nome)' }}</p>
@@ -199,53 +198,47 @@
               <p class="text-xs text-gray-400">por {{ h.nomeEnviadoPor }}</p>
             </div>
             <div class="text-right">
-              <span
-                class="text-xs px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1"
-                :class="h.status === 'ENVIADO' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
-              >
+              <span class="text-xs px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1" :class="h.status === 'ENVIADO' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
                 <span class="w-1.5 h-1.5 rounded-full" :class="h.status === 'ENVIADO' ? 'bg-green-500' : 'bg-red-500'"></span>
                 {{ h.status === 'ENVIADO' ? 'Enviado' : 'Falha' }}
               </span>
               <p v-if="h.erro" class="text-xs text-red-400 mt-0.5 truncate max-w-[120px]" :title="h.erro">{{ h.erro }}</p>
             </div>
           </div>
+
+          <!-- Mobile Cards -->
+          <div class="md:hidden divide-y divide-gray-100">
+            <div v-for="h in historicoPaginado" :key="'mh-' + h.id" class="p-3">
+              <div class="flex items-start justify-between gap-2 mb-1.5">
+                <div class="min-w-0 flex-1">
+                  <p class="text-sm font-medium text-gray-900 truncate">{{ h.nomeDestinatario || '(sem nome)' }}</p>
+                  <p class="text-xs text-gray-500 truncate">{{ h.emailDestinatario }}</p>
+                </div>
+                <span class="text-[11px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1 flex-shrink-0" :class="h.status === 'ENVIADO' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
+                  <span class="w-1.5 h-1.5 rounded-full" :class="h.status === 'ENVIADO' ? 'bg-green-500' : 'bg-red-500'"></span>
+                  {{ h.status === 'ENVIADO' ? 'Enviado' : 'Falha' }}
+                </span>
+              </div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-[11px] px-2 py-0.5 rounded-full font-medium" :class="badgeTemplate(h.tipoTemplate)">{{ labelTemplate(h.tipoTemplate) }}</span>
+                <span class="text-[11px] text-gray-400">{{ formatData(h.enviadoEm) }} por {{ h.nomeEnviadoPor }}</span>
+              </div>
+              <p v-if="h.erro" class="text-xs text-red-400 mt-1 truncate" :title="h.erro">{{ h.erro }}</p>
+            </div>
+          </div>
+
           <!-- Paginação Histórico -->
-          <div class="flex items-center justify-between px-5 py-3 bg-gray-50 border-t border-gray-200">
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-2 px-4 sm:px-5 py-3 bg-gray-50 border-t border-gray-200">
             <p class="text-xs text-gray-500">
-              Mostrando {{ histPaginaInicio + 1 }}–{{ Math.min(histPaginaFim, historico.length) }} de {{ historico.length }}
+              {{ histPaginaInicio + 1 }}–{{ Math.min(histPaginaFim, historico.length) }} de {{ historico.length }}
             </p>
             <div class="flex items-center gap-1">
-              <button
-                @click="histPagina = histPagina - 1"
-                :disabled="histPagina <= 1"
-                class="px-3 py-1.5 text-xs font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                Anterior
-              </button>
+              <button @click="histPagina = histPagina - 1" :disabled="histPagina <= 1" class="px-2.5 sm:px-3 py-1.5 text-xs font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">Anterior</button>
               <template v-for="p in histPaginasVisiveis" :key="p">
-                <button
-                  v-if="p === '...'"
-                  disabled
-                  class="px-2 py-1.5 text-xs text-gray-400"
-                >...</button>
-                <button
-                  v-else
-                  @click="histPagina = p"
-                  class="px-3 py-1.5 text-xs font-medium rounded-md border transition-colors"
-                  :class="histPagina === p
-                    ? 'bg-indigo-600 text-white border-indigo-600'
-                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'"
-                >
-                  {{ p }}
-                </button>
+                <button v-if="p === '...'" disabled class="px-2 py-1.5 text-xs text-gray-400">...</button>
+                <button v-else @click="histPagina = p" class="px-2.5 sm:px-3 py-1.5 text-xs font-medium rounded-md border transition-colors" :class="histPagina === p ? 'bg-indigo-600 text-white border-indigo-600' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'">{{ p }}</button>
               </template>
-              <button
-                @click="histPagina = histPagina + 1"
-                :disabled="histPagina >= histTotalPaginas"
-                class="px-3 py-1.5 text-xs font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                Próxima
-              </button>
+              <button @click="histPagina = histPagina + 1" :disabled="histPagina >= histTotalPaginas" class="px-2.5 sm:px-3 py-1.5 text-xs font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">Próxima</button>
             </div>
           </div>
         </template>
@@ -254,17 +247,17 @@
 
     <!-- Modal Preview -->
     <Teleport to="body">
-      <div v-if="preview.visivel" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="fecharPreview">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
-          <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-semibold text-gray-900">Preview do Email</h3>
+      <div v-if="preview.visivel" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4" @click.self="fecharPreview">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] flex flex-col">
+          <div class="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-200">
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900">Preview do Email</h3>
             <button @click="fecharPreview" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
           </div>
-          <div class="flex-1 overflow-auto p-2 bg-gray-100">
+          <div class="flex-1 overflow-auto p-1.5 sm:p-2 bg-gray-100">
             <LoadingSpinner v-if="preview.loading" size="sm" class="py-12" />
-            <iframe v-else :srcdoc="preview.html" class="w-full bg-white rounded-lg shadow-sm border-0" style="min-height: 550px; height: 70vh;"></iframe>
+            <iframe v-else :srcdoc="preview.html" class="w-full bg-white rounded-lg shadow-sm border-0" style="min-height: 400px; height: 70vh;"></iframe>
           </div>
         </div>
       </div>
@@ -328,7 +321,6 @@ const totalPaginas = computed(() => Math.max(1, Math.ceil(usuariosFiltrados.valu
 const paginaInicio = computed(() => (pagina.value - 1) * POR_PAGINA)
 const paginaFim = computed(() => paginaInicio.value + POR_PAGINA)
 const usuariosPaginados = computed(() => usuariosFiltrados.value.slice(paginaInicio.value, paginaFim.value))
-
 const paginasVisiveis = computed(() => gerarPaginas(pagina.value, totalPaginas.value))
 
 // --- Paginação Histórico ---
@@ -349,7 +341,6 @@ function gerarPaginas(atual, total) {
   return pages
 }
 
-// Reset pagina quando filtros mudam
 watch([filtroRole, busca], () => { pagina.value = 1 })
 
 function labelRole(role) {
@@ -357,26 +348,15 @@ function labelRole(role) {
   return map[role] || role
 }
 function badgeRole(role) {
-  const map = {
-    Admin: 'bg-blue-100 text-blue-800',
-    Cliente: 'bg-gray-100 text-gray-700'
-  }
+  const map = { Admin: 'bg-blue-100 text-blue-800', Cliente: 'bg-gray-100 text-gray-700' }
   return map[role] || 'bg-gray-100 text-gray-700'
 }
 function badgeTemplate(tipo) {
-  const map = {
-    CONSULTOR: 'bg-blue-100 text-blue-700',
-    CLIENTE: 'bg-emerald-100 text-emerald-700',
-    CLIENTE_AUTO_GESTAO: 'bg-amber-100 text-amber-700'
-  }
+  const map = { CONSULTOR: 'bg-blue-100 text-blue-700', CLIENTE: 'bg-emerald-100 text-emerald-700', CLIENTE_AUTO_GESTAO: 'bg-amber-100 text-amber-700' }
   return map[tipo] || 'bg-gray-100 text-gray-700'
 }
 function labelTemplate(tipo) {
-  const map = {
-    CONSULTOR: 'Consultor',
-    CLIENTE: 'Cliente',
-    CLIENTE_AUTO_GESTAO: 'Auto-Gestão'
-  }
+  const map = { CONSULTOR: 'Consultor', CLIENTE: 'Cliente', CLIENTE_AUTO_GESTAO: 'Auto-Gestão' }
   return map[tipo] || tipo
 }
 
