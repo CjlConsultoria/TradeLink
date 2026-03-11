@@ -4,9 +4,12 @@ import com.example.CJLInvestimentos.dtos.request.PushSubscriptionRequest;
 import com.example.CJLInvestimentos.dtos.request.TrocarSenhaRequest;
 import com.example.CJLInvestimentos.dtos.response.EmpresaResponse;
 import com.example.CJLInvestimentos.dtos.response.UserResponse;
+import com.example.CJLInvestimentos.entities.MoedaFavorita;
 import com.example.CJLInvestimentos.entities.User;
 import com.example.CJLInvestimentos.exceptions.BusinessException;
+import com.example.CJLInvestimentos.repositories.MoedaFavoritaRepository;
 import com.example.CJLInvestimentos.repositories.UserRepository;
+import com.example.CJLInvestimentos.services.AtividadeLogService;
 import com.example.CJLInvestimentos.services.EmpresaService;
 import com.example.CJLInvestimentos.services.FaturaService;
 import com.example.CJLInvestimentos.services.LoginLogService;
@@ -19,6 +22,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -38,6 +42,8 @@ public class MeController {
     private final NotificationAsyncRunner notificationAsyncRunner;
     private final LoginLogService loginLogService;
     private final NotificacaoInAppService notificacaoInAppService;
+    private final MoedaFavoritaRepository moedaFavoritaRepository;
+    private final AtividadeLogService atividadeLogService;
 
     @Value("${app.notificacao.push.vapid-public:}")
     private String vapidPublicKey;
@@ -159,5 +165,51 @@ public class MeController {
         User user = getUser(userDetails);
         int total = notificacaoInAppService.marcarTodasComoLidas(user.getId());
         return ResponseEntity.ok(Map.of("marcadas", total));
+    }
+
+    // === FAVORITOS (WATCHLIST) ===
+
+    @GetMapping("/favoritos")
+    public ResponseEntity<List<Map<String, String>>> listarFavoritos(@AuthenticationPrincipal UserDetails ud) {
+        User user = userRepository.findByEmail(ud.getUsername()).orElseThrow();
+        return ResponseEntity.ok(moedaFavoritaRepository.findByUserIdOrderByCreatedAtDesc(user.getId())
+            .stream().map(f -> Map.of("moeda", f.getMoeda(), "parMoeda", f.getParMoeda())).toList());
+    }
+
+    @PostMapping("/favoritos")
+    public ResponseEntity<?> adicionarFavorito(@AuthenticationPrincipal UserDetails ud, @RequestBody Map<String, String> body) {
+        User user = userRepository.findByEmail(ud.getUsername()).orElseThrow();
+        String moeda = body.get("moeda"); String par = body.get("parMoeda");
+        if (moeda == null || par == null) return ResponseEntity.badRequest().build();
+        if (moedaFavoritaRepository.existsByUserIdAndMoedaAndParMoeda(user.getId(), moeda, par))
+            return ResponseEntity.ok().build();
+        if (moedaFavoritaRepository.countByUserId(user.getId()) >= 30)
+            return ResponseEntity.badRequest().body(Map.of("message", "Máximo de 30 favoritos"));
+        moedaFavoritaRepository.save(MoedaFavorita.builder().user(user).moeda(moeda).parMoeda(par).build());
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/favoritos/{moeda}/{parMoeda}")
+    @Transactional
+    public ResponseEntity<?> removerFavorito(@AuthenticationPrincipal UserDetails ud, @PathVariable String moeda, @PathVariable String parMoeda) {
+        User user = userRepository.findByEmail(ud.getUsername()).orElseThrow();
+        moedaFavoritaRepository.deleteByUserIdAndMoedaAndParMoeda(user.getId(), moeda, parMoeda);
+        return ResponseEntity.ok().build();
+    }
+
+    // === ATIVIDADES (TIMELINE) ===
+
+    @GetMapping("/atividades")
+    public ResponseEntity<?> listarAtividades(@AuthenticationPrincipal UserDetails ud,
+                                               @RequestParam(defaultValue = "30") int limit) {
+        User user = userRepository.findByEmail(ud.getUsername()).orElseThrow();
+        var atividades = atividadeLogService.listar(user.getId(), Math.min(limit, 100));
+        return ResponseEntity.ok(atividades.stream().map(a -> Map.of(
+            "id", a.getId(),
+            "tipo", a.getTipo(),
+            "descricao", a.getDescricao() != null ? a.getDescricao() : "",
+            "link", a.getLink() != null ? a.getLink() : "",
+            "createdAt", a.getCreatedAt().toString()
+        )).toList());
     }
 }

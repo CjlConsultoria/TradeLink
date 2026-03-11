@@ -17,6 +17,10 @@
         <button type="button" @click="carregar" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">Atualizar</button>
         <button type="button" @click="exportarPdfOperacoes" :disabled="exportandoPdf" class="px-4 py-2 bg-gray-700 text-white rounded-lg text-sm hover:bg-gray-800 disabled:opacity-50">Exportar PDF (operações)</button>
         <button type="button" @click="exportarPdfResumo" :disabled="exportandoPdf" class="px-4 py-2 bg-gray-700 text-white rounded-lg text-sm hover:bg-gray-800 disabled:opacity-50">Exportar PDF (resumo)</button>
+        <button type="button" @click="exportarCsv" class="px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700 flex items-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          Exportar CSV
+        </button>
       </div>
     </div>
 
@@ -143,6 +147,7 @@ import { Bar, Doughnut } from 'vue-chartjs'
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js'
 import relatorioClienteApi from '../../api/relatorioClienteApi'
 import { formatCurrency, formatDate } from '../../utils/formatters'
+import { exportCsv } from '../../utils/exportCsv'
 import { useToast } from '../../composables/useToast'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 
@@ -208,6 +213,24 @@ async function exportarPdfResumo() {
   } finally {
     exportandoPdf.value = false
   }
+}
+
+function exportarCsv() {
+  if (!operacoes.value.length) {
+    toast.error('Nenhuma operação para exportar.')
+    return
+  }
+  const columns = [
+    { key: 'dataExecucao', label: 'Data' },
+    { key: 'carteiraNome', label: 'Carteira' },
+    { key: 'recomendacaoMoedaPar', label: 'Par' },
+    { key: 'tipo', label: 'Tipo' },
+    { key: 'precoExecutado', label: 'Preço' },
+    { key: 'quantidade', label: 'Quantidade' },
+    { key: 'valorOperacao', label: 'Valor' }
+  ]
+  exportCsv(operacoes.value, columns, 'relatorio-operacoes-cliente')
+  toast.success('CSV exportado.')
 }
 
 const resultadoPositivo = computed(() => resumo.value?.resultado != null && Number(resumo.value.resultado) >= 0)

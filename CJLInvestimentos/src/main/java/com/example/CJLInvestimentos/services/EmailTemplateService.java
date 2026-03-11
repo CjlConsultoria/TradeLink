@@ -1,6 +1,8 @@
 package com.example.CJLInvestimentos.services;
 
 import com.example.CJLInvestimentos.entities.Recomendacao;
+import com.example.CJLInvestimentos.entities.User;
+import com.example.CJLInvestimentos.dtos.response.ResumoRelatorioClienteResponse;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -718,6 +720,91 @@ public class EmailTemplateService {
 
         return wrapInLayout("Alerta de Preco - TradeLink",
                 "Alerta de preco disparado: " + par, body);
+    }
+
+    /** Resumo semanal enviado ao cliente toda segunda-feira. */
+    public String buildRelatorioSemanal(User cliente, ResumoRelatorioClienteResponse resumo) {
+        String nome = (cliente.getNome() != null && !cliente.getNome().isBlank()) ? escape(cliente.getNome()) : "Investidor";
+        boolean lucro = resumo.getResultado() != null && resumo.getResultado().compareTo(BigDecimal.ZERO) >= 0;
+        String resultadoFormatado = resumo.getResultado() != null ? "$" + resumo.getResultado().toPlainString() : "$0";
+        String resultadoBadge = lucro
+                ? buildBadge("+" + resultadoFormatado, "rgba(34,197,94,0.12)", "#16a34a")
+                : buildBadge(resultadoFormatado, "rgba(239,68,68,0.12)", "#dc2626");
+
+        String body = """
+            <p style="margin:0 0 8px; font-size:14px; color:#94a3b8;">Resumo Semanal</p>
+            <h2 style="margin:0 0 8px; color:#1e293b; font-size:22px; font-weight:700;">Ola, %s!</h2>
+            <p style="margin:0 0 20px; color:#475569;">Aqui esta o resumo das suas operacoes no TradeLink.</p>
+            """.formatted(nome);
+
+        // Metricas 2x2
+        body += """
+            <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="margin:16px 0;">
+              <tr>
+                <td class="metric-cell" style="width:50%%; padding:4px 4px 4px 0;">
+                  <table role="presentation" width="100%%" cellspacing="0" cellpadding="0">
+                    <tr><td style="background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.12); border-radius:10px; padding:16px; text-align:center;">
+                      <span style="display:block; font-size:24px; font-weight:800; color:#6366f1;">%d</span>
+                      <span style="display:block; font-size:12px; color:#64748b; margin-top:2px;">Total Operacoes</span>
+                    </td></tr>
+                  </table>
+                </td>
+                <td class="metric-cell" style="width:50%%; padding:4px 0 4px 4px;">
+                  <table role="presentation" width="100%%" cellspacing="0" cellpadding="0">
+                    <tr><td style="background:rgba(34,197,94,0.06); border:1px solid rgba(34,197,94,0.12); border-radius:10px; padding:16px; text-align:center;">
+                      <span style="display:block; font-size:24px; font-weight:800; color:#16a34a;">%d</span>
+                      <span style="display:block; font-size:12px; color:#64748b; margin-top:2px;">Compras</span>
+                    </td></tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td class="metric-cell" style="width:50%%; padding:4px 4px 4px 0;">
+                  <table role="presentation" width="100%%" cellspacing="0" cellpadding="0">
+                    <tr><td style="background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.12); border-radius:10px; padding:16px; text-align:center;">
+                      <span style="display:block; font-size:24px; font-weight:800; color:#dc2626;">%d</span>
+                      <span style="display:block; font-size:12px; color:#64748b; margin-top:2px;">Vendas</span>
+                    </td></tr>
+                  </table>
+                </td>
+                <td class="metric-cell" style="width:50%%; padding:4px 0 4px 4px;">
+                  <table role="presentation" width="100%%" cellspacing="0" cellpadding="0">
+                    <tr><td style="background:%s; border:1px solid %s; border-radius:10px; padding:16px; text-align:center;">
+                      <span style="display:block; font-size:24px; font-weight:800; color:%s;">%s</span>
+                      <span style="display:block; font-size:12px; color:#64748b; margin-top:2px;">Resultado</span>
+                    </td></tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+            """.formatted(
+                resumo.getTotalOperacoes(),
+                resumo.getTotalCompras(),
+                resumo.getTotalVendas(),
+                lucro ? "rgba(34,197,94,0.06)" : "rgba(239,68,68,0.06)",
+                lucro ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)",
+                lucro ? "#16a34a" : "#dc2626",
+                escape(resultadoFormatado)
+            );
+
+        // Tabela de totais
+        body += buildInfoTable(new String[][]{
+            {"Total Compras", "$" + (resumo.getValorTotalCompras() != null ? resumo.getValorTotalCompras().toPlainString() : "0")},
+            {"Total Vendas", "$" + (resumo.getValorTotalVendas() != null ? resumo.getValorTotalVendas().toPlainString() : "0")},
+            {"Resultado Geral", resultadoFormatado}
+        });
+
+        // Resultado badge
+        body += "<p style=\"margin:16px 0; text-align:center;\">" + resultadoBadge + "</p>";
+
+        body += buildAlertBox("&#128200;",
+                "Acesse o TradeLink para ver o detalhamento completo das suas operacoes, graficos de performance e recomendacoes do seu consultor.",
+                "rgba(99,102,241,0.05)", "rgba(99,102,241,0.15)");
+
+        body += buildButton("Ver Relatorio Completo", APP_URL + "/cliente");
+
+        return wrapInLayout("Resumo Semanal - TradeLink",
+                "Seu resumo semanal: " + resumo.getTotalOperacoes() + " operacoes, resultado " + resultadoFormatado, body);
     }
 
     private static String escape(String s) {

@@ -6,6 +6,10 @@
         <button type="button" @click="mostrarFiltros = !mostrarFiltros" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">
           {{ mostrarFiltros ? 'Ocultar filtros' : 'Mostrar filtros' }}
         </button>
+        <button type="button" @click="exportarCsv" class="px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700 flex items-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          Exportar CSV
+        </button>
         <button type="button" @click="cotacaoStore.forceRefresh(); carregar()" :disabled="loading" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-50">
           Atualizar todas
         </button>
@@ -190,6 +194,7 @@ import { useRoute, useRouter } from 'vue-router'
 import cotacaoApi from '../../api/cotacaoApi'
 import { useCotacaoStore } from '../../stores/cotacao'
 import { formatCurrency, formatPercent, formatDate } from '../../utils/formatters'
+import { exportCsv } from '../../utils/exportCsv'
 import LoadingSpinner from '../common/LoadingSpinner.vue'
 
 const route = useRoute()
@@ -309,6 +314,22 @@ async function refreshUma(cotacao) {
     carregar(page.value.number)
   } catch (_) {}
 }
+function exportarCsv() {
+  if (!page.value.content.length) return
+  const columns = [
+    { key: 'moeda', label: 'Moeda' },
+    { key: 'parMoeda', label: 'Par' },
+    { key: 'precoCompra', label: 'Preço Compra' },
+    { key: 'precoVenda', label: 'Preço Venda' },
+    { key: 'variacao', label: 'Variação (%)' },
+    { key: 'maximo', label: 'Máximo' },
+    { key: 'minimo', label: 'Mínimo' },
+    { key: 'dataHora', label: 'Data/Hora' },
+    { key: 'fonte', label: 'Fonte' }
+  ]
+  exportCsv(page.value.content, columns, 'cotacoes')
+}
+
 const INTERVALO_ATUALIZACAO_MS = 3 * 60 * 1000
 let intervalId = null
 onMounted(() => {

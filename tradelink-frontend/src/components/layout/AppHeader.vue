@@ -13,6 +13,10 @@
     </div>
     <div class="app-header__right">
       <NotificationBell />
+      <button type="button" @click="themeToggle" class="app-header__theme" :title="isDark ? 'Modo claro' : 'Modo escuro'">
+        <svg v-if="isDark" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+      </button>
       <span class="app-header__user" :title="user?.nome">{{ user?.nome }}</span>
       <span class="app-header__badge" :class="roleBadge">{{ roleLabel }}</span>
       <button type="button" @click="handleLogout" class="app-header__logout">Sair</button>
@@ -26,6 +30,9 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import NotificationBell from './NotificationBell.vue'
 import { useToast } from '../../composables/useToast'
+import { useTheme } from '../../composables/useTheme'
+
+const { toggle: themeToggle, isDark } = useTheme()
 
 defineEmits(['toggle-sidebar'])
 const router = useRouter()
@@ -168,5 +175,23 @@ function handleLogout() {
 .app-header__logout:hover {
   background: #fef2f2;
   color: #b91c1c;
+}
+
+.app-header__theme {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  color: rgb(var(--tl-text-muted));
+  background: transparent;
+  border: none;
+  border-radius: var(--tl-radius-sm);
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+}
+.app-header__theme:hover {
+  color: rgb(var(--tl-primary));
+  background: rgb(var(--tl-primary-light));
 }
 </style>

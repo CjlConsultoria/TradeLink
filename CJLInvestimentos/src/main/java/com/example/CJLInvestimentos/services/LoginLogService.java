@@ -1,7 +1,9 @@
 package com.example.CJLInvestimentos.services;
 
 import com.example.CJLInvestimentos.entities.LoginLog;
+import com.example.CJLInvestimentos.entities.User;
 import com.example.CJLInvestimentos.repositories.LoginLogRepository;
+import com.example.CJLInvestimentos.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -17,6 +19,8 @@ import java.util.List;
 public class LoginLogService {
 
     private final LoginLogRepository loginLogRepository;
+    private final UserRepository userRepository;
+    private final AtividadeLogService atividadeLogService;
 
     @Async
     public void registrar(Long userId, String email, String ip, String userAgent, boolean sucesso, String motivoFalha) {
@@ -31,6 +35,19 @@ public class LoginLogService {
                     .motivoFalha(motivoFalha)
                     .build();
             loginLogRepository.save(logEntry);
+
+            // Registrar atividade de login bem-sucedido na timeline
+            if (sucesso && userId != null) {
+                try {
+                    User user = userRepository.findById(userId).orElse(null);
+                    if (user != null) {
+                        atividadeLogService.registrar(user, "LOGIN",
+                                "Login realizado com sucesso", null);
+                    }
+                } catch (Exception ex) {
+                    log.warn("Falha ao registrar atividade de login: {}", ex.getMessage());
+                }
+            }
         } catch (Exception e) {
             log.warn("Falha ao registrar log de login: {}", e.getMessage());
         }

@@ -34,16 +34,19 @@ public class NotificationService {
     private final PushSubscriptionRepository pushSubscriptionRepository;
     private final EmailTemplateService emailTemplateService;
     private final NotificacaoInAppService notificacaoInAppService;
+    private final AtividadeLogService atividadeLogService;
 
     public NotificationService(
             @org.springframework.beans.factory.annotation.Autowired(required = false) JavaMailSender mailSender,
             PushSubscriptionRepository pushSubscriptionRepository,
             EmailTemplateService emailTemplateService,
-            NotificacaoInAppService notificacaoInAppService) {
+            NotificacaoInAppService notificacaoInAppService,
+            AtividadeLogService atividadeLogService) {
         this.mailSender = mailSender;
         this.pushSubscriptionRepository = pushSubscriptionRepository;
         this.emailTemplateService = emailTemplateService;
         this.notificacaoInAppService = notificacaoInAppService;
+        this.atividadeLogService = atividadeLogService;
     }
 
     @Value("${app.notificacao.telegram.bot-token:}")
@@ -232,6 +235,13 @@ public class NotificationService {
             notificacaoInAppService.criar(usuario, titulo, corpo, "SISTEMA", null);
         } catch (Exception e) {
             log.warn("Falha ao criar notificacao in-app para usuario id={}: {}", usuario.getId(), e.getMessage());
+        }
+
+        // Registrar na timeline de atividades
+        try {
+            atividadeLogService.registrar(usuario, "NOTIFICACAO", titulo, null);
+        } catch (Exception e) {
+            log.warn("Falha ao registrar atividade para usuario id={}: {}", usuario.getId(), e.getMessage());
         }
 
         if (Boolean.TRUE.equals(empresa.getNotificacaoEmail()) && usuario.getEmail() != null && !usuario.getEmail().isBlank()) {

@@ -28,7 +28,9 @@ import com.example.CJLInvestimentos.dtos.response.UserResponse;
 import com.example.CJLInvestimentos.entities.User;
 import com.example.CJLInvestimentos.exceptions.BusinessException;
 import jakarta.validation.Valid;
+import com.example.CJLInvestimentos.entities.Recomendacao;
 import com.example.CJLInvestimentos.exceptions.ResourceNotFoundException;
+import com.example.CJLInvestimentos.repositories.RecomendacaoRepository;
 import com.example.CJLInvestimentos.repositories.UserRepository;
 import com.example.CJLInvestimentos.services.CarteiraService;
 import com.example.CJLInvestimentos.services.FaturaPdfService;
@@ -39,6 +41,7 @@ import com.example.CJLInvestimentos.services.RelatorioConsultorService;
 import com.example.CJLInvestimentos.services.RelatorioPdfService;
 import com.example.CJLInvestimentos.services.RebalanceamentoService;
 import com.example.CJLInvestimentos.services.RecomendacaoService;
+import com.example.CJLInvestimentos.services.CopyTradingService;
 import com.example.CJLInvestimentos.services.MovimentacaoService;
 import com.example.CJLInvestimentos.services.SnapshotService;
 import com.example.CJLInvestimentos.services.ChatService;
@@ -83,6 +86,8 @@ public class ConsultorController {
     private final SnapshotService snapshotService;
     private final MovimentacaoService movimentacaoService;
     private final ChatService chatService;
+    private final CopyTradingService copyTradingService;
+    private final RecomendacaoRepository recomendacaoRepository;
 
     private User getUser(UserDetails userDetails) {
         return userRepository.findByEmail(userDetails.getUsername())
@@ -308,6 +313,17 @@ public class ConsultorController {
             @Valid @RequestBody PreviewPercentualRequest request) {
         User consultor = getUser(userDetails);
         return ResponseEntity.ok(recomendacaoService.previewPercentual(request, consultor));
+    }
+
+    // === COPY TRADING ===
+
+    @PostMapping("/recomendacoes/{id}/copy")
+    public ResponseEntity<?> copyTrading(@PathVariable Long id, @RequestBody Map<String, List<Long>> body) {
+        Recomendacao rec = recomendacaoRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Recomendação não encontrada"));
+        List<Long> carteiraIds = body.get("carteiraIds");
+        if (carteiraIds == null || carteiraIds.isEmpty()) return ResponseEntity.badRequest().body(Map.of("message", "Informe as carteiras destino"));
+        List<Recomendacao> replicadas = copyTradingService.replicar(rec, carteiraIds);
+        return ResponseEntity.ok(Map.of("replicadas", replicadas.size()));
     }
 
     // === ALOCACOES / REBALANCEAMENTO ===
