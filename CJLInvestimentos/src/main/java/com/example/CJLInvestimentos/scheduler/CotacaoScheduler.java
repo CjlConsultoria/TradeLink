@@ -6,6 +6,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+/**
+ * Scheduler de cotações — APIs gratuitas.
+ *
+ * Três tarefas:
+ *   1. Forex (AwesomeAPI) a cada 10 minutos
+ *   2. Crypto (CoinGecko) a cada 10 minutos (com delay escalonado)
+ *   3. Histórico OHLC (CoinGecko) a cada 1 hora
+ */
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -13,51 +21,48 @@ public class CotacaoScheduler {
 
     private final CotacaoService cotacaoService;
 
-    @Scheduled(initialDelayString = "${app.cotacao.initial-delay:0}", fixedDelayString = "${app.cotacao.awesome-api.interval}")
-    public void fetchAwesomeApi() {
-        log.info("Buscando cotações da AwesomeAPI...");
-        cotacaoService.fetchAndSaveAwesomeApi();
+    /**
+     * Busca cotações forex via AwesomeAPI.
+     * Intervalo: 10 minutos. Delay inicial: 5 segundos.
+     */
+    @Scheduled(initialDelayString = "${app.cotacao.initial-delay:5000}",
+               fixedDelayString = "${app.cotacao.interval:600000}")
+    public void fetchForex() {
+        log.info("Buscando cotações forex via AwesomeAPI...");
+        try {
+            cotacaoService.fetchAndSaveForex();
+        } catch (Exception e) {
+            log.error("Erro no scheduler forex: {}", e.getMessage());
+        }
     }
 
-    @Scheduled(initialDelayString = "${app.cotacao.initial-delay-coingecko:30000}", fixedDelayString = "${app.cotacao.coingecko.interval}")
-    public void fetchCoinGecko() {
-        log.info("Buscando cotações do CoinGecko...");
-        cotacaoService.fetchAndSaveCoinGecko();
+    /**
+     * Busca cotações crypto via CoinGecko.
+     * Intervalo: 10 minutos. Delay inicial: 30 segundos (escalonado para não bater rate limit).
+     */
+    @Scheduled(initialDelayString = "${app.cotacao.initial-delay-crypto:30000}",
+               fixedDelayString = "${app.cotacao.interval:600000}")
+    public void fetchCrypto() {
+        log.info("Buscando cotações crypto via CoinGecko...");
+        try {
+            cotacaoService.fetchAndSaveCrypto();
+        } catch (Exception e) {
+            log.error("Erro no scheduler crypto: {}", e.getMessage());
+        }
     }
 
-    @Scheduled(initialDelayString = "${app.cotacao.initial-delay-binance:60000}", fixedDelayString = "${app.cotacao.binance.interval:600000}")
-    public void fetchBinance() {
-        log.info("Buscando cotações da Binance...");
-        cotacaoService.fetchAndSaveBinance();
-    }
-
-    @Scheduled(initialDelayString = "${app.cotacao.initial-delay-coincap:90000}", fixedDelayString = "${app.cotacao.coincap.interval:600000}")
-    public void fetchCoinCap() {
-        log.info("Buscando cotações do CoinCap...");
-        cotacaoService.fetchAndSaveCoinCap();
-    }
-
-    @Scheduled(initialDelayString = "${app.cotacao.initial-delay-frankfurter:240000}", fixedDelayString = "${app.cotacao.frankfurter.interval:600000}")
-    public void fetchFrankfurter() {
-        log.info("Buscando cotações do Frankfurter...");
-        cotacaoService.fetchAndSaveFrankfurter();
-    }
-
-    @Scheduled(initialDelayString = "${app.cotacao.initial-delay-kraken:270000}", fixedDelayString = "${app.cotacao.kraken.interval:600000}")
-    public void fetchKraken() {
-        log.info("Buscando cotações do Kraken...");
-        cotacaoService.fetchAndSaveKraken();
-    }
-
-    @Scheduled(initialDelayString = "${app.cotacao.initial-delay-kucoin:300000}", fixedDelayString = "${app.cotacao.kucoin.interval:600000}")
-    public void fetchKuCoin() {
-        log.info("Buscando cotações do KuCoin...");
-        cotacaoService.fetchAndSaveKuCoin();
-    }
-
-    @Scheduled(initialDelayString = "${app.cotacao.initial-delay-bybit:330000}", fixedDelayString = "${app.cotacao.bybit.interval:600000}")
-    public void fetchBybit() {
-        log.info("Buscando cotações do Bybit...");
-        cotacaoService.fetchAndSaveBybit();
+    /**
+     * Atualiza histórico OHLC dos cryptos principais via CoinGecko.
+     * Intervalo: 1 hora. Delay inicial: 2 minutos.
+     */
+    @Scheduled(initialDelayString = "${app.cotacao.historico-initial-delay:120000}",
+               fixedDelayString = "${app.cotacao.historico-interval:3600000}")
+    public void atualizarHistoricoOHLC() {
+        log.info("Atualizando histórico OHLC via CoinGecko...");
+        try {
+            cotacaoService.atualizarHistoricoPrincipal();
+        } catch (Exception e) {
+            log.error("Erro no scheduler de histórico OHLC: {}", e.getMessage());
+        }
     }
 }

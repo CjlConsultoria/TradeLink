@@ -5,6 +5,7 @@ import { ref } from 'vue'
 export const useCotacaoStore = defineStore('cotacao', () => {
   const cotacoes = ref([])
   const loading = ref(false)
+  const paresDisponiveis = ref([])
   let pollingInterval = null
 
   async function fetchLatest() {
@@ -56,5 +57,31 @@ export const useCotacaoStore = defineStore('cotacao', () => {
     }
   }
 
-  return { cotacoes, loading, fetchLatest, startPolling, stopPolling, forceRefresh, refreshSingle }
+  async function fetchOHLCV(moeda, parMoeda, intervalo = '1day', de, ate) {
+    try {
+      const res = await cotacaoApi.ohlcv(moeda, parMoeda, intervalo, de, ate)
+      return res.data
+    } catch (e) {
+      console.error('Erro ao buscar OHLCV:', e)
+      return []
+    }
+  }
+
+  async function fetchParesDisponiveis() {
+    try {
+      const res = await cotacaoApi.paresDisponiveis()
+      paresDisponiveis.value = res.data
+      return res.data
+    } catch (e) {
+      console.error('Erro ao buscar pares disponíveis:', e)
+      return []
+    }
+  }
+
+  return {
+    cotacoes, loading, paresDisponiveis,
+    fetchLatest, startPolling, stopPolling,
+    forceRefresh, refreshSingle,
+    fetchOHLCV, fetchParesDisponiveis
+  }
 })
