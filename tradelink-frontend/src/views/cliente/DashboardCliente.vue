@@ -3,7 +3,7 @@
     <h2 class="page-title">Dashboard</h2>
     <LoadingSpinner v-if="loading" />
     <template v-else>
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8" data-onboarding="cards">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-8" data-onboarding="cards">
         <router-link to="/cliente/carteiras" class="card p-6 block hover:border-indigo-300">
           <p class="text-sm text-gray-500">Carteiras</p>
           <p class="text-3xl font-bold text-indigo-600 mt-1">{{ dashboard?.totalCarteiras || 0 }}</p>
@@ -100,16 +100,16 @@
           </button>
         </div>
         <div class="flex flex-wrap gap-3 mb-4">
-          <select v-model="filtros.carteiraId" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-40">
+          <select v-model="filtros.carteiraId" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-full sm:w-40">
             <option value="">Todas as carteiras</option>
             <option v-for="c in carteiras" :key="c.id" :value="c.id">{{ c.nome }}</option>
           </select>
-          <select v-model="filtros.categoria" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-40">
+          <select v-model="filtros.categoria" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-full sm:w-40">
             <option value="">Todas (tipo)</option>
             <option value="COMPRA">Compra</option>
             <option value="VENDA">Venda</option>
           </select>
-          <input v-model="filtros.nome" type="text" placeholder="Buscar por nome (moeda/par)" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-48" />
+          <input v-model="filtros.nome" type="text" placeholder="Buscar por nome (moeda/par)" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-full sm:w-48" />
           <button type="button" @click="carregar(0)" class="px-3 py-2 bg-gray-100 rounded-lg text-sm hover:bg-gray-200">Filtrar</button>
         </div>
         <div class="space-y-3">

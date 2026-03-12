@@ -31,11 +31,11 @@
           <div>
             <label class="text-xs text-gray-500 block mb-1">Empresa</label>
             <input v-model="filtroBusca" type="text" placeholder="Buscar empresa..."
-              class="input-base text-sm py-1.5 px-3 w-52" />
+              class="input-base text-sm py-1.5 px-3 w-full sm:w-52" />
           </div>
           <div>
             <label class="text-xs text-gray-500 block mb-1">Status</label>
-            <select v-model="filtroStatus" class="input-base text-sm py-1.5 px-3 w-36">
+            <select v-model="filtroStatus" class="input-base text-sm py-1.5 px-3 w-full sm:w-36">
               <option value="">Todas</option>
               <option value="ativas">Ativas</option>
               <option value="inativas">Inativas</option>

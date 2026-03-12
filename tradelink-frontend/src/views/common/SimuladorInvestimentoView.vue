@@ -5,7 +5,7 @@
 
     <!-- Formulário -->
     <div class="card p-6 mb-6">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <div>
           <label class="text-xs font-medium text-gray-500 mb-1 block">Moeda</label>
           <select v-model="moedaSelecionada" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
@@ -39,7 +39,7 @@
     </div>
 
     <!-- Resultado -->
-    <div v-if="resultado" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div v-if="resultado" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
       <div class="card p-6 text-center">
         <p class="text-sm text-gray-500">Investimento inicial</p>
         <p class="text-2xl font-bold text-gray-900 mt-1">{{ formatCurrency(resultado.valorInicial) }}</p>

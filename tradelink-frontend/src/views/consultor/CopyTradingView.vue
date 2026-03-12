@@ -72,7 +72,7 @@
       <div v-if="recSelecionada && carteirasDestino.length > 0" class="card p-6">
         <h3 class="section-title">4. Confirmar Copy Trading</h3>
         <div class="bg-indigo-50 rounded-lg p-4 mb-4">
-          <div class="grid grid-cols-2 gap-2 text-sm">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
             <div>
               <span class="text-gray-500">Origem:</span>
               <span class="font-medium ml-1">{{ carteiraOrigem.nome }}</span>

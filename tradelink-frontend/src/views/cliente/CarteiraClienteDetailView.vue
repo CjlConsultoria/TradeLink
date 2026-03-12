@@ -16,10 +16,11 @@
       </div>
       <!-- Saldo -->
       <div class="mb-6">
-        <div class="flex items-center justify-between mb-3">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
           <h3 class="text-lg font-semibold">Meu Saldo</h3>
-          <button @click="showMovModal = true" class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-indigo-700">
-            Registrar Aporte / Saque
+          <button @click="showMovModal = true" class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-indigo-700 whitespace-nowrap">
+            <span class="hidden sm:inline">Registrar Aporte / Saque</span>
+            <span class="sm:hidden">Aporte / Saque</span>
           </button>
         </div>
         <SaldoCard ref="saldoCardRef" :carteira-id="route.params.id" />

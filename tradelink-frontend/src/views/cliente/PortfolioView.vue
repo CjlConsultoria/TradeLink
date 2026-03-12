@@ -31,8 +31,8 @@
     <LoadingSpinner v-if="loading" />
 
     <!-- Tabela de ativos -->
-    <div v-if="!loading && ativos.length" class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      <table class="w-full text-sm">
+    <div v-if="!loading && ativos.length" class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
+      <table class="w-full text-sm min-w-[600px]">
         <thead>
           <tr class="bg-gray-50 text-gray-600 text-left">
             <th class="px-4 py-3 font-medium">Ativo</th>

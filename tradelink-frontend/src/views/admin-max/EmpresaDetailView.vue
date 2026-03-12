@@ -283,7 +283,7 @@
           <div class="card p-6 max-w-sm w-full relative z-10">
             <h3 class="section-title">Marcar como pago</h3>
             <p class="text-sm text-gray-500 mb-3">Registre que a empresa pagou por transferência, boleto ou outra forma.</p>
-            <input v-model="marcarPagoObs" type="text" placeholder="Observação (opcional)" class="input-base mb-3" />
+            <input v-model="marcarPagoObs" type="text" placeholder="Observação (opcional)" class="input-base w-full mb-3" />
             <div class="flex gap-2">
               <button type="button" class="btn-primary flex-1" :disabled="salvandoPago" @click="marcarComoPago">Confirmar</button>
               <button type="button" class="px-4 py-2 border rounded-lg text-sm" @click="showMarcarPago = false">Cancelar</button>

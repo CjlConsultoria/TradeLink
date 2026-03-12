@@ -6,7 +6,7 @@
     <!-- Seleção de moedas -->
     <div class="card p-4 mb-6">
       <div class="flex flex-wrap items-end gap-3">
-        <div v-for="(sel, i) in selecionadas" :key="i" class="flex-1 min-w-[180px]">
+        <div v-for="(sel, i) in selecionadas" :key="i" class="flex-1 min-w-[140px] sm:min-w-[180px]">
           <label class="text-xs font-medium text-gray-500 mb-1 block">Moeda {{ i + 1 }}</label>
           <select v-model="selecionadas[i]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
             <option value="">Selecione...</option>
@@ -22,7 +22,7 @@
             class="px-3 py-2 bg-red-50 text-red-600 rounded-lg text-sm hover:bg-red-100">Remover</button>
         </div>
       </div>
-      <div class="flex gap-2 mt-4">
+      <div class="flex flex-wrap gap-2 mt-4">
         <button v-for="p in periodos" :key="p.horas" type="button"
           @click="periodoHoras = p.horas; carregarHistoricos()"
           class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"

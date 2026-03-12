@@ -122,7 +122,7 @@
       <!-- Configuracao do Sistema -->
       <div class="card p-6 mb-6">
         <h3 class="section-title mb-4">Configuração do Sistema</h3>
-        <div class="flex items-center justify-between p-4 rounded-lg border border-gray-200">
+        <div class="flex flex-wrap items-center justify-between gap-3 p-4 rounded-lg border border-gray-200">
           <div>
             <p class="font-medium text-gray-900">Autenticação em Dois Fatores (2FA)</p>
             <p class="text-sm text-gray-500 mt-0.5">Exige código OTP por e-mail no login (exceto AdminMax)</p>

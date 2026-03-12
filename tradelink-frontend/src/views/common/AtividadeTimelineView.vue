@@ -22,7 +22,7 @@
 
         <!-- Conteúdo -->
         <div class="card p-4 flex-1">
-          <div class="flex items-start justify-between gap-2">
+          <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-2">
             <div>
               <span class="inline-block px-2 py-0.5 rounded text-xs font-semibold mb-1"
                 :class="badgeClass(a.tipo)">
@@ -30,7 +30,7 @@
               </span>
               <p class="text-sm text-gray-800">{{ a.descricao }}</p>
             </div>
-            <span class="text-xs text-gray-400 flex-shrink-0 whitespace-nowrap">{{ formatDate(a.createdAt) }}</span>
+            <span class="text-xs text-gray-400 flex-shrink-0">{{ formatDate(a.createdAt) }}</span>
           </div>
           <router-link v-if="a.link" :to="a.link" class="text-xs text-indigo-600 hover:underline mt-1 inline-block">
             Ver detalhes →

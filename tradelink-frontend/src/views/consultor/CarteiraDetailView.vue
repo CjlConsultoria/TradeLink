@@ -25,7 +25,7 @@
           <button @click="showClienteForm = !showClienteForm" class="text-sm text-indigo-600 hover:underline">Atribuir Cliente</button>
         </div>
         <div v-if="showClienteForm" class="bg-gray-50 rounded-lg p-4 mb-4">
-          <div class="flex gap-3 items-end">
+          <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-end">
             <select v-model="selectedClienteId" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm">
               <option value="">Selecione um cliente...</option>
               <option v-for="c in availableClientes" :key="c.id" :value="c.id">{{ c.nome }} ({{ c.email }})</option>
@@ -130,7 +130,7 @@
         <RecomendacaoImpactoModal :show="showImpactoModal" :recomendacao-id="impactoRecomId" @close="showImpactoModal = false" />
         <div class="space-y-3">
           <div v-for="r in recomendacoes" :key="r.id" class="border border-gray-200 rounded-lg p-4">
-            <div class="flex items-center justify-between mb-2">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
               <div class="flex items-center gap-2 flex-wrap">
                 <TipoBadge :tipo="r.tipo" />
                 <span class="font-semibold">{{ r.moeda }}/{{ r.parMoeda }}</span>
@@ -139,7 +139,7 @@
                 <span v-if="r.totalOperacoesClientes > 0" class="text-xs bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded">{{ r.totalOperacoesClientes }} op.</span>
                 <button v-if="r.totalOperacoesClientes > 0" @click="toggleOperacoes(r.id)" class="text-xs text-indigo-600 hover:underline">{{ operacoesAbertas[r.id] ? 'Ocultar' : 'Ver' }} operacoes</button>
               </div>
-              <div class="flex gap-2 items-center">
+              <div class="flex flex-wrap gap-2 items-center">
                 <button @click="abrirImpacto(r.id)" class="text-xs text-indigo-600 hover:underline font-medium">Ver Impacto</button>
                 <template v-if="r.status === 'ATIVA'">
                   <button @click="executarRecom(r.id)" class="text-xs text-blue-600 hover:underline">Executar</button>

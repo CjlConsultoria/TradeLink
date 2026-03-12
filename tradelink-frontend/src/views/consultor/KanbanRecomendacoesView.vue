@@ -5,7 +5,7 @@
 
     <!-- Filtro por carteira -->
     <div class="flex flex-wrap gap-3 mb-6">
-      <select v-model="carteiraId" class="input-base w-64" @change="carregar">
+      <select v-model="carteiraId" class="input-base w-full sm:w-64" @change="carregar">
         <option value="">Todas as carteiras</option>
         <option v-for="c in carteiras" :key="c.id" :value="c.id">{{ c.nome }}</option>
       </select>
@@ -14,7 +14,7 @@
 
     <LoadingSpinner v-if="loading" />
 
-    <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <!-- Coluna ATIVA -->
       <div class="kanban-col">
         <div class="kanban-header bg-indigo-50 border-indigo-200 text-indigo-700">

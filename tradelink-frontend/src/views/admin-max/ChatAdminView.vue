@@ -2,9 +2,9 @@
   <div>
     <h2 class="page-title">Chat — Suporte</h2>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
       <!-- Lista de conversas -->
-      <div class="card p-4 lg:col-span-1" style="max-height:75vh;overflow-y:auto;">
+      <div class="card p-4 lg:col-span-1 max-h-[50vh] lg:max-h-[75vh] overflow-y-auto">
         <div class="flex items-center justify-between mb-3">
           <h3 class="section-title !mb-0">Conversas</h3>
           <select v-model="filtro" class="text-xs border rounded px-2 py-1">
@@ -37,7 +37,7 @@
       </div>
 
       <!-- Painel de mensagens -->
-      <div class="card p-4 lg:col-span-2 flex flex-col" style="max-height:75vh;">
+      <div class="card p-4 lg:col-span-2 flex flex-col max-h-[60vh] lg:max-h-[75vh]">
         <template v-if="conversaSelecionada">
           <div class="flex items-center justify-between pb-3 border-b mb-3">
             <div>

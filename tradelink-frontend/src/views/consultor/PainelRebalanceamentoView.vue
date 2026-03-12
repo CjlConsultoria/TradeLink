@@ -75,7 +75,7 @@
 
       <!-- Barra de acoes em lote -->
       <div v-if="selecionados.size > 0"
-        class="card p-3 mb-4 flex items-center gap-4 bg-indigo-50 border-indigo-200">
+        class="card p-3 mb-4 flex flex-wrap items-center gap-3 sm:gap-4 bg-indigo-50 border-indigo-200">
         <span class="text-sm font-medium text-indigo-700">{{ selecionados.size }} selecionado(s)</span>
         <button @click="gerarRecomendacoesLote" :disabled="gerandoLote"
           class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-50">
@@ -162,9 +162,9 @@
                     <td colspan="8" class="px-4 py-3 bg-gray-50">
                       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <!-- Tabela de ativos -->
-                        <div>
+                        <div class="overflow-x-auto">
                           <h4 class="text-xs font-semibold text-gray-500 uppercase mb-2">Alocacao</h4>
-                          <table class="w-full text-xs">
+                          <table class="w-full text-xs min-w-[400px]">
                             <thead>
                               <tr class="text-gray-500">
                                 <th class="text-left py-1">Ativo</th>

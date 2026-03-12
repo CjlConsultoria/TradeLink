@@ -72,7 +72,7 @@
 
       <!-- Resumo: ganho/perda total e por moeda -->
       <div v-show="tabAtiva === 'resumo'" class="space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <p class="text-sm text-gray-500">Total investido (compras)</p>
             <p class="text-2xl font-bold text-emerald-600 mt-1">{{ formatCurrency(resumo?.valorTotalCompras) }}</p>

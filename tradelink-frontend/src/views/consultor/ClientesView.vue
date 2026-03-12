@@ -1,9 +1,9 @@
 <template>
   <div>
     <!-- Header + Licença -->
-    <div class="flex items-center justify-between mb-4">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
       <h2 class="text-2xl font-bold text-gray-900">Clientes</h2>
-      <div class="flex items-center gap-3">
+      <div class="flex flex-wrap items-center gap-2 sm:gap-3">
         <span v-if="licenca" class="text-xs text-gray-500">
           {{ licenca.totalClientes }} cliente(s)
           <template v-if="licenca.maxUsuarios"> / {{ licenca.maxUsuarios }} max</template>

@@ -23,10 +23,10 @@
 
     <!-- Saude dos Portfolios -->
     <div class="card p-6 mb-8" data-onboarding="saude">
-      <div class="flex items-center justify-between mb-4">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
         <h3 class="section-title">Saude dos Portfolios</h3>
         <router-link to="/consultor/rebalanceamento"
-          class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">
+          class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 whitespace-nowrap">
           Painel de Rebalanceamento
         </router-link>
       </div>
@@ -39,7 +39,7 @@
         <router-link to="/consultor/carteiras" class="text-sm text-indigo-600 hover:underline">Ver todas</router-link>
       </div>
       <div class="flex flex-wrap gap-3 mb-4">
-        <input v-model="filtros.nome" type="text" placeholder="Buscar por nome" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-48" />
+        <input v-model="filtros.nome" type="text" placeholder="Buscar por nome" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-full sm:w-48" />
         <button type="button" @click="paginaAtual = 0" class="px-3 py-2 bg-gray-100 rounded-lg text-sm hover:bg-gray-200">Filtrar</button>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -49,7 +49,7 @@
           <p class="text-sm text-gray-500 mt-1">{{ c.totalClientes }} clientes - {{ c.totalRecomendacoes }} recomendacoes</p>
         </router-link>
       </div>
-      <div v-if="totalPaginas > 1" class="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
+      <div v-if="totalPaginas > 1" class="flex flex-wrap items-center justify-between gap-2 mt-3 pt-3 border-t border-gray-200">
         <p class="text-sm text-gray-500">{{ carteirasFiltradas.length }} resultado(s) · página {{ paginaAtual + 1 }} de {{ totalPaginas }}</p>
         <div class="flex gap-1">
           <button type="button" :disabled="paginaAtual === 0" @click="paginaAtual--" class="px-3 py-1 rounded border text-sm disabled:opacity-50">Anterior</button>

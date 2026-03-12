@@ -4,13 +4,13 @@
     <p class="text-sm text-gray-600 mb-4">Gerencie qualquer usuário: editar dados, ativar, inativar.</p>
 
     <div class="flex flex-wrap gap-3 mb-4">
-      <select v-model="filtroRole" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-40">
+      <select v-model="filtroRole" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-full sm:w-40">
         <option value="">Todos os perfis</option>
         <option value="AdminMax">Super Admin</option>
         <option value="Admin">Consultor</option>
         <option value="Cliente">Cliente</option>
       </select>
-      <select v-model="filtroEmpresaId" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-56">
+      <select v-model="filtroEmpresaId" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-full sm:w-56">
         <option value="">Todas as empresas</option>
         <option v-for="e in empresas" :key="e.id" :value="e.id">{{ e.nome }}</option>
       </select>

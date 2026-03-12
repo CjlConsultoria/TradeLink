@@ -15,14 +15,14 @@
         </div>
         <div>
           <label class="block text-xs text-gray-500 mb-0.5">Carteira</label>
-          <select v-model="filtros.carteiraId" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-48">
+          <select v-model="filtros.carteiraId" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-full sm:w-48">
             <option value="">Todas</option>
             <option v-for="c in carteiras" :key="c.id" :value="c.id">{{ c.nome }}</option>
           </select>
         </div>
         <div>
           <label class="block text-xs text-gray-500 mb-0.5">Cliente</label>
-          <select v-model="filtros.clienteId" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-48">
+          <select v-model="filtros.clienteId" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-full sm:w-48">
             <option value="">Todos</option>
             <option v-for="c in clientes" :key="c.id" :value="c.id">{{ c.nome }}</option>
           </select>
@@ -37,7 +37,7 @@
       </div>
     </div>
 
-    <div class="flex flex-wrap gap-2 border-b border-gray-200 mb-4">
+    <div class="flex gap-2 border-b border-gray-200 mb-4 overflow-x-auto pb-px">
       <button v-for="t in tabs" :key="t.id" @click="tabAtiva = t.id"
         :class="tabAtiva === t.id ? 'bg-indigo-100 text-indigo-800 border-indigo-500' : 'bg-white text-gray-600 border-transparent'"
         class="px-4 py-2 rounded-t-lg border-b-2 text-sm font-medium">

@@ -80,8 +80,8 @@
 
     <!-- Modal Criar/Editar -->
     <Teleport to="body">
-      <div v-if="modal.show" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" @click.self="modal.show = false">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+      <div v-if="modal.show" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" @click.self="modal.show = false">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-5 sm:p-6">
           <h3 class="text-lg font-bold mb-4">{{ modal.meta ? 'Editar Meta' : 'Nova Meta' }}</h3>
           <form @submit.prevent="salvar">
             <div class="space-y-3">

@@ -3,7 +3,7 @@
     <h2 class="page-title">Configurações</h2>
     <p class="text-gray-600 mb-6">Notificações e alteração de senha.</p>
 
-    <div class="flex gap-2 mb-6 border-b border-gray-200">
+    <div class="flex gap-2 mb-6 border-b border-gray-200 overflow-x-auto pb-px">
       <button type="button" @click="abaAtiva = 'notificacoes'"
         :class="abaAtiva === 'notificacoes' ? 'border-b-2 border-indigo-600 text-indigo-600 font-medium' : 'text-gray-500 hover:text-gray-700'"
         class="pb-2 px-1 text-sm">Notificações</button>
@@ -60,7 +60,7 @@
           <p class="text-sm text-gray-500 mb-3">{{ config?.telegramInstrucoes || 'Informe seu Chat ID do Telegram para receber notificações.' }}</p>
           <div class="flex gap-2 flex-wrap">
             <input v-model="telegramChatId" type="text" placeholder="Ex: 123456789"
-              class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-48" />
+              class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-full sm:w-48" />
             <button type="button" @click="salvarTelegram" :disabled="salvandoTelegram"
               class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-50">
               {{ salvandoTelegram ? 'Salvando...' : 'Salvar' }}
