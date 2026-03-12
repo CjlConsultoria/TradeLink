@@ -898,8 +898,18 @@ public class EmailTemplateService {
 
     /** Template de apresentacao para CLIENTE (com consultor). */
     public String buildApresentacaoCliente(String nome, String consultorNome, String linkPpt, String linkHtml) {
+        boolean plural = consultorNome != null && consultorNome.contains(",");
+        String introTexto;
+        if (consultorNome == null) {
+            introTexto = "Preparamos este guia para voce conhecer o TradeLink e acompanhar seus investimentos.";
+        } else if (plural) {
+            introTexto = "Seus consultores <strong>" + escape(consultorNome) + "</strong> prepararam este guia para voce conhecer o TradeLink e acompanhar seus investimentos.";
+        } else {
+            introTexto = "Seu consultor <strong>" + escape(consultorNome) + "</strong> preparou este guia para voce conhecer o TradeLink e acompanhar seus investimentos.";
+        }
+
         String body = "<h1 style=\"font-size:22px; color:#1e293b; margin:0 0 8px;\">Ola, " + escape(nome) + "! &#128075;</h1>"
-            + "<p style=\"color:#64748b; font-size:15px; margin:0 0 20px;\">Seu consultor <strong>" + escape(consultorNome) + "</strong> preparou este guia para voce conhecer o TradeLink e acompanhar seus investimentos.</p>";
+            + "<p style=\"color:#64748b; font-size:15px; margin:0 0 20px;\">" + introTexto + "</p>";
 
         body += buildAlertBox("&#128176;",
             "O TradeLink e sua plataforma pessoal para acompanhar portfolio, receber recomendacoes e monitorar o mercado — tudo em um so lugar.",
@@ -908,8 +918,9 @@ public class EmailTemplateService {
         body += buildSectionHeader("&#128202; Seu Dashboard");
         body += "<p style=\"color:#475569; font-size:14px; margin:0 0 12px;\">Ao fazer login, voce vera um painel com saldo total, rentabilidade, recomendacoes pendentes do consultor e alertas ativos. Tudo consolidado em uma unica tela.</p>";
 
+        String consultorLabel = plural ? "seus consultores gerenciam" : "seu consultor gerencia";
         body += buildSectionHeader("&#128188; O que voce pode fazer");
-        body += buildFeatureItem("&#128188;", "Ver Carteiras", "Acompanhe as carteiras que seu consultor gerencia para voce, com saldos e operacoes detalhadas.");
+        body += buildFeatureItem("&#128188;", "Ver Carteiras", "Acompanhe as carteiras que " + consultorLabel + " para voce, com saldos e operacoes detalhadas.");
         body += buildFeatureItem("&#128203;", "Recomendacoes", "Receba recomendacoes do consultor e aceite ou recuse diretamente no sistema.");
         body += buildFeatureItem("&#128193;", "Meu Portfolio", "Visualize todos os seus ativos, alocacao percentual e valor total investido.");
         body += buildFeatureItem("&#128200;", "Performance", "Acompanhe rentabilidade acumulada, ROI por periodo e performance por moeda.");
@@ -1031,8 +1042,18 @@ public class EmailTemplateService {
     public String buildBoasVindasCliente(String nome, String consultorNome, String linkPpt, String linkHtml) {
         String body = buildBoasVindasBanner();
 
+        boolean plural = consultorNome != null && consultorNome.contains(",");
+        String introTexto;
+        if (consultorNome == null) {
+            introTexto = "Sua conta foi ativada com sucesso! O TradeLink e utilizado para gerenciar seus investimentos. Veja o que voce pode acompanhar:";
+        } else if (plural) {
+            introTexto = "Sua conta foi ativada com sucesso! Seus consultores <strong>" + escape(consultorNome) + "</strong> utilizam o TradeLink para gerenciar seus investimentos. Veja o que voce pode acompanhar:";
+        } else {
+            introTexto = "Sua conta foi ativada com sucesso! Seu consultor <strong>" + escape(consultorNome) + "</strong> utiliza o TradeLink para gerenciar seus investimentos. Veja o que voce pode acompanhar:";
+        }
+
         body += "<h1 style=\"font-size:22px; color:#1e293b; margin:0 0 8px;\">Ola, " + escape(nome) + "! &#128075;</h1>"
-            + "<p style=\"color:#64748b; font-size:15px; margin:0 0 20px;\">Sua conta foi ativada com sucesso! Seu consultor <strong>" + escape(consultorNome) + "</strong> utiliza o TradeLink para gerenciar seus investimentos. Veja o que voce pode acompanhar:</p>";
+            + "<p style=\"color:#64748b; font-size:15px; margin:0 0 20px;\">" + introTexto + "</p>";
 
         body += buildSectionHeader("&#128202; O que voce encontra no TradeLink");
         body += buildFeatureItem("&#128193;", "Meu Portfolio", "Veja todos os seus ativos, alocacao e valor total investido.");

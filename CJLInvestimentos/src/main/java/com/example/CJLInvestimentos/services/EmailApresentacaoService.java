@@ -1,10 +1,12 @@
 package com.example.CJLInvestimentos.services;
 
 import com.example.CJLInvestimentos.dtos.response.EmailApresentacaoResponse;
+import com.example.CJLInvestimentos.entities.CarteiraCliente;
 import com.example.CJLInvestimentos.entities.EmailApresentacao;
 import com.example.CJLInvestimentos.entities.User;
 import com.example.CJLInvestimentos.entities.enums.Role;
 import com.example.CJLInvestimentos.entities.enums.TipoTemplateApresentacao;
+import com.example.CJLInvestimentos.repositories.CarteiraClienteRepository;
 import com.example.CJLInvestimentos.repositories.EmailApresentacaoRepository;
 import com.example.CJLInvestimentos.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +16,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -22,6 +26,7 @@ public class EmailApresentacaoService {
 
     private final EmailApresentacaoRepository emailApresentacaoRepository;
     private final UserRepository userRepository;
+    private final CarteiraClienteRepository carteiraClienteRepository;
     private final NotificationService notificationService;
     private final EmailTemplateService emailTemplateService;
 
@@ -57,11 +62,7 @@ public class EmailApresentacaoService {
                     html = emailTemplateService.buildApresentacaoConsultor(nome, linkPpt, linkHtml);
                     break;
                 case CLIENTE:
-                    String consultorNome = "seu consultor";
-                    if (user.getEmpresa() != null && user.getEmpresa().getNomeResponsavel() != null) {
-                        consultorNome = user.getEmpresa().getNomeResponsavel();
-                    }
-                    html = emailTemplateService.buildApresentacaoCliente(nome, consultorNome, linkPpt, linkHtml);
+                    html = emailTemplateService.buildApresentacaoCliente(nome, resolverConsultorNome(user), linkPpt, linkHtml);
                     break;
                 case CLIENTE_AUTO_GESTAO:
                     html = emailTemplateService.buildApresentacaoClienteAutoGestao(nome, linkPpt, linkHtml);
@@ -108,13 +109,7 @@ public class EmailApresentacaoService {
 
         return switch (tipo) {
             case CONSULTOR -> emailTemplateService.buildApresentacaoConsultor(nome, linkPpt, linkHtml);
-            case CLIENTE -> {
-                String consultorNome = "seu consultor";
-                if (user.getEmpresa() != null && user.getEmpresa().getNomeResponsavel() != null) {
-                    consultorNome = user.getEmpresa().getNomeResponsavel();
-                }
-                yield emailTemplateService.buildApresentacaoCliente(nome, consultorNome, linkPpt, linkHtml);
-            }
+            case CLIENTE -> emailTemplateService.buildApresentacaoCliente(nome, resolverConsultorNome(user), linkPpt, linkHtml);
             case CLIENTE_AUTO_GESTAO -> emailTemplateService.buildApresentacaoClienteAutoGestao(nome, linkPpt, linkHtml);
         };
     }
@@ -143,11 +138,7 @@ public class EmailApresentacaoService {
                 html = emailTemplateService.buildBoasVindasConsultor(nome, linkPpt, linkHtml);
                 break;
             case CLIENTE:
-                String consultorNome = "seu consultor";
-                if (user.getEmpresa() != null && user.getEmpresa().getNomeResponsavel() != null) {
-                    consultorNome = user.getEmpresa().getNomeResponsavel();
-                }
-                html = emailTemplateService.buildBoasVindasCliente(nome, consultorNome, linkPpt, linkHtml);
+                html = emailTemplateService.buildBoasVindasCliente(nome, resolverConsultorNome(user), linkPpt, linkHtml);
                 break;
             case CLIENTE_AUTO_GESTAO:
                 html = emailTemplateService.buildBoasVindasClienteAutoGestao(nome, linkPpt, linkHtml);
@@ -183,6 +174,48 @@ public class EmailApresentacaoService {
                 .stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    /**
+     * Resolve o(s) nome(s) do(s) consultor(es) vinculado(s) ao cliente.
+     * Retorna null se nenhum consultor for encontrado.
+     */
+    private String resolverConsultorNome(User clienteUser) {
+        // 1) Buscar consultores reais via CarteiraCliente → Carteira → consultor
+        try {
+            List<CarteiraCliente> vinculos = carteiraClienteRepository.findByClienteIdWithCarteiraConsultor(clienteUser.getId());
+            List<String> nomes = vinculos.stream()
+                    .map(cc -> cc.getCarteira().getConsultor())
+                    .filter(Objects::nonNull)
+                    .map(User::getNome)
+                    .filter(n -> n != null && !n.isBlank())
+                    .distinct()
+                    .toList();
+            if (!nomes.isEmpty()) return String.join(", ", nomes);
+        } catch (Exception e) {
+            log.debug("Erro ao buscar consultores via carteira para userId={}: {}", clienteUser.getId(), e.getMessage());
+        }
+
+        // 2) Fallback: empresa.nomeResponsavel
+        if (clienteUser.getEmpresa() != null && clienteUser.getEmpresa().getNomeResponsavel() != null
+                && !clienteUser.getEmpresa().getNomeResponsavel().isBlank()) {
+            return clienteUser.getEmpresa().getNomeResponsavel();
+        }
+
+        // 3) Fallback: buscar qualquer consultor da mesma empresa
+        if (clienteUser.getEmpresa() != null) {
+            List<User> consultores = userRepository.findByEmpresaIdAndRole(
+                    clienteUser.getEmpresa().getId(), Role.Admin);
+            if (!consultores.isEmpty()) {
+                String joined = consultores.stream()
+                        .map(User::getNome)
+                        .filter(n -> n != null && !n.isBlank())
+                        .collect(Collectors.joining(", "));
+                if (!joined.isBlank()) return joined;
+            }
+        }
+
+        return null;
     }
 
     private EmailApresentacaoResponse toResponse(EmailApresentacao e) {
