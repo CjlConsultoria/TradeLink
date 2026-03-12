@@ -79,16 +79,16 @@ public class CotacaoController {
 
     /**
      * Retorna dados históricos OHLCV (candlestick) para um par.
-     * Intervalos suportados: 1min, 5min, 15min, 30min, 1h, 4h, 1day, 1week, 1month
+     * @param dias Quantidade de dias de histórico (7, 30, 90, 180, 365, 0=max). Default: 90.
      */
     @GetMapping("/{moeda}/{parMoeda}/ohlcv")
     public ResponseEntity<List<CotacaoHistoricoResponse>> historicoOHLCV(
             @PathVariable String moeda,
             @PathVariable String parMoeda,
-            @RequestParam(defaultValue = "1day") String intervalo,
+            @RequestParam(defaultValue = "90") int dias,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime de,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime ate) {
-        return ResponseEntity.ok(cotacaoService.historicoOHLCV(moeda, parMoeda, intervalo, de, ate));
+        return ResponseEntity.ok(cotacaoService.historicoOHLCV(moeda, parMoeda, dias, de, ate));
     }
 
     /**

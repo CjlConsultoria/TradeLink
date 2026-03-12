@@ -15,31 +15,31 @@
             <span v-if="stats.empresasInativas > 0" class="text-xs px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">{{ stats.empresasInativas }}</span>
           </div>
         </router-link>
-        <div class="card p-5">
+        <router-link to="/admin-max/usuarios?role=Admin" class="card p-5 block hover:border-indigo-300 transition-colors">
           <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Consultores</p>
           <p class="text-2xl font-bold text-blue-600 mt-1">{{ stats.totalConsultores }}</p>
-        </div>
-        <div class="card p-5">
+        </router-link>
+        <router-link to="/admin-max/usuarios?role=Cliente" class="card p-5 block hover:border-indigo-300 transition-colors">
           <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Clientes</p>
           <p class="text-2xl font-bold text-emerald-600 mt-1">{{ stats.totalClientes }}</p>
-        </div>
-        <div class="card p-5">
+        </router-link>
+        <router-link to="/admin-max/carteiras" class="card p-5 block hover:border-indigo-300 transition-colors">
           <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Carteiras</p>
           <p class="text-2xl font-bold text-purple-600 mt-1">{{ stats.totalCarteiras }}</p>
-        </div>
-        <div class="card p-5">
+        </router-link>
+        <router-link to="/admin-max/financeiro" class="card p-5 block hover:border-indigo-300 transition-colors">
           <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Receita Total</p>
           <p class="text-2xl font-bold text-green-600 mt-1">{{ formatCurrency(stats.receitaTotal) }}</p>
           <p class="text-xs text-gray-400 mt-1">Este mes: {{ formatCurrency(stats.receitaMesAtual) }}</p>
-        </div>
-        <div class="card p-5">
+        </router-link>
+        <router-link to="/admin-max/financeiro?status=PENDENTE" class="card p-5 block hover:border-indigo-300 transition-colors">
           <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Faturas</p>
           <div class="flex items-baseline gap-2 mt-1">
             <span class="text-2xl font-bold text-amber-600">{{ stats.faturasPendentes }}</span>
             <span class="text-xs text-gray-400">pendentes</span>
           </div>
           <p v-if="stats.faturasVencidas > 0" class="text-xs text-red-500 mt-1">{{ stats.faturasVencidas }} vencidas</p>
-        </div>
+        </router-link>
       </div>
 
       <!-- Graficos -->
@@ -142,7 +142,7 @@
       <!-- Atalhos rapidos -->
       <div class="card p-6">
         <h3 class="section-title mb-4">Atalhos</h3>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <router-link to="/admin-max/empresas" class="flex items-center gap-3 p-4 rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-colors">
             <span class="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 text-lg font-bold">E</span>
             <span class="font-medium text-gray-800">Empresas</span>
@@ -154,6 +154,10 @@
           <router-link to="/admin-max/usuarios" class="flex items-center gap-3 p-4 rounded-lg border border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition-colors">
             <span class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600 text-lg font-bold">U</span>
             <span class="font-medium text-gray-800">Usuarios</span>
+          </router-link>
+          <router-link to="/admin-max/financeiro" class="flex items-center gap-3 p-4 rounded-lg border border-gray-200 hover:border-green-300 hover:bg-green-50 transition-colors">
+            <span class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center text-green-600 text-lg font-bold">F</span>
+            <span class="font-medium text-gray-800">Financeiro</span>
           </router-link>
           <router-link to="/admin-max/configuracoes" class="flex items-center gap-3 p-4 rounded-lg border border-gray-200 hover:border-gray-400 hover:bg-gray-50 transition-colors">
             <span class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600 text-lg font-bold">C</span>

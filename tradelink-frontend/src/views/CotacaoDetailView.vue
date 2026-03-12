@@ -138,18 +138,21 @@ const erro = ref('')
 const periodoSelecionado = ref('1M')
 
 const periodos = [
-  { value: '1S', label: '1S', intervalo: '1day', dias: 7 },
-  { value: '1M', label: '1M', intervalo: '1day', dias: 30 },
-  { value: '3M', label: '3M', intervalo: '1day', dias: 90 },
-  { value: '6M', label: '6M', intervalo: '1week', dias: 180 },
-  { value: '1A', label: '1A', intervalo: '1week', dias: 365 },
-  { value: 'MAX', label: 'Máx', intervalo: '1month', dias: 0 }
+  { value: '1S', label: '1S', dias: 7 },
+  { value: '1M', label: '1M', dias: 30 },
+  { value: '3M', label: '3M', dias: 90 },
+  { value: '6M', label: '6M', dias: 180 },
+  { value: '1A', label: '1A', dias: 365 },
+  { value: 'MAX', label: 'Máx', dias: 0 }
 ]
 
 const periodoAtual = computed(() => periodos.find(p => p.value === periodoSelecionado.value) || periodos[1])
 const intervaloAtual = computed(() => {
-  const labels = { '1day': 'Diário', '1week': 'Semanal', '1month': 'Mensal', '1h': 'Horário' }
-  return labels[periodoAtual.value.intervalo] || periodoAtual.value.intervalo
+  const d = periodoAtual.value.dias
+  if (d === 0) return 'Máximo'
+  if (d <= 30) return 'Diário'
+  if (d <= 180) return 'Semanal'
+  return 'Mensal'
 })
 
 const ohlcvRecentes = computed(() => {
@@ -185,17 +188,9 @@ async function carregarOHLCV() {
   ohlcvLoading.value = true
   try {
     const periodo = periodoAtual.value
-    const res = await cotacaoApi.ohlcv(moeda.value, parMoeda.value, periodo.intervalo)
-    let dados = res.data || []
-
-    // Filtrar por período se necessário
-    if (periodo.dias > 0 && dados.length > 0) {
-      const cutoff = new Date()
-      cutoff.setDate(cutoff.getDate() - periodo.dias)
-      dados = dados.filter(d => new Date(d.dataHora) >= cutoff)
-    }
-
-    ohlcvDados.value = dados
+    const dias = periodo.dias || 0 // 0 = max
+    const res = await cotacaoApi.ohlcv(moeda.value, parMoeda.value, dias)
+    ohlcvDados.value = res.data || []
   } catch (e) {
     console.error('Erro ao carregar OHLCV:', e)
     ohlcvDados.value = []

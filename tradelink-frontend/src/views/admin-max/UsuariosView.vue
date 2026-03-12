@@ -148,6 +148,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import userApi from '../../api/userApi'
 import empresaApi from '../../api/empresaApi'
 import { useToast } from '../../composables/useToast'
@@ -155,13 +156,14 @@ import { useConfirm } from '../../composables/useConfirm'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import ToggleSwitch from '../../components/common/ToggleSwitch.vue'
 
+const route = useRoute()
 const toast = useToast()
 const { confirm } = useConfirm()
 const loadingAtivo = ref({})
 const loading = ref(true)
 const usuarios = ref([])
 const empresas = ref([])
-const filtroRole = ref('')
+const filtroRole = ref(route.query.role || '')
 const filtroEmpresaId = ref('')
 
 const modal = ref({

@@ -3,8 +3,10 @@ package com.example.CJLInvestimentos.services;
 import com.example.CJLInvestimentos.dtos.request.AtualizarFaturaRequest;
 import com.example.CJLInvestimentos.dtos.request.CriarFaturaRequest;
 import com.example.CJLInvestimentos.dtos.request.MarcarPagoRequest;
+import com.example.CJLInvestimentos.dtos.response.FaturaAdminResponse;
 import com.example.CJLInvestimentos.dtos.response.FaturaResponse;
 import com.example.CJLInvestimentos.dtos.response.FaturasComProximaResponse;
+import com.example.CJLInvestimentos.dtos.response.FinanceiroResumoResponse;
 import com.example.CJLInvestimentos.dtos.response.ProximaFaturaResponse;
 import com.example.CJLInvestimentos.entities.Empresa;
 import com.example.CJLInvestimentos.entities.Fatura;
@@ -23,9 +25,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -385,5 +388,120 @@ public class FaturaService {
                 .descricaoServico(f.getDescricaoServico())
                 .observacao(f.getObservacao())
                 .build();
+    }
+
+    private FaturaAdminResponse toAdminResponse(Fatura f) {
+        return FaturaAdminResponse.builder()
+                .id(f.getId())
+                .empresaId(f.getEmpresa() != null ? f.getEmpresa().getId() : null)
+                .empresaNome(f.getEmpresa() != null ? f.getEmpresa().getNome() : null)
+                .dataVencimento(f.getDataVencimento())
+                .dataPagamento(f.getDataPagamento())
+                .valor(f.getValor())
+                .status(f.getStatus().name())
+                .formaPagamento(f.getFormaPagamento() != null ? f.getFormaPagamento().name() : null)
+                .descricaoServico(f.getDescricaoServico())
+                .observacao(f.getObservacao())
+                .build();
+    }
+
+    // === PAINEL FINANCEIRO (AdminMax global) ===
+
+    /** Lista todas as faturas de todas as empresas (visão global para AdminMax). */
+    @Transactional(readOnly = true)
+    public List<FaturaAdminResponse> listarTodasFaturas() {
+        return faturaRepository.findAllWithEmpresa().stream()
+                .map(this::toAdminResponse)
+                .collect(Collectors.toList());
+    }
+
+    /** Resumo financeiro global para o painel AdminMax. */
+    @Transactional(readOnly = true)
+    public FinanceiroResumoResponse getFinanceiroResumo() {
+        List<Fatura> todasFaturas = faturaRepository.findAllWithEmpresa();
+
+        BigDecimal receitaTotal = todasFaturas.stream()
+                .filter(f -> f.getStatus() == StatusFatura.PAGA)
+                .map(Fatura::getValor)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        YearMonth mesAtual = YearMonth.now();
+        Instant inicioMes = mesAtual.atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
+        Instant fimMes = mesAtual.plusMonths(1).atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
+
+        BigDecimal receitaMesAtual = todasFaturas.stream()
+                .filter(f -> f.getStatus() == StatusFatura.PAGA)
+                .filter(f -> f.getDataPagamento() != null
+                        && !f.getDataPagamento().isBefore(inicioMes)
+                        && f.getDataPagamento().isBefore(fimMes))
+                .map(Fatura::getValor)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        long faturasPendentesCount = todasFaturas.stream()
+                .filter(f -> f.getStatus() == StatusFatura.PENDENTE).count();
+        BigDecimal faturasPendentesValor = todasFaturas.stream()
+                .filter(f -> f.getStatus() == StatusFatura.PENDENTE)
+                .map(Fatura::getValor)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        long faturasVencidasCount = todasFaturas.stream()
+                .filter(f -> f.getStatus() == StatusFatura.VENCIDA).count();
+        BigDecimal faturasVencidasValor = todasFaturas.stream()
+                .filter(f -> f.getStatus() == StatusFatura.VENCIDA)
+                .map(Fatura::getValor)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // MRR: soma dos preços dos planos de empresas com assinatura ativa
+        BigDecimal mrr = empresaRepository.findAll().stream()
+                .filter(e -> e.getSubscriptionStatus() == com.example.CJLInvestimentos.entities.enums.SubscriptionStatus.ACTIVE)
+                .filter(e -> e.getPlano() != null && e.getPlano().getPreco() != null)
+                .map(e -> e.getPlano().getPreco())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Receita mensal dos últimos 12 meses
+        List<FinanceiroResumoResponse.ReceitaMensal> receitaMensal = calcularReceitaMensal(todasFaturas);
+
+        return FinanceiroResumoResponse.builder()
+                .receitaTotal(receitaTotal)
+                .receitaMesAtual(receitaMesAtual)
+                .faturasPendentesCount(faturasPendentesCount)
+                .faturasPendentesValor(faturasPendentesValor)
+                .faturasVencidasCount(faturasVencidasCount)
+                .faturasVencidasValor(faturasVencidasValor)
+                .mrr(mrr)
+                .receitaMensal(receitaMensal)
+                .build();
+    }
+
+    private List<FinanceiroResumoResponse.ReceitaMensal> calcularReceitaMensal(List<Fatura> faturas) {
+        YearMonth mesAtual = YearMonth.now();
+        ZoneId zone = ZoneId.systemDefault();
+        List<FinanceiroResumoResponse.ReceitaMensal> resultado = new ArrayList<>();
+
+        for (int i = 11; i >= 0; i--) {
+            YearMonth mes = mesAtual.minusMonths(i);
+            String mesStr = mes.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+            Instant inicio = mes.atDay(1).atStartOfDay(zone).toInstant();
+            Instant fim = mes.plusMonths(1).atDay(1).atStartOfDay(zone).toInstant();
+
+            List<Fatura> pagas = faturas.stream()
+                    .filter(f -> f.getStatus() == StatusFatura.PAGA)
+                    .filter(f -> f.getDataPagamento() != null
+                            && !f.getDataPagamento().isBefore(inicio)
+                            && f.getDataPagamento().isBefore(fim))
+                    .collect(Collectors.toList());
+
+            BigDecimal valor = pagas.stream()
+                    .map(Fatura::getValor)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            resultado.add(FinanceiroResumoResponse.ReceitaMensal.builder()
+                    .mes(mesStr)
+                    .valor(valor)
+                    .count(pagas.size())
+                    .build());
+        }
+
+        return resultado;
     }
 }

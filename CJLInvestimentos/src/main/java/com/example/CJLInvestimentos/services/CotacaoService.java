@@ -243,25 +243,31 @@ public class CotacaoService {
     // ─── Queries de histórico OHLCV ──────────────────────────────────────
 
     /**
-     * Retorna dados históricos OHLC do banco de dados.
-     * Se não existem, busca sob demanda do CoinGecko (apenas crypto).
+     * Retorna dados históricos OHLC do banco de dados, parametrizado por dias.
+     * Se não existem, busca sob demanda (CoinGecko para crypto, AwesomeAPI para forex).
+     *
+     * @param dias 0 = máximo disponível; 7/30/90/180/365 = período em dias
      */
     public List<CotacaoHistoricoResponse> historicoOHLCV(String moeda, String parMoeda,
-                                                          String intervalo,
+                                                          int dias,
                                                           LocalDateTime de, LocalDateTime ate) {
         String moedaUpper = moeda.toUpperCase();
         String parUpper = parMoeda.toUpperCase();
+        boolean isCrypto = apiService.isCrypto(moedaUpper);
 
-        // Determinar intervalo no banco:
-        // - Crypto CoinGecko usa intervalos variáveis (30min, 4h, 4day)
-        // - Forex AwesomeAPI sempre armazena como "1day"
+        // Determinar o intervalo correto que está armazenado no banco
+        // CoinGecko granularidade automática: 1-2d→30min, 3-30d→4h, 31+d→4day
+        // AwesomeAPI: sempre "1day"
         String intervaloDb;
-        if (!apiService.isCrypto(moedaUpper)) {
-            // Forex: sempre "1day" no banco (AwesomeAPI só retorna diário)
+        if (!isCrypto) {
             intervaloDb = "1day";
         } else {
-            intervaloDb = intervalo != null ? intervalo : "4h";
+            // Para crypto, buscar pelo intervalo que o CoinGecko usa para esse range de dias
+            intervaloDb = determinarIntervaloParaDias(String.valueOf(dias <= 0 ? 9999 : dias));
         }
+
+        // Calcular cutoff de data se dias > 0
+        LocalDateTime cutoff = (dias > 0) ? LocalDateTime.now().minusDays(dias) : null;
 
         // Buscar do banco
         List<CotacaoHistorico> dados;
@@ -269,39 +275,64 @@ public class CotacaoService {
             dados = cotacaoHistoricoRepository
                     .findByMoedaAndParMoedaAndIntervaloAndDataHoraBetweenOrderByDataHoraAsc(
                             moedaUpper, parUpper, intervaloDb, de, ate);
+        } else if (cutoff != null) {
+            dados = cotacaoHistoricoRepository
+                    .findByMoedaAndParMoedaAndIntervaloAndDataHoraBetweenOrderByDataHoraAsc(
+                            moedaUpper, parUpper, intervaloDb, cutoff, LocalDateTime.now());
         } else {
             dados = cotacaoHistoricoRepository
                     .findByMoedaAndParMoedaAndIntervaloOrderByDataHoraAsc(
                             moedaUpper, parUpper, intervaloDb);
         }
 
-        // Se não temos dados, buscar sob demanda
-        if (dados.isEmpty()) {
+        // Verificar se os dados cobrem o período solicitado.
+        // Se vazios ou se o dado mais antigo não cobre o cutoff, buscar sob demanda.
+        boolean precisaBuscar = dados.isEmpty();
+        if (!precisaBuscar && cutoff != null && !dados.isEmpty()) {
+            LocalDateTime dadoMaisAntigo = dados.get(0).getDataHora();
+            // Se o dado mais antigo é mais recente que 80% do cutoff, temos gaps
+            long diasCobertos = java.time.Duration.between(dadoMaisAntigo, LocalDateTime.now()).toDays();
+            precisaBuscar = diasCobertos < (dias * 0.7); // menos de 70% do período coberto
+        }
+
+        if (precisaBuscar) {
             try {
-                if (apiService.isCrypto(moedaUpper)) {
-                    // Crypto: CoinGecko OHLC
-                    String days = calcularDiasParaIntervalo(intervalo);
-                    apiService.fetchOhlcBySymbol(moedaUpper, parUpper, days)
+                if (isCrypto) {
+                    // Crypto: CoinGecko OHLC — buscar os dias solicitados
+                    String daysParam = (dias <= 0) ? "max" : String.valueOf(Math.min(dias, 365));
+                    apiService.fetchOhlcBySymbol(moedaUpper, parUpper, daysParam)
                             .forEach(h -> {
                                 try {
                                     cotacaoHistoricoRepository.save(h);
                                 } catch (Exception ignored) {} // ignora duplicatas
                             });
 
-                    String intervaloReal = determinarIntervaloParaDias(days);
-                    dados = cotacaoHistoricoRepository
-                            .findByMoedaAndParMoedaAndIntervaloOrderByDataHoraAsc(
-                                    moedaUpper, parUpper, intervaloReal);
+                    String intervaloReal = determinarIntervaloParaDias(daysParam);
+                    if (cutoff != null) {
+                        dados = cotacaoHistoricoRepository
+                                .findByMoedaAndParMoedaAndIntervaloAndDataHoraBetweenOrderByDataHoraAsc(
+                                        moedaUpper, parUpper, intervaloReal, cutoff, LocalDateTime.now());
+                    } else {
+                        dados = cotacaoHistoricoRepository
+                                .findByMoedaAndParMoedaAndIntervaloOrderByDataHoraAsc(
+                                        moedaUpper, parUpper, intervaloReal);
+                    }
                 } else {
-                    // Forex: AwesomeAPI daily
-                    int dias = calcularDiasForex(intervalo);
-                    List<CotacaoHistorico> fetched = apiService.fetchForexHistoricoBySymbol(moedaUpper, parUpper, dias);
+                    // Forex: AwesomeAPI daily (max 360 dias)
+                    int diasForex = (dias <= 0) ? 360 : Math.min(dias, 360);
+                    List<CotacaoHistorico> fetched = apiService.fetchForexHistoricoBySymbol(moedaUpper, parUpper, diasForex);
                     if (!fetched.isEmpty()) {
                         cotacaoHistoricoRepository.deleteByMoedaAndParMoedaAndIntervalo(moedaUpper, parUpper, "1day");
                         cotacaoHistoricoRepository.saveAll(fetched);
-                        dados = cotacaoHistoricoRepository
-                                .findByMoedaAndParMoedaAndIntervaloOrderByDataHoraAsc(
-                                        moedaUpper, parUpper, "1day");
+                        if (cutoff != null) {
+                            dados = cotacaoHistoricoRepository
+                                    .findByMoedaAndParMoedaAndIntervaloAndDataHoraBetweenOrderByDataHoraAsc(
+                                            moedaUpper, parUpper, "1day", cutoff, LocalDateTime.now());
+                        } else {
+                            dados = cotacaoHistoricoRepository
+                                    .findByMoedaAndParMoedaAndIntervaloOrderByDataHoraAsc(
+                                            moedaUpper, parUpper, "1day");
+                        }
                     }
                 }
             } catch (Exception e) {
@@ -429,33 +460,10 @@ public class CotacaoService {
 
     // ─── Helpers ─────────────────────────────────────────────────────────
 
-    private String calcularDiasParaIntervalo(String intervalo) {
-        if (intervalo == null) return "90";
-        return switch (intervalo) {
-            case "30min" -> "1";
-            case "4h" -> "30";
-            case "4day" -> "90";
-            case "1day" -> "90";
-            case "1week" -> "365";
-            case "1month" -> "max";
-            default -> "90";
-        };
-    }
-
     /**
-     * Calcula quantos dias buscar do AwesomeAPI daily baseado no intervalo solicitado.
-     * AwesomeAPI max = 360 dias; sempre retorna dados diários.
+     * Determina qual intervalo o CoinGecko usa baseado no número de dias.
+     * CoinGecko granularidade: 1-2d→30min, 3-30d→4h, 31+d→4day
      */
-    private int calcularDiasForex(String intervalo) {
-        if (intervalo == null) return 90;
-        return switch (intervalo) {
-            case "1day" -> 90;
-            case "1week" -> 360;  // AwesomeAPI max
-            case "1month" -> 360;
-            default -> 90;
-        };
-    }
-
     private String determinarIntervaloParaDias(String days) {
         try {
             int d = "max".equalsIgnoreCase(days) ? 9999 : Integer.parseInt(days);

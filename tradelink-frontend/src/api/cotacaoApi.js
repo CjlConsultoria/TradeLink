@@ -14,12 +14,12 @@ export default {
    * Dados historicos OHLCV (candlestick).
    * @param {string} moeda - Ex: USD, BTC
    * @param {string} parMoeda - Ex: BRL, USD
-   * @param {string} intervalo - 1min, 5min, 15min, 30min, 1h, 4h, 1day, 1week, 1month
+   * @param {number} dias - Quantidade de dias (7, 30, 90, 180, 365, 0=max)
    * @param {string} [de] - ISO datetime inicio (opcional)
    * @param {string} [ate] - ISO datetime fim (opcional)
    */
-  ohlcv(moeda, parMoeda, intervalo = '1day', de, ate) {
-    const params = { intervalo }
+  ohlcv(moeda, parMoeda, dias = 90, de, ate) {
+    const params = { dias }
     if (de) params.de = de
     if (ate) params.ate = ate
     return api.get(`/cotacoes/${moeda}/${parMoeda}/ohlcv`, { params })

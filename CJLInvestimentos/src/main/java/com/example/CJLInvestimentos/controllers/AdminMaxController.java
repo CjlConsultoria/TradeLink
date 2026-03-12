@@ -9,8 +9,11 @@ import com.example.CJLInvestimentos.dtos.request.PlanoRequest;
 import com.example.CJLInvestimentos.dtos.request.RegisterRequest;
 import com.example.CJLInvestimentos.dtos.response.AdminMaxDashboardResponse;
 import com.example.CJLInvestimentos.dtos.response.EmpresaResponse;
+import com.example.CJLInvestimentos.dtos.response.FaturaAdminResponse;
 import com.example.CJLInvestimentos.dtos.response.FaturaResponse;
 import com.example.CJLInvestimentos.dtos.response.FaturasComProximaResponse;
+import com.example.CJLInvestimentos.dtos.response.FinanceiroResumoResponse;
+import com.example.CJLInvestimentos.dtos.response.CarteiraResponse;
 import com.example.CJLInvestimentos.dtos.response.PlanoResponse;
 import com.example.CJLInvestimentos.dtos.response.ProximaFaturaResponse;
 import com.example.CJLInvestimentos.dtos.response.UserResponse;
@@ -25,6 +28,7 @@ import com.example.CJLInvestimentos.repositories.UserRepository;
 import com.example.CJLInvestimentos.services.AdminMaxDashboardService;
 import com.example.CJLInvestimentos.services.ChatService;
 import com.example.CJLInvestimentos.services.ConfiguracaoSistemaService;
+import com.example.CJLInvestimentos.services.CarteiraService;
 import com.example.CJLInvestimentos.services.CotacaoService;
 import com.example.CJLInvestimentos.services.EmailApresentacaoService;
 import com.example.CJLInvestimentos.services.EmpresaService;
@@ -54,6 +58,7 @@ public class AdminMaxController {
     private final EmpresaService empresaService;
     private final UserService userService;
     private final PlanoService planoService;
+    private final CarteiraService carteiraService;
     private final CotacaoService cotacaoService;
     private final FaturaService faturaService;
     private final FaturaPdfService faturaPdfService;
@@ -231,6 +236,25 @@ public class AdminMaxController {
         headers.setContentType(MediaType.APPLICATION_PDF);
         headers.setContentDispositionFormData("inline", "fatura-" + faturaId + ".pdf");
         return ResponseEntity.ok().headers(headers).body(pdf);
+    }
+
+    // === FINANCEIRO (painel global) ===
+
+    @GetMapping("/financeiro/resumo")
+    public ResponseEntity<FinanceiroResumoResponse> getFinanceiroResumo() {
+        return ResponseEntity.ok(faturaService.getFinanceiroResumo());
+    }
+
+    @GetMapping("/faturas")
+    public ResponseEntity<List<FaturaAdminResponse>> listarTodasFaturas() {
+        return ResponseEntity.ok(faturaService.listarTodasFaturas());
+    }
+
+    // === CARTEIRAS (visão global) ===
+
+    @GetMapping("/carteiras")
+    public ResponseEntity<List<CarteiraResponse>> listarTodasCarteiras() {
+        return ResponseEntity.ok(carteiraService.listarTodasAdmin());
     }
 
     @GetMapping("/usuarios")

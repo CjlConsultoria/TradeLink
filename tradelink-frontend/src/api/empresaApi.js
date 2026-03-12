@@ -34,5 +34,9 @@ export default {
   /** Bloqueia ou desbloqueia o acesso à plataforma da empresa (todos consultores e clientes). */
   bloquearAcesso(empresaId, bloqueado) {
     return api.put(`/admin-max/empresas/${empresaId}/bloquear-acesso`, { bloqueado })
+  },
+  /** AdminMax: lista todas as carteiras de todas as empresas */
+  listarCarteiras() {
+    return api.get('/admin-max/carteiras')
   }
 }

@@ -50,6 +50,8 @@ const routes = [
       { path: 'empresas/:id', name: 'EmpresaDetail', component: EmpresaDetailView },
       { path: 'usuarios', name: 'UsuariosAdminMax', component: UsuariosView },
       { path: 'planos', name: 'Planos', component: PlanosView },
+      { path: 'financeiro', name: 'FinanceiroAdminMax', component: () => import('../views/admin-max/FinanceiroView.vue') },
+      { path: 'carteiras', name: 'CarteirasAdminMax', component: () => import('../views/admin-max/CarteirasAdminView.vue') },
       { path: 'faq', name: 'FaqAdmin', component: () => import('../views/admin-max/FaqAdminView.vue') },
       { path: 'chat', name: 'ChatAdmin', component: () => import('../views/admin-max/ChatAdminView.vue') },
       { path: 'emails-apresentacao', name: 'EmailsApresentacao', component: () => import('../views/admin-max/EmailsApresentacaoView.vue') },

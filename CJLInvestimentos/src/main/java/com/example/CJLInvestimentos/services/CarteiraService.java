@@ -171,6 +171,14 @@ public class CarteiraService {
         return carteira;
     }
 
+    /** Lista todas as carteiras do sistema (visão global para AdminMax). */
+    @Transactional(readOnly = true)
+    public List<CarteiraResponse> listarTodasAdmin() {
+        return carteiraRepository.findAll().stream()
+                .map(this::toResponse)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
     private CarteiraResponse toResponse(Carteira carteira) {
         int totalClientes = (int) carteiraClienteRepository.countByCarteiraId(carteira.getId());
         int totalRecomendacoes = (int) recomendacaoRepository.countByCarteiraId(carteira.getId());

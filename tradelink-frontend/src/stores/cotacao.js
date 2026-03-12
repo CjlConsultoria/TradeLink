@@ -57,9 +57,9 @@ export const useCotacaoStore = defineStore('cotacao', () => {
     }
   }
 
-  async function fetchOHLCV(moeda, parMoeda, intervalo = '1day', de, ate) {
+  async function fetchOHLCV(moeda, parMoeda, dias = 90, de, ate) {
     try {
-      const res = await cotacaoApi.ohlcv(moeda, parMoeda, intervalo, de, ate)
+      const res = await cotacaoApi.ohlcv(moeda, parMoeda, dias, de, ate)
       return res.data
     } catch (e) {
       console.error('Erro ao buscar OHLCV:', e)
