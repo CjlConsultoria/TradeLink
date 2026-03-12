@@ -120,9 +120,10 @@ async function carregarHistoricos() {
 
   loadingChart.value = true
   try {
+    const dias = Math.max(Math.ceil(periodoHoras.value / 24), 1)
     const results = await Promise.all(pares.map(par => {
       const [moeda, parMoeda] = par.split('/')
-      return cotacaoApi.historico(moeda, parMoeda, periodoHoras.value)
+      return cotacaoApi.ohlcv(moeda, parMoeda, dias)
         .then(r => ({ par, data: r.data || [] }))
         .catch(() => ({ par, data: [] }))
     }))
@@ -130,11 +131,14 @@ async function carregarHistoricos() {
     const newDatasets = []
     const newResumo = []
 
+    const getPreco = (p) => Number(p.close || p.open || p.precoCompra || p.precoVenda || 0)
+
     results.forEach((result, idx) => {
       if (!result.data.length) return
       const pontos = result.data.sort((a, b) => new Date(a.dataHora) - new Date(b.dataHora))
-      const precoInicial = Number(pontos[0].precoCompra || pontos[0].precoVenda)
-      const precoFinal = Number(pontos[pontos.length - 1].precoCompra || pontos[pontos.length - 1].precoVenda)
+      const precoInicial = getPreco(pontos[0])
+      const precoFinal = getPreco(pontos[pontos.length - 1])
+      if (!precoInicial || !precoFinal) return
 
       // Normalizar para variação percentual
       const labels = pontos.map(p => {
@@ -145,11 +149,11 @@ async function carregarHistoricos() {
       })
 
       const dataPercent = pontos.map(p => {
-        const preco = Number(p.precoCompra || p.precoVenda)
+        const preco = getPreco(p)
         return ((preco - precoInicial) / precoInicial * 100)
       })
 
-      const precos = pontos.map(p => Number(p.precoCompra || p.precoVenda))
+      const precos = pontos.map(p => getPreco(p))
 
       newDatasets.push({
         label: result.par,

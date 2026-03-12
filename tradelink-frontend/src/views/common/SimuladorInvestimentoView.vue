@@ -38,6 +38,13 @@
       </div>
     </div>
 
+    <!-- Sem dados -->
+    <div v-if="semDados" class="card p-8 mb-6 text-center">
+      <p class="text-3xl mb-2">📉</p>
+      <p class="text-gray-600 font-medium">Dados históricos insuficientes</p>
+      <p class="text-sm text-gray-400 mt-1">Não há pontos suficientes para simular este par no período selecionado. Tente outro par ou um período diferente.</p>
+    </div>
+
     <!-- Resultado -->
     <div v-if="resultado" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
       <div class="card p-6 text-center">
@@ -93,9 +100,11 @@
 import { ref, onMounted, nextTick, onUnmounted } from 'vue'
 import cotacaoApi from '../../api/cotacaoApi'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
+import { useToast } from '../../composables/useToast'
 import { Chart, registerables } from 'chart.js'
 Chart.register(...registerables)
 
+const toast = useToast()
 const chartRef = ref(null)
 let chartInstance = null
 const moedasDisponiveis = ref([])
@@ -106,6 +115,18 @@ const loading = ref(false)
 const loadingRapido = ref(false)
 const resultado = ref(null)
 const simulacoesRapidas = ref([])
+const semDados = ref(false)
+
+// Converte horas para dias para o endpoint OHLCV
+function horasParaDias(horas) {
+  const dias = Math.ceil(horas / 24)
+  return Math.max(dias, 1)
+}
+
+// Extrai preço de um ponto (suporta OHLCV e formato antigo)
+function getPreco(p) {
+  return Number(p.close || p.open || p.precoCompra || p.precoVenda || 0)
+}
 
 onMounted(async () => {
   try {
@@ -124,11 +145,12 @@ async function carregarSimulacoesRapidas() {
   const topPares = moedasDisponiveis.value.slice(0, 9)
   const results = await Promise.all(topPares.map(async par => {
     try {
-      const res = await cotacaoApi.historico(par.moeda, par.parMoeda, 168)
+      const res = await cotacaoApi.ohlcv(par.moeda, par.parMoeda, 7)
       const pontos = (res.data || []).sort((a, b) => new Date(a.dataHora) - new Date(b.dataHora))
       if (pontos.length < 2) return null
-      const precoInicial = Number(pontos[0].precoCompra || pontos[0].precoVenda)
-      const precoFinal = Number(pontos[pontos.length - 1].precoCompra || pontos[pontos.length - 1].precoVenda)
+      const precoInicial = getPreco(pontos[0])
+      const precoFinal = getPreco(pontos[pontos.length - 1])
+      if (!precoInicial || !precoFinal) return null
       const valorFinal = (1000 / precoInicial) * precoFinal
       return {
         par: par.key,
@@ -146,14 +168,21 @@ async function simular() {
   if (!moedaSelecionada.value || !valorInvestido.value) return
   loading.value = true
   resultado.value = null
+  semDados.value = false
   try {
     const [moeda, parMoeda] = moedaSelecionada.value.split('/')
-    const res = await cotacaoApi.historico(moeda, parMoeda, periodoHoras.value)
+    const dias = horasParaDias(periodoHoras.value)
+    const res = await cotacaoApi.ohlcv(moeda, parMoeda, dias)
     const pontos = (res.data || []).sort((a, b) => new Date(a.dataHora) - new Date(b.dataHora))
-    if (pontos.length < 2) { loading.value = false; return }
+    if (pontos.length < 2) {
+      semDados.value = true
+      toast.warning('Dados históricos insuficientes para esta moeda/período. Tente outro par ou período maior.')
+      loading.value = false
+      return
+    }
 
-    const precoInicial = Number(pontos[0].precoCompra || pontos[0].precoVenda)
-    const precoFinal = Number(pontos[pontos.length - 1].precoCompra || pontos[pontos.length - 1].precoVenda)
+    const precoInicial = getPreco(pontos[0])
+    const precoFinal = getPreco(pontos[pontos.length - 1])
     const quantidade = valorInvestido.value / precoInicial
     const valorFinal = quantidade * precoFinal
     const lucro = valorFinal - valorInvestido.value
@@ -169,7 +198,10 @@ async function simular() {
 
     await nextTick()
     renderChart(pontos, quantidade)
-  } catch (e) { console.error(e) }
+  } catch (e) {
+    console.error(e)
+    toast.error('Erro ao simular investimento. Tente novamente.')
+  }
   finally { loading.value = false }
 }
 
@@ -183,7 +215,7 @@ function renderChart(pontos, quantidade) {
       ? d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
       : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
   })
-  const valores = pontos.map(p => quantidade * Number(p.precoCompra || p.precoVenda))
+  const valores = pontos.map(p => quantidade * getPreco(p))
   const isPositive = valores[valores.length - 1] >= valorInvestido.value
 
   chartInstance = new Chart(chartRef.value, {
