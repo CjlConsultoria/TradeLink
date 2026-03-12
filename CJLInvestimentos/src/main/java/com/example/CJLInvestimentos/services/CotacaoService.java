@@ -255,44 +255,34 @@ public class CotacaoService {
         String parUpper = parMoeda.toUpperCase();
         boolean isCrypto = apiService.isCrypto(moedaUpper);
 
-        // Determinar o intervalo correto que está armazenado no banco
-        // CoinGecko granularidade automática: 1-2d→30min, 3-30d→4h, 31+d→4day
-        // AwesomeAPI: sempre "1day"
-        String intervaloDb;
-        if (!isCrypto) {
-            intervaloDb = "1day";
-        } else {
-            // Para crypto, buscar pelo intervalo que o CoinGecko usa para esse range de dias
-            intervaloDb = determinarIntervaloParaDias(String.valueOf(dias <= 0 ? 9999 : dias));
-        }
-
         // Calcular cutoff de data se dias > 0
         LocalDateTime cutoff = (dias > 0) ? LocalDateTime.now().minusDays(dias) : null;
 
-        // Buscar do banco
+        // Buscar do banco SEM filtrar por intervalo — retorna qualquer granularidade disponível.
+        // Isso resolve o problema de mismatch: scheduler salva "4day" (90d fetch),
+        // mas query para 30 dias buscava "4h" → encontrava vazio.
         List<CotacaoHistorico> dados;
         if (de != null && ate != null) {
             dados = cotacaoHistoricoRepository
-                    .findByMoedaAndParMoedaAndIntervaloAndDataHoraBetweenOrderByDataHoraAsc(
-                            moedaUpper, parUpper, intervaloDb, de, ate);
+                    .findByMoedaAndParMoedaAndDataHoraBetweenOrderByDataHoraAsc(
+                            moedaUpper, parUpper, de, ate);
         } else if (cutoff != null) {
             dados = cotacaoHistoricoRepository
-                    .findByMoedaAndParMoedaAndIntervaloAndDataHoraBetweenOrderByDataHoraAsc(
-                            moedaUpper, parUpper, intervaloDb, cutoff, LocalDateTime.now());
+                    .findByMoedaAndParMoedaAndDataHoraBetweenOrderByDataHoraAsc(
+                            moedaUpper, parUpper, cutoff, LocalDateTime.now());
         } else {
             dados = cotacaoHistoricoRepository
-                    .findByMoedaAndParMoedaAndIntervaloOrderByDataHoraAsc(
-                            moedaUpper, parUpper, intervaloDb);
+                    .findByMoedaAndParMoedaOrderByDataHoraAsc(
+                            moedaUpper, parUpper);
         }
 
         // Verificar se os dados cobrem o período solicitado.
-        // Se vazios ou se o dado mais antigo não cobre o cutoff, buscar sob demanda.
+        // Se vazios ou se cobertura < 70%, buscar sob demanda.
         boolean precisaBuscar = dados.isEmpty();
-        if (!precisaBuscar && cutoff != null && !dados.isEmpty()) {
+        if (!precisaBuscar && cutoff != null) {
             LocalDateTime dadoMaisAntigo = dados.get(0).getDataHora();
-            // Se o dado mais antigo é mais recente que 80% do cutoff, temos gaps
             long diasCobertos = java.time.Duration.between(dadoMaisAntigo, LocalDateTime.now()).toDays();
-            precisaBuscar = diasCobertos < (dias * 0.7); // menos de 70% do período coberto
+            precisaBuscar = diasCobertos < (dias * 0.7);
         }
 
         if (precisaBuscar) {
@@ -306,17 +296,6 @@ public class CotacaoService {
                                     cotacaoHistoricoRepository.save(h);
                                 } catch (Exception ignored) {} // ignora duplicatas
                             });
-
-                    String intervaloReal = determinarIntervaloParaDias(daysParam);
-                    if (cutoff != null) {
-                        dados = cotacaoHistoricoRepository
-                                .findByMoedaAndParMoedaAndIntervaloAndDataHoraBetweenOrderByDataHoraAsc(
-                                        moedaUpper, parUpper, intervaloReal, cutoff, LocalDateTime.now());
-                    } else {
-                        dados = cotacaoHistoricoRepository
-                                .findByMoedaAndParMoedaAndIntervaloOrderByDataHoraAsc(
-                                        moedaUpper, parUpper, intervaloReal);
-                    }
                 } else {
                     // Forex: AwesomeAPI daily (max 360 dias)
                     int diasForex = (dias <= 0) ? 360 : Math.min(dias, 360);
@@ -324,16 +303,18 @@ public class CotacaoService {
                     if (!fetched.isEmpty()) {
                         cotacaoHistoricoRepository.deleteByMoedaAndParMoedaAndIntervalo(moedaUpper, parUpper, "1day");
                         cotacaoHistoricoRepository.saveAll(fetched);
-                        if (cutoff != null) {
-                            dados = cotacaoHistoricoRepository
-                                    .findByMoedaAndParMoedaAndIntervaloAndDataHoraBetweenOrderByDataHoraAsc(
-                                            moedaUpper, parUpper, "1day", cutoff, LocalDateTime.now());
-                        } else {
-                            dados = cotacaoHistoricoRepository
-                                    .findByMoedaAndParMoedaAndIntervaloOrderByDataHoraAsc(
-                                            moedaUpper, parUpper, "1day");
-                        }
                     }
+                }
+
+                // Re-query após fetch — sem filtro de intervalo
+                if (cutoff != null) {
+                    dados = cotacaoHistoricoRepository
+                            .findByMoedaAndParMoedaAndDataHoraBetweenOrderByDataHoraAsc(
+                                    moedaUpper, parUpper, cutoff, LocalDateTime.now());
+                } else {
+                    dados = cotacaoHistoricoRepository
+                            .findByMoedaAndParMoedaOrderByDataHoraAsc(
+                                    moedaUpper, parUpper);
                 }
             } catch (Exception e) {
                 log.warn("Falha ao buscar OHLC sob demanda para {}/{}: {}", moedaUpper, parUpper, e.getMessage());

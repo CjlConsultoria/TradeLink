@@ -25,4 +25,11 @@ public interface CotacaoHistoricoRepository extends JpaRepository<CotacaoHistori
     void deleteByMoedaAndParMoedaAndIntervalo(String moeda, String parMoeda, String intervalo);
 
     long countByMoedaAndParMoedaAndIntervalo(String moeda, String parMoeda, String intervalo);
+
+    // Queries sem filtro de intervalo — retornam qualquer granularidade disponível
+    List<CotacaoHistorico> findByMoedaAndParMoedaAndDataHoraBetweenOrderByDataHoraAsc(
+            String moeda, String parMoeda, LocalDateTime de, LocalDateTime ate);
+
+    List<CotacaoHistorico> findByMoedaAndParMoedaOrderByDataHoraAsc(
+            String moeda, String parMoeda);
 }
