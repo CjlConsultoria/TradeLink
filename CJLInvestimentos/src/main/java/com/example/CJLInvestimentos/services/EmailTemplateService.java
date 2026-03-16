@@ -1100,6 +1100,98 @@ public class EmailTemplateService {
             "Sua conta auto-gestao foi ativada. Gerencie seus investimentos!", body);
     }
 
+    // ─── Templates de Chamados ───
+
+    public String buildChamadoCriado(String nome, String numero, String assunto, String categoria, String prioridade) {
+        String body = """
+            <p style="margin:0 0 8px; font-size:14px; color:#94a3b8;">Chamado Criado</p>
+            <h2 style="margin:0 0 8px; color:#1e293b; font-size:22px; font-weight:700;">Ola, %s!</h2>
+            <p style="margin:0 0 20px; color:#475569;">Seu chamado foi registrado com sucesso. Acompanhe o andamento pela plataforma.</p>
+            """.formatted(escape(nome));
+
+        body += "<p style='margin:0 0 16px;'>" + buildBadge(numero, "rgba(99,102,241,0.12)", "#6366f1") + "</p>";
+
+        body += buildInfoTable(new String[][]{
+            {"Assunto", escape(assunto)},
+            {"Categoria", escape(categoria)},
+            {"Prioridade", escape(prioridade)},
+            {"Status", "Aberto"}
+        });
+
+        body += buildButton("Ver Chamado", APP_URL + "/login");
+
+        body += """
+            <p style="margin:16px 0 0; color:#94a3b8; font-size:13px;">Voce recebera notificacoes sobre atualizacoes deste chamado.</p>
+            """;
+
+        return wrapInLayout("Chamado " + numero + " criado",
+                "Seu chamado " + numero + " foi registrado com sucesso.", body);
+    }
+
+    public String buildChamadoStatusAlterado(String nome, String numero, String assunto, String novoStatus) {
+        String badgeBg;
+        String badgeColor;
+        switch (novoStatus) {
+            case "EM_ANALISE" -> { badgeBg = "rgba(234,179,8,0.12)"; badgeColor = "#ca8a04"; }
+            case "EM_ANDAMENTO" -> { badgeBg = "rgba(249,115,22,0.12)"; badgeColor = "#ea580c"; }
+            case "PENDENTE" -> { badgeBg = "rgba(239,68,68,0.12)"; badgeColor = "#dc2626"; }
+            case "RESOLVIDO" -> { badgeBg = "rgba(34,197,94,0.12)"; badgeColor = "#16a34a"; }
+            case "FECHADO" -> { badgeBg = "rgba(100,116,139,0.12)"; badgeColor = "#64748b"; }
+            default -> { badgeBg = "rgba(99,102,241,0.12)"; badgeColor = "#6366f1"; }
+        }
+
+        String statusDisplay = novoStatus.replace("_", " ");
+
+        String body = """
+            <p style="margin:0 0 8px; font-size:14px; color:#94a3b8;">Atualizacao de Chamado</p>
+            <h2 style="margin:0 0 8px; color:#1e293b; font-size:22px; font-weight:700;">Ola, %s!</h2>
+            <p style="margin:0 0 20px; color:#475569;">O status do seu chamado <strong style="color:#6366f1;">%s</strong> foi atualizado.</p>
+            """.formatted(escape(nome), escape(numero));
+
+        body += buildInfoTable(new String[][]{
+            {"Chamado", escape(numero)},
+            {"Assunto", escape(assunto)},
+            {"Novo Status", statusDisplay}
+        });
+
+        body += "<p style='margin:16px 0;'>Status: " + buildBadge(statusDisplay, badgeBg, badgeColor) + "</p>";
+
+        body += buildButton("Ver Chamado", APP_URL + "/login");
+
+        return wrapInLayout("Chamado " + numero + " atualizado",
+                "O status do chamado " + numero + " foi alterado para " + statusDisplay + ".", body);
+    }
+
+    public String buildChamadoNovaResposta(String nome, String numero, String assunto, String nomeAdmin, String previewResposta) {
+        if (previewResposta != null && previewResposta.length() > 200) {
+            previewResposta = previewResposta.substring(0, 200) + "...";
+        }
+
+        String body = """
+            <p style="margin:0 0 8px; font-size:14px; color:#94a3b8;">Nova Resposta</p>
+            <h2 style="margin:0 0 8px; color:#1e293b; font-size:22px; font-weight:700;">Ola, %s!</h2>
+            <p style="margin:0 0 20px; color:#475569;">Ha uma nova resposta no seu chamado <strong style="color:#6366f1;">%s</strong>.</p>
+            """.formatted(escape(nome), escape(numero));
+
+        body += buildInfoTable(new String[][]{
+            {"Chamado", escape(numero)},
+            {"Assunto", escape(assunto)},
+            {"Respondido por", escape(nomeAdmin)}
+        });
+
+        body += """
+            <div style="margin:16px 0; padding:16px 20px; background:#f8fafc; border-left:4px solid #6366f1; border-radius:0 8px 8px 0;">
+              <p style="margin:0 0 4px; font-size:12px; color:#94a3b8; font-weight:600;">RESPOSTA</p>
+              <p style="margin:0; color:#334155; font-size:14px; line-height:1.6;">%s</p>
+            </div>
+            """.formatted(escape(previewResposta));
+
+        body += buildButton("Ver Chamado", APP_URL + "/login");
+
+        return wrapInLayout("Nova resposta no chamado " + numero,
+                nomeAdmin + " respondeu ao chamado " + numero + ".", body);
+    }
+
     private static String escape(String s) {
         if (s == null) return "";
         return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");

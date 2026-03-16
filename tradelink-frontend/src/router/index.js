@@ -54,6 +54,7 @@ const routes = [
       { path: 'carteiras', name: 'CarteirasAdminMax', component: () => import('../views/admin-max/CarteirasAdminView.vue') },
       { path: 'faq', name: 'FaqAdmin', component: () => import('../views/admin-max/FaqAdminView.vue') },
       { path: 'chat', name: 'ChatAdmin', component: () => import('../views/admin-max/ChatAdminView.vue') },
+      { path: 'chamados', name: 'ChamadosAdmin', component: () => import('../views/admin-max/ChamadosAdminView.vue') },
       { path: 'emails-apresentacao', name: 'EmailsApresentacao', component: () => import('../views/admin-max/EmailsApresentacaoView.vue') },
       { path: 'configuracoes', name: 'ConfiguracoesAdminMax', component: ConfiguracoesNotificacaoView }
     ]
@@ -80,6 +81,7 @@ const routes = [
       { path: 'watchlist', name: 'WatchlistConsultor', component: () => import('../views/common/WatchlistView.vue') },
       { path: 'atividades', name: 'AtividadesConsultor', component: () => import('../views/common/AtividadeTimelineView.vue') },
       { path: 'faturas', name: 'FaturasConsultor', component: () => import('../views/consultor/FaturasView.vue') },
+      { path: 'chamados', name: 'ChamadosConsultor', component: () => import('../views/consultor/ChamadosConsultorView.vue') },
       { path: 'faq', name: 'FaqConsultor', component: () => import('../views/common/FaqInternaView.vue') },
       { path: 'configuracoes', name: 'ConfiguracoesConsultor', component: ConfiguracoesNotificacaoView }
     ]
@@ -105,6 +107,7 @@ const routes = [
       { path: 'watchlist', name: 'WatchlistCliente', component: () => import('../views/common/WatchlistView.vue') },
       { path: 'atividades', name: 'AtividadesCliente', component: () => import('../views/common/AtividadeTimelineView.vue') },
       { path: 'faturas', name: 'FaturasCliente', component: () => import('../views/cliente/FaturasClienteView.vue') },
+      { path: 'chamados', name: 'ChamadosCliente', component: () => import('../views/cliente/ChamadosClienteView.vue') },
       { path: 'faq', name: 'FaqCliente', component: () => import('../views/common/FaqInternaView.vue') },
       { path: 'configuracoes', name: 'ConfiguracoesCliente', component: ConfiguracoesNotificacaoView }
     ]

@@ -62,6 +62,7 @@ const menuItems = computed(() => {
         { to: '/admin-max/financeiro', label: 'Financeiro', icon: '💲' },
         { to: '/admin-max/faq', label: 'FAQ', icon: '❓' },
         { to: '/admin-max/chat', label: 'Chat Suporte', icon: '💬' },
+        { to: '/admin-max/chamados', label: 'Chamados', icon: '🎫' },
         { to: '/admin-max/emails-apresentacao', label: 'Emails', icon: '📧' },
         { to: '/admin-max/configuracoes', label: 'Configurações', icon: '⚙️' }
       ]
@@ -82,6 +83,7 @@ const menuItems = computed(() => {
         { to: '/consultor/faturas', label: 'Faturas', icon: '🧾' },
         { to: '/consultor/relatorios', label: 'Histórico e Relatórios', icon: '📈' },
         { to: '/consultor/atividades', label: 'Atividades', icon: '🕐' },
+        { to: '/consultor/chamados', label: 'Chamados', icon: '🎫' },
         { to: '/consultor/faq', label: 'FAQ', icon: '❓' },
         { label: 'Suporte', icon: '💬', action: 'openChat' },
         { to: '/consultor/configuracoes', label: 'Configurações', icon: '⚙️' }
@@ -103,6 +105,7 @@ const menuItems = computed(() => {
           { to: '/cliente/faturas', label: 'Faturas', icon: '🧾' },
           { to: '/cliente/relatorios', label: 'Relatórios', icon: '📈' },
           { to: '/cliente/atividades', label: 'Atividades', icon: '🕐' },
+          { to: '/cliente/chamados', label: 'Chamados', icon: '🎫' },
           { to: '/cliente/faq', label: 'FAQ', icon: '❓' },
           { label: 'Suporte', icon: '💬', action: 'openChat' },
           { to: '/cliente/configuracoes', label: 'Configurações', icon: '⚙️' }
@@ -122,6 +125,7 @@ const menuItems = computed(() => {
         { to: '/cliente/alertas-preco', label: 'Alertas de Preço', icon: '🔔' },
         { to: '/cliente/relatorios', label: 'Relatórios', icon: '📈' },
         { to: '/cliente/atividades', label: 'Atividades', icon: '🕐' },
+        { to: '/cliente/chamados', label: 'Chamados', icon: '🎫' },
         { to: '/cliente/faq', label: 'FAQ', icon: '❓' },
         { label: 'Suporte', icon: '💬', action: 'openChat' },
         { to: '/cliente/configuracoes', label: 'Configurações', icon: '⚙️' }
