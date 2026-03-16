@@ -66,7 +66,7 @@ function saveConsent(level) {
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 9998;
+  z-index: 9990;
   background: #fff;
   border-top: 1px solid #e5e7eb;
   box-shadow: 0 -4px 24px -4px rgba(0, 0, 0, 0.12);
