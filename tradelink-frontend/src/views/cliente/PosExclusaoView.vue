@@ -107,31 +107,55 @@
                 {{ downloadLoading ? 'Gerando PDF...' : 'Baixar Gratuitamente' }}
               </button>
             </template>
-            <!-- Ja baixou: pago -->
+            <!-- Ja baixou: pode baixar novamente (pago ou gratis se pagou agora) -->
             <template v-else>
-              <p class="text-slate-400 text-xs mb-2">
-                Relatorio ja baixado. Baixe novamente por:
-              </p>
-              <div class="flex items-baseline gap-1 mb-3">
-                <span class="text-2xl font-bold text-white">R$ 19,90</span>
-                <span class="text-slate-400 text-sm">(avulso)</span>
-              </div>
-              <button
-                @click="iniciarCheckoutRelatorio"
-                :disabled="checkoutRelatorioLoading"
-                class="w-full bg-slate-600 text-white py-3 px-4 rounded-xl font-medium hover:bg-slate-700 disabled:opacity-50 transition-colors text-sm"
-              >
-                {{ checkoutRelatorioLoading ? 'Processando...' : 'Pagar e Baixar Novamente' }}
-              </button>
+              <!-- Se acabou de pagar o relatório, oferece download direto -->
+              <template v-if="pagamentoRelatorioOk">
+                <div class="flex items-baseline gap-1 mb-3">
+                  <span class="text-2xl font-bold text-emerald-400">Pago</span>
+                  <span class="text-slate-400 text-sm">&#10003;</span>
+                </div>
+                <button
+                  @click="baixarRelatorioPagoManual"
+                  :disabled="downloadLoading"
+                  class="w-full bg-emerald-600 text-white py-3 px-4 rounded-xl font-medium hover:bg-emerald-700 disabled:opacity-50 transition-colors text-sm"
+                >
+                  {{ downloadLoading ? 'Gerando PDF...' : 'Baixar Relatorio (PDF)' }}
+                </button>
+              </template>
+              <!-- Senao, mostra opção de pagar -->
+              <template v-else>
+                <p class="text-slate-400 text-xs mb-2">
+                  Relatorio ja baixado. Baixe novamente por:
+                </p>
+                <div class="flex items-baseline gap-1 mb-3">
+                  <span class="text-2xl font-bold text-white">R$ {{ status.precoRelatorio ? Number(status.precoRelatorio).toFixed(2).replace('.', ',') : '19,90' }}</span>
+                  <span class="text-slate-400 text-sm">(avulso)</span>
+                </div>
+                <button
+                  @click="iniciarCheckoutRelatorio"
+                  :disabled="checkoutRelatorioLoading"
+                  class="w-full bg-slate-600 text-white py-3 px-4 rounded-xl font-medium hover:bg-slate-700 disabled:opacity-50 transition-colors text-sm"
+                >
+                  {{ checkoutRelatorioLoading ? 'Processando...' : 'Pagar e Baixar Novamente' }}
+                </button>
+              </template>
             </template>
           </div>
         </div>
       </div>
 
-      <!-- Pagamento OK (query param) -->
-      <div v-if="pagamentoOk" class="bg-green-500/10 border border-green-500/20 rounded-xl p-4 mb-6 text-center">
+      <!-- Pagamento OK: relatorio -->
+      <div v-if="pagamentoRelatorioOk" class="bg-green-500/10 border border-green-500/20 rounded-xl p-4 mb-6 text-center">
         <p class="text-green-300 text-sm font-medium">
-          &#10003; Pagamento confirmado! Redirecionando...
+          &#10003; Pagamento confirmado! {{ downloadingPago ? 'Gerando seu PDF...' : 'Download concluido!' }}
+        </p>
+      </div>
+
+      <!-- Pagamento OK: auto-gestao -->
+      <div v-if="pagamentoAutoGestaoOk" class="bg-green-500/10 border border-green-500/20 rounded-xl p-4 mb-6 text-center">
+        <p class="text-green-300 text-sm font-medium">
+          &#10003; Pagamento confirmado! Ativando sua auto-gestao...
         </p>
       </div>
 
@@ -169,7 +193,9 @@ const erro = ref('')
 const checkoutLoading = ref(false)
 const checkoutRelatorioLoading = ref(false)
 const downloadLoading = ref(false)
-const pagamentoOk = ref(false)
+const pagamentoRelatorioOk = ref(false)
+const pagamentoAutoGestaoOk = ref(false)
+const downloadingPago = ref(false)
 
 async function loadStatus() {
   loading.value = true
@@ -193,25 +219,39 @@ async function loadStatus() {
 async function confirmarPagamentoSeNecessario() {
   const sessionId = route.query.session_id
   const piId = route.query.payment_intent
+  const tipo = route.query.tipo // 'relatorio' ou undefined (auto-gestao)
+
+  // Confirma pagamento no backend (fallback para quando webhook não chega)
   if (sessionId || piId) {
     try {
-      // Tenta confirmar pagamento (fallback para quando webhook não chega)
       await autoGestaoApi.confirmarPagamento(piId || sessionId)
-      pagamentoOk.value = true
-      // Recarregar status após confirmação
-      setTimeout(async () => {
-        await loadStatus()
-      }, 1500)
     } catch (e) {
       // ignora — webhook pode já ter processado
-      pagamentoOk.value = true
-      setTimeout(async () => {
-        await loadStatus()
-      }, 1500)
     }
+  }
+
+  if (tipo === 'relatorio') {
+    // Pagamento de relatório: fazer download automático do PDF
+    pagamentoRelatorioOk.value = true
+    downloadingPago.value = true
+    try {
+      const res = await autoGestaoApi.baixarRelatorioPago()
+      const blob = new Blob([res.data], { type: 'application/pdf' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'relatorio-completo-tradelink.pdf'
+      a.click()
+      window.URL.revokeObjectURL(url)
+    } catch (e) {
+      erro.value = 'Pagamento confirmado, mas erro ao gerar PDF. Use o botao abaixo para baixar.'
+    } finally {
+      downloadingPago.value = false
+    }
+    await loadStatus()
   } else {
-    // Veio com pagamento=ok mas sem IDs — apenas recarrega status
-    pagamentoOk.value = true
+    // Pagamento de auto-gestão: recarrega status (redireciona automaticamente se ativa)
+    pagamentoAutoGestaoOk.value = true
     setTimeout(async () => {
       await loadStatus()
     }, 1500)
@@ -232,6 +272,25 @@ async function baixarRelatorioGratis() {
     window.URL.revokeObjectURL(url)
     // Atualizar status local
     if (status.value) status.value.relatorioGratisBaixado = true
+  } catch (e) {
+    erro.value = e.response?.data?.erro || 'Erro ao gerar relatorio.'
+  } finally {
+    downloadLoading.value = false
+  }
+}
+
+async function baixarRelatorioPagoManual() {
+  downloadLoading.value = true
+  erro.value = ''
+  try {
+    const res = await autoGestaoApi.baixarRelatorioPago()
+    const blob = new Blob([res.data], { type: 'application/pdf' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'relatorio-completo-tradelink.pdf'
+    a.click()
+    window.URL.revokeObjectURL(url)
   } catch (e) {
     erro.value = e.response?.data?.erro || 'Erro ao gerar relatorio.'
   } finally {
