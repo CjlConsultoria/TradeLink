@@ -32,6 +32,24 @@ public class AdminMaxDashboardResponse {
     private long faturasPendentes;
     private long faturasVencidas;
 
+    // --- Receita detalhada ---
+    /** Receita de faturas de empresas (assinaturas de planos). */
+    private BigDecimal receitaEmpresas;
+    /** Receita de auto-gestão (clientes individuais mensalidade). */
+    private BigDecimal receitaAutoGestao;
+    /** Receita de relatórios avulsos. */
+    private BigDecimal receitaRelatorios;
+    /** Receita de empresas no mês atual. */
+    private BigDecimal receitaEmpresasMes;
+    /** Receita de auto-gestão no mês atual. */
+    private BigDecimal receitaAutoGestaoMes;
+    /** Receita de relatórios avulsos no mês atual. */
+    private BigDecimal receitaRelatoriosMes;
+    /** Total de clientes com auto-gestão ativa. */
+    private long clientesAutoGestaoAtivos;
+    /** Receita mensal detalhada (últimos 6 meses). */
+    private List<ReceitaMensal> receitaMensal;
+
     // --- Crescimento mensal (últimos 6 meses) ---
     private List<CrescimentoMensal> crescimentoMensal;
 
@@ -55,6 +73,17 @@ public class AdminMaxDashboardResponse {
         private String mes; // "2026-01", "2026-02", etc.
         private long empresas;
         private long usuarios;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class ReceitaMensal {
+        private String mes; // "2026-01", "2026-02", etc.
+        private BigDecimal empresas;
+        private BigDecimal autoGestao;
+        private BigDecimal relatorios;
     }
 
     @Data

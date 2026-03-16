@@ -42,6 +42,48 @@
         </router-link>
       </div>
 
+      <!-- Receita Detalhada -->
+      <div class="card p-6 mb-6">
+        <h3 class="section-title mb-4">Receita Detalhada</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+          <!-- Empresas -->
+          <div class="rounded-xl border border-indigo-200 bg-indigo-50 p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="w-3 h-3 rounded-full bg-indigo-500"></span>
+              <p class="text-sm font-medium text-indigo-900">Assinaturas Empresas</p>
+            </div>
+            <p class="text-2xl font-bold text-indigo-700">{{ formatCurrency(stats.receitaEmpresas) }}</p>
+            <p class="text-xs text-indigo-500 mt-1">Este mes: {{ formatCurrency(stats.receitaEmpresasMes) }}</p>
+          </div>
+          <!-- Auto-Gestao -->
+          <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+              <p class="text-sm font-medium text-emerald-900">Auto-Gestao</p>
+            </div>
+            <p class="text-2xl font-bold text-emerald-700">{{ formatCurrency(stats.receitaAutoGestao) }}</p>
+            <div class="flex items-center justify-between mt-1">
+              <p class="text-xs text-emerald-500">Este mes: {{ formatCurrency(stats.receitaAutoGestaoMes) }}</p>
+              <span class="text-xs px-1.5 py-0.5 rounded-full bg-emerald-200 text-emerald-800 font-medium">{{ stats.clientesAutoGestaoAtivos || 0 }} ativos</span>
+            </div>
+          </div>
+          <!-- Relatorios Avulsos -->
+          <div class="rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+              <p class="text-sm font-medium text-amber-900">Relatorios Avulsos</p>
+            </div>
+            <p class="text-2xl font-bold text-amber-700">{{ formatCurrency(stats.receitaRelatorios) }}</p>
+            <p class="text-xs text-amber-500 mt-1">Este mes: {{ formatCurrency(stats.receitaRelatoriosMes) }}</p>
+          </div>
+        </div>
+        <!-- Grafico receita mensal -->
+        <div class="chart-container">
+          <Bar v-if="revenueChartData" :data="revenueChartData" :options="revenueChartOptions" />
+          <p v-else class="text-sm text-gray-400 text-center py-10">Sem dados de receita</p>
+        </div>
+      </div>
+
       <!-- Graficos -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <!-- Crescimento mensal -->
@@ -202,6 +244,14 @@ const stats = ref({
   empresasPorPlano: [],
   receitaTotal: 0,
   receitaMesAtual: 0,
+  receitaEmpresas: 0,
+  receitaAutoGestao: 0,
+  receitaRelatorios: 0,
+  receitaEmpresasMes: 0,
+  receitaAutoGestaoMes: 0,
+  receitaRelatoriosMes: 0,
+  clientesAutoGestaoAtivos: 0,
+  receitaMensal: [],
   faturasPendentes: 0,
   faturasVencidas: 0,
   crescimentoMensal: [],
@@ -367,6 +417,87 @@ const pieChartOptions = {
           return `${ctx.label}: ${ctx.raw} (${pct}%)`
         }
       }
+    }
+  }
+}
+
+// --- Revenue chart ---
+const revenueChartData = computed(() => {
+  const data = stats.value.receitaMensal
+  if (!data || data.length === 0) return null
+  const hasData = data.some(d => Number(d.empresas) > 0 || Number(d.autoGestao) > 0 || Number(d.relatorios) > 0)
+  if (!hasData) return null
+  return {
+    labels: data.map(d => formatMesLabel(d.mes)),
+    datasets: [
+      {
+        label: 'Empresas',
+        data: data.map(d => Number(d.empresas) || 0),
+        backgroundColor: 'rgba(99, 102, 241, 0.8)',
+        borderColor: 'rgb(99, 102, 241)',
+        borderWidth: 1,
+        borderRadius: 6,
+        barPercentage: 0.7
+      },
+      {
+        label: 'Auto-Gestao',
+        data: data.map(d => Number(d.autoGestao) || 0),
+        backgroundColor: 'rgba(16, 185, 129, 0.8)',
+        borderColor: 'rgb(16, 185, 129)',
+        borderWidth: 1,
+        borderRadius: 6,
+        barPercentage: 0.7
+      },
+      {
+        label: 'Relatorios',
+        data: data.map(d => Number(d.relatorios) || 0),
+        backgroundColor: 'rgba(245, 158, 11, 0.8)',
+        borderColor: 'rgb(245, 158, 11)',
+        borderWidth: 1,
+        borderRadius: 6,
+        barPercentage: 0.7
+      }
+    ]
+  }
+})
+
+const revenueChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: 'bottom',
+      labels: { usePointStyle: true, pointStyle: 'circle', padding: 16, font: { size: 12 } }
+    },
+    tooltip: {
+      backgroundColor: 'rgba(15, 23, 42, 0.9)',
+      titleFont: { size: 13 },
+      bodyFont: { size: 12 },
+      padding: 10,
+      cornerRadius: 8,
+      callbacks: {
+        label(ctx) {
+          const val = Number(ctx.raw) || 0
+          return `${ctx.dataset.label}: ${val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`
+        }
+      }
+    }
+  },
+  scales: {
+    y: {
+      beginAtZero: true,
+      ticks: {
+        font: { size: 11 },
+        color: '#9ca3af',
+        callback(value) { return 'R$ ' + value.toLocaleString('pt-BR') }
+      },
+      grid: { color: 'rgba(0,0,0,0.04)' },
+      stacked: true
+    },
+    x: {
+      ticks: { font: { size: 11 }, color: '#9ca3af' },
+      grid: { display: false },
+      stacked: true
     }
   }
 }

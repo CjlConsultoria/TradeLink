@@ -66,23 +66,55 @@ public class AdminMaxDashboardService {
                 .sorted((a, b) -> Long.compare(b.getQuantidade(), a.getQuantidade()))
                 .collect(Collectors.toList());
 
-        // Receita
-        BigDecimal receitaTotal = todasFaturas.stream()
+        // Receita - classificação por tipo
+        List<Fatura> faturasPagas = todasFaturas.stream()
                 .filter(f -> f.getStatus() == StatusFatura.PAGA)
-                .map(Fatura::getValor)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .collect(Collectors.toList());
+
+        BigDecimal receitaTotal = faturasPagas.stream()
+                .map(Fatura::getValor).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Faturas de empresas (assinatura de planos)
+        List<Fatura> faturasEmpresa = faturasPagas.stream()
+                .filter(f -> f.getEmpresa() != null).collect(Collectors.toList());
+        // Faturas individuais (auto-gestão + relatórios)
+        List<Fatura> faturasIndividuais = faturasPagas.stream()
+                .filter(f -> f.getUser() != null && f.getEmpresa() == null).collect(Collectors.toList());
+        List<Fatura> faturasRelatorio = faturasIndividuais.stream()
+                .filter(f -> f.getDescricaoServico() != null && f.getDescricaoServico().toLowerCase().contains("relat"))
+                .collect(Collectors.toList());
+        List<Fatura> faturasAutoGestao = faturasIndividuais.stream()
+                .filter(f -> !faturasRelatorio.contains(f)).collect(Collectors.toList());
+
+        BigDecimal receitaEmpresas = faturasEmpresa.stream()
+                .map(Fatura::getValor).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal receitaAutoGestao = faturasAutoGestao.stream()
+                .map(Fatura::getValor).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal receitaRelatorios = faturasRelatorio.stream()
+                .map(Fatura::getValor).reduce(BigDecimal.ZERO, BigDecimal::add);
 
         YearMonth mesAtual = YearMonth.now();
         Instant inicioMes = mesAtual.atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
         Instant fimMes = mesAtual.plusMonths(1).atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
 
-        BigDecimal receitaMesAtual = todasFaturas.stream()
-                .filter(f -> f.getStatus() == StatusFatura.PAGA)
-                .filter(f -> f.getDataPagamento() != null
-                        && !f.getDataPagamento().isBefore(inicioMes)
-                        && f.getDataPagamento().isBefore(fimMes))
-                .map(Fatura::getValor)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        java.util.function.Predicate<Fatura> noMesAtual = f -> f.getDataPagamento() != null
+                && !f.getDataPagamento().isBefore(inicioMes) && f.getDataPagamento().isBefore(fimMes);
+
+        BigDecimal receitaMesAtual = faturasPagas.stream().filter(noMesAtual)
+                .map(Fatura::getValor).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal receitaEmpresasMes = faturasEmpresa.stream().filter(noMesAtual)
+                .map(Fatura::getValor).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal receitaAutoGestaoMes = faturasAutoGestao.stream().filter(noMesAtual)
+                .map(Fatura::getValor).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal receitaRelatoriosMes = faturasRelatorio.stream().filter(noMesAtual)
+                .map(Fatura::getValor).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Clientes com auto-gestão ativa
+        long clientesAutoGestaoAtivos = todosUsuarios.stream()
+                .filter(u -> Boolean.TRUE.equals(u.getAutoGestao())
+                        && u.getCurrentPeriodEnd() != null
+                        && u.getCurrentPeriodEnd().isAfter(Instant.now()))
+                .count();
 
         long faturasPendentes = todasFaturas.stream()
                 .filter(f -> f.getStatus() == StatusFatura.PENDENTE)
@@ -91,6 +123,9 @@ public class AdminMaxDashboardService {
         long faturasVencidas = todasFaturas.stream()
                 .filter(f -> f.getStatus() == StatusFatura.VENCIDA)
                 .count();
+
+        // Receita mensal detalhada (últimos 6 meses)
+        List<AdminMaxDashboardResponse.ReceitaMensal> receitaMensal = calcularReceitaMensal(faturasPagas);
 
         // Crescimento mensal (últimos 6 meses)
         List<CrescimentoMensal> crescimentoMensal = calcularCrescimentoMensal(todasEmpresas, todosUsuarios);
@@ -128,11 +163,51 @@ public class AdminMaxDashboardService {
                 .empresasPorPlano(empresasPorPlano)
                 .receitaTotal(receitaTotal)
                 .receitaMesAtual(receitaMesAtual)
+                .receitaEmpresas(receitaEmpresas)
+                .receitaAutoGestao(receitaAutoGestao)
+                .receitaRelatorios(receitaRelatorios)
+                .receitaEmpresasMes(receitaEmpresasMes)
+                .receitaAutoGestaoMes(receitaAutoGestaoMes)
+                .receitaRelatoriosMes(receitaRelatoriosMes)
+                .clientesAutoGestaoAtivos(clientesAutoGestaoAtivos)
+                .receitaMensal(receitaMensal)
                 .faturasPendentes(faturasPendentes)
                 .faturasVencidas(faturasVencidas)
                 .crescimentoMensal(crescimentoMensal)
                 .empresasRecentes(empresasRecentes)
                 .build();
+    }
+
+    private List<AdminMaxDashboardResponse.ReceitaMensal> calcularReceitaMensal(List<Fatura> faturasPagas) {
+        YearMonth mesAtual = YearMonth.now();
+        ZoneId zone = ZoneId.systemDefault();
+        List<AdminMaxDashboardResponse.ReceitaMensal> resultado = new ArrayList<>();
+
+        for (int i = 5; i >= 0; i--) {
+            YearMonth mes = mesAtual.minusMonths(i);
+            String mesStr = mes.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+            Instant inicio = mes.atDay(1).atStartOfDay(zone).toInstant();
+            Instant fim = mes.plusMonths(1).atDay(1).atStartOfDay(zone).toInstant();
+
+            java.util.function.Predicate<Fatura> noMes = f -> f.getDataPagamento() != null
+                    && !f.getDataPagamento().isBefore(inicio) && f.getDataPagamento().isBefore(fim);
+
+            BigDecimal emp = faturasPagas.stream().filter(noMes)
+                    .filter(f -> f.getEmpresa() != null)
+                    .map(Fatura::getValor).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal rel = faturasPagas.stream().filter(noMes)
+                    .filter(f -> f.getUser() != null && f.getEmpresa() == null
+                            && f.getDescricaoServico() != null && f.getDescricaoServico().toLowerCase().contains("relat"))
+                    .map(Fatura::getValor).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal ag = faturasPagas.stream().filter(noMes)
+                    .filter(f -> f.getUser() != null && f.getEmpresa() == null
+                            && (f.getDescricaoServico() == null || !f.getDescricaoServico().toLowerCase().contains("relat")))
+                    .map(Fatura::getValor).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            resultado.add(AdminMaxDashboardResponse.ReceitaMensal.builder()
+                    .mes(mesStr).empresas(emp).autoGestao(ag).relatorios(rel).build());
+        }
+        return resultado;
     }
 
     private List<CrescimentoMensal> calcularCrescimentoMensal(List<Empresa> empresas, List<User> usuarios) {
