@@ -35,7 +35,7 @@ O TradeLink centraliza toda a sua operação em um único lugar:
 COMO COMECAR (3 PASSOS)
 
 1. Cadastre-se
-Acesse: https://tradelink-grun.onrender.com/cadastro
+Acesse: https://tradelinkinvest.com.br/cadastro
 Selecione o perfil "Consultor / Assessor", preencha seus dados e crie uma senha.
 Seu acesso gratuito de 5 dias começa imediatamente.
 
@@ -85,7 +85,7 @@ POR QUE O TRADELINK?
 
 Ficou com alguma dúvida? Basta responder este e-mail ou usar o chat de suporte dentro do sistema.
 
-Acesse agora: https://tradelink-grun.onrender.com/cadastro
+Acesse agora: https://tradelinkinvest.com.br/cadastro
 
 Atenciosamente,
 Equipe TradeLink
