@@ -156,7 +156,9 @@
       </div>
 
       <!-- Cotações depois -->
-      <CotacoesDashboardSection titulo="Cotações" />
+      <div data-onboarding="cotacoes">
+        <CotacoesDashboardSection titulo="Cotações" />
+      </div>
 
       <!-- Modal Registrar operação -->
       <Teleport to="body">
@@ -235,24 +237,54 @@ import operacaoApi from '../../api/operacaoApi'
 
 const toast = useToast()
 
-const onboarding = useOnboarding('cliente-dashboard', [
+const onboarding = useOnboarding('cliente-dashboard-v2', [
   {
     target: '[data-onboarding="cards"]',
-    title: 'Visao geral',
-    message: 'Aqui voce ve um resumo rapido: total de carteiras, recomendacoes pendentes, resolvidas e cotacoes recentes.',
+    title: 'Bem-vindo ao TradeLink!',
+    message: 'Este e o seu painel principal. Aqui voce acompanha de forma rapida o total de carteiras, recomendacoes pendentes, resolvidas e cotacoes recentes. Clique em qualquer card para ir direto a secao.',
     position: 'bottom'
   },
   {
     target: '[data-onboarding="portfolio"]',
     title: 'Seu Portfolio',
-    message: 'Acompanhe a composicao do seu portfolio com a barra de alocacao e veja quanto cada ativo representa.',
+    message: 'Acompanhe a composicao do seu portfolio com a barra de alocacao colorida. Cada cor representa um ativo e seu percentual. Clique em "Ver detalhes" para gerenciar seus ativos.',
     position: 'bottom'
   },
   {
+    target: '[data-sidebar-link="/cliente/portfolio"]',
+    title: 'Adicionar Ativos ao Portfolio',
+    message: 'No menu "Meu Portfolio" voce pode adicionar, editar e remover ativos do seu portfolio. Registre suas posicoes para acompanhar a evolucao e ver a alocacao atualizada.',
+    position: 'right'
+  },
+  {
     target: '[data-onboarding="recomendacoes"]',
-    title: 'Recomendacoes',
-    message: 'Aqui ficam as recomendacoes do seu consultor. Voce pode registrar operacoes ou marcar como resolvida.',
+    title: 'Recomendacoes do Consultor',
+    message: 'Aqui ficam as recomendacoes do seu consultor. Use as abas para filtrar por pendentes ou resolvidas. Voce pode registrar operacoes clicando no botao "Registrar operacao" ou marcar como resolvida.',
     position: 'top'
+  },
+  {
+    target: '[data-onboarding="cotacoes"]',
+    title: 'Cotacoes em Tempo Real',
+    message: 'Acompanhe as cotacoes das principais moedas e criptomoedas atualizadas automaticamente. Os valores sao atualizados periodicamente para voce tomar decisoes informadas.',
+    position: 'top'
+  },
+  {
+    target: '[data-sidebar-link="/cliente/cotacoes"]',
+    title: 'Pagina de Cotacoes',
+    message: 'No menu "Cotacoes" voce acessa a lista completa de cotacoes com mais detalhes, historico e graficos. Use tambem o Comparador e o Simulador para analises avancadas.',
+    position: 'right'
+  },
+  {
+    target: '[data-sidebar-link="/cliente/carteiras"]',
+    title: 'Suas Carteiras',
+    message: 'Em "Carteiras" voce visualiza todas as carteiras atribuidas pelo seu consultor, com recomendacoes e alocacoes especificas para cada uma.',
+    position: 'right'
+  },
+  {
+    target: '[data-sidebar-link="/cliente/configuracoes"]',
+    title: 'Configuracoes e Suporte',
+    message: 'Em "Configuracoes" voce altera seus dados pessoais e preferencias. Se precisar de ajuda, use o botao de Suporte no menu ou o chat flutuante no canto da tela. Bons investimentos!',
+    position: 'right'
   }
 ])
 

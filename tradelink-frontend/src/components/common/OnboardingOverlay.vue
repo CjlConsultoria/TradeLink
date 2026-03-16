@@ -75,24 +75,37 @@ const props = defineProps({
 
 const emit = defineEmits(['next', 'prev', 'skip'])
 
-const TOOLTIP_WIDTH = 340
 const TOOLTIP_GAP = 16
 
 const spotRect = ref({ x: 0, y: 0, w: 0, h: 0 })
 
-const tooltipPosition = computed(() => props.step?.position || 'bottom')
+const isMobile = computed(() => window.innerWidth < 640)
+
+const tooltipWidth = computed(() => isMobile.value ? Math.min(300, window.innerWidth - 24) : 340)
+
+const tooltipPosition = computed(() => {
+  const preferred = props.step?.position || 'bottom'
+  // On mobile, force bottom unless it's a sidebar target (which needs right)
+  if (isMobile.value) {
+    const isSidebarTarget = props.step?.target?.includes('data-sidebar-link')
+    if (isSidebarTarget) return 'bottom'
+    if (preferred === 'left' || preferred === 'right') return 'bottom'
+  }
+  return preferred
+})
 
 const tooltipStyle = computed(() => {
   const r = spotRect.value
   const pos = tooltipPosition.value
-  const style = { width: TOOLTIP_WIDTH + 'px' }
+  const tw = tooltipWidth.value
+  const style = { width: tw + 'px' }
 
   if (pos === 'bottom') {
     style.top = (r.y + r.h + TOOLTIP_GAP) + 'px'
-    style.left = Math.max(12, Math.min(r.x + r.w / 2 - TOOLTIP_WIDTH / 2, window.innerWidth - TOOLTIP_WIDTH - 12)) + 'px'
+    style.left = Math.max(12, Math.min(r.x + r.w / 2 - tw / 2, window.innerWidth - tw - 12)) + 'px'
   } else if (pos === 'top') {
     style.top = (r.y - TOOLTIP_GAP) + 'px'
-    style.left = Math.max(12, Math.min(r.x + r.w / 2 - TOOLTIP_WIDTH / 2, window.innerWidth - TOOLTIP_WIDTH - 12)) + 'px'
+    style.left = Math.max(12, Math.min(r.x + r.w / 2 - tw / 2, window.innerWidth - tw - 12)) + 'px'
     style.transform = 'translateY(-100%)'
   } else if (pos === 'right') {
     style.top = (r.y + r.h / 2) + 'px'
@@ -100,7 +113,7 @@ const tooltipStyle = computed(() => {
     style.transform = 'translateY(-50%)'
   } else if (pos === 'left') {
     style.top = (r.y + r.h / 2) + 'px'
-    style.left = (r.x - TOOLTIP_GAP - TOOLTIP_WIDTH) + 'px'
+    style.left = (r.x - TOOLTIP_GAP - tw) + 'px'
     style.transform = 'translateY(-50%)'
   }
 
@@ -112,6 +125,25 @@ function updateSpot() {
     spotRect.value = { x: window.innerWidth / 2 - 50, y: window.innerHeight / 2 - 25, w: 100, h: 50 }
     return
   }
+
+  // If targeting sidebar link on mobile, open sidebar first
+  const isSidebarTarget = props.step.target.includes('data-sidebar-link')
+  if (isSidebarTarget && window.innerWidth < 1024) {
+    const sidebar = document.querySelector('.sidebar')
+    if (sidebar && !sidebar.classList.contains('sidebar--open')) {
+      sidebar.classList.add('sidebar--open')
+      const backdrop = document.querySelector('.sidebar__backdrop')
+      if (backdrop) backdrop.style.display = 'block'
+    }
+    // Wait for sidebar animation to complete
+    setTimeout(() => positionSpot(), 300)
+    return
+  }
+
+  positionSpot()
+}
+
+function positionSpot() {
   const el = document.querySelector(props.step.target)
   if (!el) {
     spotRect.value = { x: window.innerWidth / 2 - 50, y: window.innerHeight / 2 - 25, w: 100, h: 50 }
@@ -128,15 +160,29 @@ function updateSpot() {
   el.scrollIntoView({ behavior: 'smooth', block: 'center' })
 }
 
+function closeSidebarIfOpen() {
+  if (window.innerWidth < 1024) {
+    const sidebar = document.querySelector('.sidebar')
+    if (sidebar && sidebar.classList.contains('sidebar--open')) {
+      sidebar.classList.remove('sidebar--open')
+    }
+  }
+}
+
 function next() { emit('next') }
 function prev() { emit('prev') }
-function skip() { emit('skip') }
+function skip() { closeSidebarIfOpen(); emit('skip') }
 
 // Re-calculate when step changes
 watch(() => [props.active, props.currentStep], async () => {
   if (props.active && props.step) {
+    // Close sidebar if new step doesn't target sidebar
+    const isSidebarTarget = props.step.target?.includes('data-sidebar-link')
+    if (!isSidebarTarget) closeSidebarIfOpen()
     await nextTick()
     setTimeout(updateSpot, 100)
+  } else if (!props.active) {
+    closeSidebarIfOpen()
   }
 }, { immediate: true })
 
@@ -266,6 +312,41 @@ onUnmounted(() => window.removeEventListener('resize', onResize))
 }
 .onboarding-btn--ghost:hover {
   background: #eef2ff;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 639px) {
+  .onboarding-tooltip {
+    max-width: calc(100vw - 24px);
+    padding: 1rem;
+  }
+
+  .onboarding-tooltip__title {
+    font-size: 0.9375rem;
+  }
+
+  .onboarding-tooltip__message {
+    font-size: 0.8125rem;
+  }
+
+  .onboarding-tooltip__footer {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+
+  .onboarding-tooltip__counter {
+    text-align: center;
+  }
+
+  .onboarding-tooltip__actions {
+    justify-content: center;
+  }
+
+  .onboarding-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+  }
 }
 
 /* Fade transition */

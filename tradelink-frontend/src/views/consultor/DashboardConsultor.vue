@@ -88,30 +88,54 @@ import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 
 const cotacaoStore = useCotacaoStore()
 
-const onboarding = useOnboarding('consultor-dashboard', [
+const onboarding = useOnboarding('consultor-dashboard-v2', [
   {
     target: '[data-onboarding="cards"]',
-    title: 'Metricas principais',
-    message: 'Veja rapidamente o total de carteiras, clientes e cotacoes disponiveis na plataforma.',
-    position: 'bottom'
-  },
-  {
-    target: '[data-onboarding="cotacoes"]',
-    title: 'Cotacoes em tempo real',
-    message: 'Acompanhe as cotacoes atualizadas automaticamente. Use o botao de atualizar para forcar uma nova consulta.',
+    title: 'Bem-vindo ao TradeLink!',
+    message: 'Este e o seu painel de consultor. Aqui voce ve um resumo rapido: total de carteiras gerenciadas, clientes vinculados e cotacoes disponiveis. Clique em qualquer card para acessar a secao.',
     position: 'bottom'
   },
   {
     target: '[data-onboarding="saude"]',
     title: 'Saude dos Portfolios',
-    message: 'Monitore a saude de cada cliente. Vermelho indica portfolios que precisam de atencao urgente.',
+    message: 'Monitore a saude dos portfolios dos seus clientes. Verde indica que esta balanceado, amarelo precisa de atencao e vermelho esta desbalanceado. Use o "Painel de Rebalanceamento" para acoes rapidas.',
     position: 'top'
   },
   {
     target: '[data-onboarding="carteiras"]',
     title: 'Suas Carteiras',
-    message: 'Gerencie todas as suas carteiras aqui. Clique em uma carteira para ver detalhes e criar recomendacoes.',
+    message: 'Aqui ficam todas as suas carteiras. Clique em uma carteira para ver os detalhes, clientes vinculados e recomendacoes ativas. Use o filtro para encontrar rapidamente.',
     position: 'top'
+  },
+  {
+    target: '[data-sidebar-link="/consultor/carteiras"]',
+    title: 'Criar Nova Carteira',
+    message: 'Em "Carteiras" voce pode criar novas carteiras clicando no botao "Nova Carteira". Defina um nome e descricao, e depois vincule clientes e crie recomendacoes para cada uma.',
+    position: 'right'
+  },
+  {
+    target: '[data-sidebar-link="/consultor/kanban"]',
+    title: 'Kanban de Recomendacoes',
+    message: 'No "Kanban" voce gerencia todas as recomendacoes de forma visual. Arraste cards entre colunas (Ativas, Executadas, Canceladas) e use o botao de copiar para replicar recomendacoes em outras carteiras.',
+    position: 'right'
+  },
+  {
+    target: '[data-sidebar-link="/consultor/clientes"]',
+    title: 'Gerenciar Clientes',
+    message: 'Em "Clientes" voce convida novos clientes por email ou vincula clientes existentes. Acompanhe o status de cada um (Ativo, Pendente, Inativo) e gerencie seus acessos.',
+    position: 'right'
+  },
+  {
+    target: '[data-sidebar-link="/consultor/cotacoes"]',
+    title: 'Cotacoes e Ferramentas',
+    message: 'Acesse cotacoes em tempo real, Heat Map, Comparador e Simulador para analises aprofundadas. Use essas ferramentas para embasar suas recomendacoes aos clientes.',
+    position: 'right'
+  },
+  {
+    target: '[data-sidebar-link="/consultor/configuracoes"]',
+    title: 'Configuracoes e Suporte',
+    message: 'Em "Configuracoes" voce altera seus dados, personaliza a plataforma e gerencia seu plano. Use o Suporte para tirar duvidas. Bom trabalho!',
+    position: 'right'
   }
 ])
 

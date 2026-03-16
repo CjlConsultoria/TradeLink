@@ -14,6 +14,7 @@
           :to="item.to"
           class="sidebar__link"
           :class="{ 'sidebar__link--active': isActive(item.to) }"
+          :data-sidebar-link="item.to"
         >
           <span class="sidebar__icon" aria-hidden="true">{{ item.icon }}</span>
           <span>{{ item.label }}</span>
