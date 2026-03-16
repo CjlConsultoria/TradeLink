@@ -1,17 +1,20 @@
 import axios from 'axios'
 
-// API: em produção no Render o front está em tradelink-grun e o back em tradelink-1-ed48
+// API: em produção o front está em tradelinkinvest.com.br e o back em tradelink-1-ed48.onrender.com
 // No app mobile (Capacitor) sempre usa a API de produção.
+const PRODUCTION_API = 'https://tradelink-1-ed48.onrender.com/api'
+const PRODUCTION_HOSTS = ['tradelinkinvest.com.br', 'www.tradelinkinvest.com.br', 'tradelink-grun.onrender.com']
+
 function getBaseURL() {
   if (import.meta.env.VITE_API_URL) {
     return `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api`
   }
-  if (typeof window !== 'undefined' && window.location.hostname === 'tradelink-grun.onrender.com') {
-    return 'https://tradelink-1-ed48.onrender.com/api'
+  if (typeof window !== 'undefined' && PRODUCTION_HOSTS.includes(window.location.hostname)) {
+    return PRODUCTION_API
   }
   // App iOS/Android (Capacitor): usar API de produção
   if (typeof window !== 'undefined' && window.Capacitor?.isNativePlatform?.()) {
-    return 'https://tradelink-1-ed48.onrender.com/api'
+    return PRODUCTION_API
   }
   return '/api'
 }

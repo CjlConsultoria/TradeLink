@@ -17,7 +17,7 @@ import java.util.Map;
 public class EmailTemplateService {
 
     private static final String APP_NAME = "TradeLink";
-    private static final String APP_URL = "https://tradelink-grun.onrender.com";
+    private static final String APP_URL = "https://tradelinkinvest.com.br";
 
     /** Layout base responsivo (table-based para clientes de e-mail) — TEMA CLARO. */
     public String wrapInLayout(String title, String preheader, String bodyContent) {
