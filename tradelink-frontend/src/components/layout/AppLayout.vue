@@ -1,8 +1,8 @@
 <template>
   <div class="app-layout">
-    <AppSidebar :open="sidebarOpen" @close="sidebarOpen = false" />
-    <div class="app-layout__main">
-      <AppHeader @toggle-sidebar="sidebarOpen = !sidebarOpen" />
+    <AppSidebar :open="sidebarOpen" :collapsed="sidebarCollapsed" @close="sidebarOpen = false" />
+    <div class="app-layout__main" :class="{ 'app-layout__main--collapsed': sidebarCollapsed }">
+      <AppHeader @toggle-sidebar="sidebarOpen = !sidebarOpen" @toggle-collapse="toggleCollapse" :collapsed="sidebarCollapsed" />
       <main class="app-layout__content">
         <router-view />
       </main>
@@ -36,6 +36,7 @@ import recomendacaoApi from '../../api/recomendacaoApi'
 const toast = useToast()
 
 const sidebarOpen = ref(false)
+const sidebarCollapsed = ref(localStorage.getItem('tl-sidebar-collapsed') === 'true')
 const showRecomModal = ref(false)
 const fabCarteiras = ref([])
 const recomModalRef = ref(null)
@@ -45,6 +46,11 @@ const showChatButton = computed(() => {
   const role = useAuthStore().user?.role
   return role === 'Admin' || role === 'Cliente'
 })
+
+function toggleCollapse() {
+  sidebarCollapsed.value = !sidebarCollapsed.value
+  localStorage.setItem('tl-sidebar-collapsed', sidebarCollapsed.value)
+}
 
 useKeyboardShortcuts({ onNewRecommendation: () => { showRecomModal.value = true } })
 
@@ -70,10 +76,10 @@ async function onRecomSaved(payload) {
       observacao: payload.observacao
     })
     showRecomModal.value = false
-    toast.success('Recomendação criada com sucesso.')
+    toast.success('Recomendacao criada com sucesso.')
   } catch (e) {
     console.error(e)
-    toast.error(e.response?.data?.mensagem || 'Erro ao criar recomendação.')
+    toast.error(e.response?.data?.mensagem || 'Erro ao criar recomendacao.')
   }
 }
 
@@ -104,10 +110,14 @@ async function onCriarCarteira(payload) {
   flex-direction: column;
   min-width: 0;
   margin-left: 0;
+  transition: margin-left 0.25s ease;
 }
 @media (min-width: 1024px) {
   .app-layout__main {
     margin-left: 16rem;
+  }
+  .app-layout__main--collapsed {
+    margin-left: 4.5rem;
   }
 }
 

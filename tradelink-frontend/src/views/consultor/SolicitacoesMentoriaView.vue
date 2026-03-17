@@ -76,6 +76,14 @@
           <div v-else class="text-right shrink-0">
             <p v-if="s.precoFinal" class="font-bold text-sm" style="color: rgb(var(--tl-text));">R$ {{ formatPreco(s.precoFinal) }}/mes</p>
             <p v-if="s.mensagemConsultor" class="text-xs mt-1 italic" style="color: rgb(var(--tl-text-muted));">"{{ s.mensagemConsultor }}"</p>
+            <button
+              v-if="s.status === 'ACEITA'"
+              @click="confirmarManual(s.id)"
+              :disabled="respondendo"
+              class="mt-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
+            >
+              Confirmar Pagamento
+            </button>
           </div>
         </div>
       </div>
@@ -85,7 +93,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { listarSolicitacoesConsultor, responderSolicitacao } from '../../api/marketplaceApi'
+import { listarSolicitacoesConsultor, responderSolicitacao, confirmarPagamentoManual } from '../../api/marketplaceApi'
 import { useToast } from '../../composables/useToast'
 
 const toast = useToast()
@@ -121,6 +129,19 @@ async function responder(s, aceitar) {
     await carregar()
   } catch (e) {
     toast.error(e.response?.data?.message || 'Erro ao responder')
+  } finally {
+    respondendo.value = false
+  }
+}
+
+async function confirmarManual(solicitacaoId) {
+  respondendo.value = true
+  try {
+    await confirmarPagamentoManual(solicitacaoId)
+    toast.success('Pagamento confirmado! Cliente vinculado.')
+    await carregar()
+  } catch (e) {
+    toast.error(e.response?.data?.message || 'Erro ao confirmar pagamento')
   } finally {
     respondendo.value = false
   }

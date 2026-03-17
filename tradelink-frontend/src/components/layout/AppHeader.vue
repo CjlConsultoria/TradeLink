@@ -6,6 +6,12 @@
           <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
         </svg>
       </button>
+      <button type="button" @click="$emit('toggle-collapse')" class="app-header__collapse" :aria-label="collapsed ? 'Expandir menu' : 'Recolher menu'">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path v-if="collapsed" stroke-linecap="round" stroke-linejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7"/>
+          <path v-else stroke-linecap="round" stroke-linejoin="round" d="M11 19l-7-7 7-7M19 19l-7-7 7-7"/>
+        </svg>
+      </button>
       <div class="app-header__brand">
         <span class="app-header__logo">◈</span>
         <span class="app-header__title">TradeLink</span>
@@ -35,7 +41,8 @@ import { useTheme } from '../../composables/useTheme'
 
 const { toggle: themeToggle, isDark } = useTheme()
 
-defineEmits(['toggle-sidebar'])
+defineProps({ collapsed: Boolean })
+defineEmits(['toggle-sidebar', 'toggle-collapse'])
 const router = useRouter()
 const authStore = useAuthStore()
 const toast = useToast()
@@ -54,7 +61,7 @@ const roleBadge = computed(() => {
   return map[user.value?.role] || 'app-header__badge--default'
 })
 function handleLogout() {
-  toast.info('Até logo!')
+  toast.info('Ate logo!')
   authStore.logout()
   router.push('/login')
 }
@@ -101,6 +108,27 @@ function handleLogout() {
   .app-header__menu { display: none; }
 }
 .app-header__menu:hover {
+  color: rgb(var(--tl-primary));
+  background: rgb(var(--tl-primary-light));
+}
+
+.app-header__collapse {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  color: rgb(var(--tl-text-muted));
+  background: transparent;
+  border: none;
+  border-radius: var(--tl-radius-sm);
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+}
+@media (min-width: 1024px) {
+  .app-header__collapse { display: flex; }
+}
+.app-header__collapse:hover {
   color: rgb(var(--tl-primary));
   background: rgb(var(--tl-primary-light));
 }

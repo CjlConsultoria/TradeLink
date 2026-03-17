@@ -51,6 +51,10 @@ export function responderSolicitacao(id, data) {
   return api.put(`/consultor/marketplace/solicitacoes/${id}/responder`, data)
 }
 
+export function confirmarPagamentoManual(solicitacaoId) {
+  return api.post(`/consultor/marketplace/confirmar-pagamento/${solicitacaoId}`)
+}
+
 export function listarClientesMarketplace() {
   return api.get('/consultor/marketplace/clientes')
 }

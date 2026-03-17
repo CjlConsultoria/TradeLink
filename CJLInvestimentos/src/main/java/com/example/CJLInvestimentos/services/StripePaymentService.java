@@ -713,8 +713,8 @@ public class StripePaymentService {
     private String cancelUrlMarketplace;
 
     /**
-     * Cria Checkout Session para pagamento de mentoria do marketplace.
-     * Modo PAYMENT (pagamento único mensal, sem subscription Stripe na v1).
+     * Cria Checkout Session para assinatura mensal de mentoria do marketplace.
+     * Modo SUBSCRIPTION — cobra mensalmente via Stripe.
      */
     public Map<String, String> createCheckoutSessionMarketplace(User cliente,
             com.example.CJLInvestimentos.entities.SolicitacaoMentoria solicitacao) {
@@ -734,30 +734,31 @@ public class StripePaymentService {
                     .setCurrency("brl")
                     .setUnitAmount(amountCentavos)
                     .setProductData(productData)
+                    .setRecurring(SessionCreateParams.LineItem.PriceData.Recurring.builder()
+                            .setInterval(SessionCreateParams.LineItem.PriceData.Recurring.Interval.MONTH)
+                            .build())
                     .build();
             SessionCreateParams.LineItem lineItem = SessionCreateParams.LineItem.builder()
                     .setPriceData(priceData)
                     .setQuantity(1L)
                     .build();
-            SessionCreateParams.PaymentIntentData paymentIntentData = SessionCreateParams.PaymentIntentData.builder()
-                    .putMetadata("user_id", cliente.getId().toString())
-                    .putMetadata("tipo", "marketplace")
-                    .putMetadata("solicitacao_id", solicitacao.getId().toString())
-                    .build();
             String successWithSession = successUrlMarketplace
                     + (successUrlMarketplace.contains("?") ? "&" : "?")
                     + "session_id={CHECKOUT_SESSION_ID}&solicitacao_id=" + solicitacao.getId();
             SessionCreateParams.Builder paramsBuilder = SessionCreateParams.builder()
-                    .setMode(SessionCreateParams.Mode.PAYMENT)
+                    .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
                     .setSuccessUrl(successWithSession)
                     .setCancelUrl(cancelUrlMarketplace)
                     .putMetadata("user_id", cliente.getId().toString())
                     .putMetadata("tipo", "marketplace")
                     .putMetadata("solicitacao_id", solicitacao.getId().toString())
                     .addLineItem(lineItem)
-                    .setPaymentIntentData(paymentIntentData)
-                    .addPaymentMethodType(SessionCreateParams.PaymentMethodType.CARD)
-                    .addPaymentMethodType(SessionCreateParams.PaymentMethodType.BOLETO);
+                    .setSubscriptionData(SessionCreateParams.SubscriptionData.builder()
+                            .putMetadata("user_id", cliente.getId().toString())
+                            .putMetadata("tipo", "marketplace")
+                            .putMetadata("solicitacao_id", solicitacao.getId().toString())
+                            .build())
+                    .addPaymentMethodType(SessionCreateParams.PaymentMethodType.CARD);
             if (customerId != null) paramsBuilder.setCustomer(customerId);
             Session session = Session.create(paramsBuilder.build());
 
@@ -778,8 +779,15 @@ public class StripePaymentService {
         Session session = (Session) event.getDataObjectDeserializer().getObject().orElse(null);
         if (session == null) return;
 
+        // Verificar se é pagamento marketplace (subscription)
+        Map<String, String> sessionMeta = session.getMetadata();
+        if (sessionMeta != null && "marketplace".equals(sessionMeta.get("tipo"))) {
+            handleMarketplaceCheckoutCompleted(session, sessionMeta);
+            return;
+        }
+
         String empresaIdStr = session.getClientReferenceId();
-        if (empresaIdStr == null) empresaIdStr = session.getMetadata() != null ? session.getMetadata().get("empresa_id") : null;
+        if (empresaIdStr == null) empresaIdStr = sessionMeta != null ? sessionMeta.get("empresa_id") : null;
         if (empresaIdStr == null) {
             log.warn("checkout.session.completed sem empresa_id");
             return;
@@ -827,6 +835,26 @@ public class StripePaymentService {
         empresaRepository.save(empresa);
     }
 
+    /**
+     * Trata checkout.session.completed para assinaturas marketplace.
+     * Vincula cliente ao consultor e salva subscriptionId.
+     */
+    private void handleMarketplaceCheckoutCompleted(Session session, Map<String, String> meta) {
+        String solicitacaoIdStr = meta.get("solicitacao_id");
+        if (solicitacaoIdStr == null) {
+            log.warn("checkout.session.completed marketplace sem solicitacao_id");
+            return;
+        }
+        Long solicitacaoId = Long.parseLong(solicitacaoIdStr);
+        String subscriptionId = session.getSubscription();
+        try {
+            marketplaceService.processarPagamentoMarketplaceComSubscription(solicitacaoId, subscriptionId);
+            log.info("Marketplace subscription ativada via checkout: solicitacao={}, subscription={}", solicitacaoId, subscriptionId);
+        } catch (Exception e) {
+            log.error("Erro ao processar marketplace checkout completed: solicitacao={}", solicitacaoId, e);
+        }
+    }
+
     /** Extrai o ID do PaymentIntent da Session (Stripe SDK pode retornar String ou ExpandableField). */
     private String getPaymentIntentIdFromSession(Session session) {
         Object piRef = session.getPaymentIntent();
@@ -846,6 +874,7 @@ public class StripePaymentService {
         Subscription sub = (Subscription) event.getDataObjectDeserializer().getObject().orElse(null);
         if (sub == null) return;
 
+        // Verificar se e subscription de empresa (plano)
         empresaRepository.findByStripeSubscriptionId(sub.getId()).ifPresent(empresa -> {
             empresa.setCurrentPeriodEnd(sub.getCurrentPeriodEnd() != null ? Instant.ofEpochSecond(sub.getCurrentPeriodEnd()) : null);
             String status = sub.getStatus();
@@ -858,18 +887,38 @@ public class StripePaymentService {
             }
             empresaRepository.save(empresa);
         });
+
+        // Verificar se e subscription de marketplace (usuario)
+        userRepository.findByMarketplaceSubscriptionId(sub.getId()).ifPresent(user -> {
+            if (sub.getCurrentPeriodEnd() != null) {
+                user.setMarketplaceCurrentPeriodEnd(Instant.ofEpochSecond(sub.getCurrentPeriodEnd()));
+            }
+            userRepository.save(user);
+            log.info("Marketplace subscription atualizada para user {}", user.getId());
+        });
     }
 
     private void handleSubscriptionDeleted(Event event) {
         Subscription sub = (Subscription) event.getDataObjectDeserializer().getObject().orElse(null);
         if (sub == null) return;
 
+        // Verificar se e subscription de empresa (plano)
         empresaRepository.findByStripeSubscriptionId(sub.getId()).ifPresent(empresa -> {
             empresa.setSubscriptionStatus(SubscriptionStatus.CANCELLED);
             empresa.setStripeSubscriptionId(null);
             empresa.setCurrentPeriodEnd(null);
             empresaRepository.save(empresa);
             log.info("Assinatura cancelada para empresa {}", empresa.getId());
+        });
+
+        // Verificar se e subscription de marketplace (usuario)
+        userRepository.findByMarketplaceSubscriptionId(sub.getId()).ifPresent(user -> {
+            try {
+                marketplaceService.desvincularClientePorSubscriptionCancelada(user);
+                log.info("Cliente {} desvinculado por cancelamento de subscription marketplace", user.getId());
+            } catch (Exception e) {
+                log.error("Erro ao desvincular cliente {} por subscription cancelada", user.getId(), e);
+            }
         });
     }
 

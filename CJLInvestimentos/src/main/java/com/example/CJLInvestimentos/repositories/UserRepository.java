@@ -22,4 +22,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByTokenConvite(String tokenConvite);
     Optional<User> findByCpf(String cpf);
     Optional<User> findByTokenResetSenha(String tokenResetSenha);
+    Optional<User> findByMarketplaceSubscriptionId(String marketplaceSubscriptionId);
 }

@@ -702,6 +702,15 @@ public class ConsultorController {
         return ResponseEntity.ok(marketplaceService.responderSolicitacao(id, consultor, request));
     }
 
+    @PostMapping("/marketplace/confirmar-pagamento/{solicitacaoId}")
+    public ResponseEntity<?> confirmarPagamentoManual(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long solicitacaoId) {
+        User consultor = getUser(userDetails);
+        marketplaceService.confirmarPagamentoManual(solicitacaoId, consultor);
+        return ResponseEntity.ok(Map.of("message", "Pagamento confirmado manualmente"));
+    }
+
     @GetMapping("/marketplace/clientes")
     public ResponseEntity<?> listarClientesMarketplace(@AuthenticationPrincipal UserDetails userDetails) {
         User consultor = getUser(userDetails);

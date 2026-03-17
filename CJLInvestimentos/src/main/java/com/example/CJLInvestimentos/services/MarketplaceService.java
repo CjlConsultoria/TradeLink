@@ -195,6 +195,7 @@ public class MarketplaceService {
 
     // ─── Checkout / Pagamento ────────────────────────────────────
 
+    @Transactional
     public Map<String, String> criarCheckoutMarketplace(User cliente, Long solicitacaoId) {
         SolicitacaoMentoria sol = solicitacaoRepository.findById(solicitacaoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Solicitação não encontrada"));
@@ -208,7 +209,10 @@ public class MarketplaceService {
             throw new BusinessException("Preço não definido para esta solicitação.");
         }
 
-        return stripePaymentService.createCheckoutSessionMarketplace(cliente, sol);
+        Map<String, String> result = stripePaymentService.createCheckoutSessionMarketplace(cliente, sol);
+        // Salvar o session ID que foi setado no objeto sol pelo Stripe service
+        solicitacaoRepository.save(sol);
+        return result;
     }
 
     /**
@@ -266,6 +270,104 @@ public class MarketplaceService {
         if (sol.getStatus() == StatusSolicitacaoMentoria.PAGA) return true; // já processado
         processarPagamentoMarketplace(sol.getId());
         return true;
+    }
+
+    /**
+     * Confirmação manual de pagamento pelo consultor (para dev local sem webhook).
+     */
+    @Transactional
+    public void confirmarPagamentoManual(Long solicitacaoId, User consultor) {
+        SolicitacaoMentoria sol = solicitacaoRepository.findById(solicitacaoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Solicitação não encontrada"));
+        if (!sol.getEmpresa().getId().equals(consultor.getEmpresa().getId())) {
+            throw new BusinessException("Solicitação não pertence à sua empresa.");
+        }
+        if (sol.getStatus() == StatusSolicitacaoMentoria.PAGA) {
+            throw new BusinessException("Solicitação já está paga.");
+        }
+        if (sol.getStatus() != StatusSolicitacaoMentoria.ACEITA) {
+            throw new BusinessException("Só é possível confirmar pagamento de solicitações aceitas.");
+        }
+        processarPagamentoMarketplace(sol.getId());
+    }
+
+    /**
+     * Chamado pelo webhook checkout.session.completed para subscriptions marketplace.
+     * Vincula o cliente e salva o subscriptionId.
+     */
+    @Transactional
+    public void processarPagamentoMarketplaceComSubscription(Long solicitacaoId, String subscriptionId) {
+        SolicitacaoMentoria sol = solicitacaoRepository.findById(solicitacaoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Solicitacao nao encontrada"));
+
+        if (sol.getStatus() == StatusSolicitacaoMentoria.PAGA) {
+            log.info("Solicitacao {} ja processada (PAGA). Ignorando.", solicitacaoId);
+            return;
+        }
+
+        sol.setStatus(StatusSolicitacaoMentoria.PAGA);
+        sol.setStripeSubscriptionId(subscriptionId);
+        solicitacaoRepository.save(sol);
+
+        User cliente = sol.getCliente();
+        Empresa empresa = sol.getEmpresa();
+
+        // Vincular cliente ao consultor
+        cliente.setEmpresa(empresa);
+        cliente.setOrigemVinculo("MARKETPLACE");
+        cliente.setMarketplacePrecoCliente(sol.getPrecoFinal());
+        cliente.setMarketplaceSubscriptionId(subscriptionId);
+        cliente.setAutoGestao(false);
+        cliente.setSubscriptionStatus("NONE");
+        cliente.setCurrentPeriodEnd(null);
+        cliente.setDataExclusao(null);
+
+        // Obter periodo da subscription
+        if (subscriptionId != null) {
+            try {
+                com.stripe.model.Subscription sub = com.stripe.model.Subscription.retrieve(subscriptionId);
+                if (sub.getCurrentPeriodEnd() != null) {
+                    cliente.setMarketplaceCurrentPeriodEnd(java.time.Instant.ofEpochSecond(sub.getCurrentPeriodEnd()));
+                }
+            } catch (Exception e) {
+                log.warn("Erro ao obter periodo da subscription marketplace {}: {}", subscriptionId, e.getMessage());
+            }
+        }
+        userRepository.save(cliente);
+
+        // Registrar fatura marketplace
+        faturaService.registrarFaturaMarketplace(cliente, empresa, sol.getPrecoFinal(), subscriptionId);
+
+        // Email para ambos
+        notificationAsyncRunner.enviarEmailMarketplacePagamentoConfirmadoAsync(
+                cliente.getEmail(),
+                cliente.getNome() != null ? cliente.getNome() : cliente.getEmail(),
+                empresa.getNome(), sol.getPrecoFinal());
+
+        log.info("Cliente {} vinculado ao consultor {} via marketplace subscription {}. Preco: {}",
+                cliente.getId(), empresa.getId(), subscriptionId, sol.getPrecoFinal());
+    }
+
+    /**
+     * Chamado pelo webhook subscription.deleted para desvincular cliente do marketplace.
+     */
+    @Transactional
+    public void desvincularClientePorSubscriptionCancelada(User cliente) {
+        String empresaNome = cliente.getEmpresa() != null ? cliente.getEmpresa().getNome() : "";
+        cliente.setEmpresa(null);
+        cliente.setOrigemVinculo(null);
+        cliente.setMarketplacePrecoCliente(null);
+        cliente.setMarketplaceSubscriptionId(null);
+        cliente.setMarketplaceCurrentPeriodEnd(null);
+        cliente.setDataExclusao(java.time.LocalDateTime.now());
+        userRepository.save(cliente);
+
+        notificationAsyncRunner.enviarEmailMarketplaceDesvinculacaoAsync(
+                cliente.getEmail(),
+                cliente.getNome() != null ? cliente.getNome() : cliente.getEmail(),
+                empresaNome);
+
+        log.info("Cliente {} desvinculado por cancelamento de subscription marketplace", cliente.getId());
     }
 
     // ─── Desvinculação marketplace ───────────────────────────────
