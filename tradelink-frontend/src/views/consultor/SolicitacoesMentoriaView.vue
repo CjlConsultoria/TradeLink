@@ -1,45 +1,45 @@
 <template>
   <div>
     <h2 class="page-title">Solicitacoes de Mentoria</h2>
-    <p class="text-sm text-gray-500 dark:text-gray-400 -mt-4 mb-6">Gerencie solicitacoes recebidas pelo marketplace</p>
+    <p class="text-sm -mt-4 mb-6" style="color: rgb(var(--tl-text-muted));">Gerencie solicitacoes recebidas pelo marketplace</p>
 
     <div v-if="loading" class="flex justify-center py-16">
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
     </div>
 
     <div v-else-if="!solicitacoes.length" class="card p-12 text-center">
-      <svg class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg class="w-12 h-12 mx-auto mb-3" style="color: rgb(var(--tl-border));" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
       </svg>
-      <p class="font-medium text-gray-700 dark:text-gray-300">Nenhuma solicitacao recebida</p>
-      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Ative seu perfil no marketplace para receber solicitacoes</p>
+      <p class="font-medium" style="color: rgb(var(--tl-text));">Nenhuma solicitacao recebida</p>
+      <p class="text-sm mt-1" style="color: rgb(var(--tl-text-muted));">Ative seu perfil no marketplace para receber solicitacoes</p>
     </div>
 
     <div v-else class="space-y-4">
       <div
         v-for="s in solicitacoes"
         :key="s.id"
-        class="card p-5"
+        class="card p-4 sm:p-5"
       >
         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-          <div class="flex-1">
-            <div class="flex items-center gap-2 mb-1">
-              <h3 class="font-semibold text-gray-900 dark:text-gray-100 text-sm">{{ s.clienteNome || s.clienteEmail }}</h3>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-1 flex-wrap">
+              <h3 class="font-semibold text-sm" style="color: rgb(var(--tl-text));">{{ s.clienteNome || s.clienteEmail }}</h3>
               <span :class="statusClass(s.status)" class="px-2.5 py-0.5 rounded-full text-xs font-medium">
                 {{ statusLabel(s.status) }}
               </span>
             </div>
-            <p class="text-gray-500 dark:text-gray-400 text-xs">{{ s.clienteEmail }}</p>
-            <div v-if="s.mensagemCliente" class="mt-2 p-3 rounded-lg bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-gray-700">
-              <p class="text-gray-600 dark:text-gray-300 text-sm italic">"{{ s.mensagemCliente }}"</p>
+            <p class="text-xs" style="color: rgb(var(--tl-text-muted));">{{ s.clienteEmail }}</p>
+            <div v-if="s.mensagemCliente" class="mt-2 p-3 rounded-lg bg-gray-50 border border-gray-200">
+              <p class="text-sm italic" style="color: rgb(var(--tl-text-muted));">"{{ s.mensagemCliente }}"</p>
             </div>
-            <p class="text-gray-400 text-xs mt-2">{{ formatDate(s.createdAt) }}</p>
+            <p class="text-xs mt-2" style="color: rgb(var(--tl-text-muted));">{{ formatDate(s.createdAt) }}</p>
           </div>
 
-          <!-- Actions for PENDENTE -->
-          <div v-if="s.status === 'PENDENTE'" class="flex flex-col gap-2 sm:w-52">
+          <!-- Actions PENDENTE -->
+          <div v-if="s.status === 'PENDENTE'" class="flex flex-col gap-2 w-full sm:w-52 shrink-0">
             <div>
-              <label class="text-xs text-gray-500 dark:text-gray-400">Preco final (R$/mes):</label>
+              <label class="text-xs font-semibold" style="color: rgb(var(--tl-text));">Preco final (R$/mes):</label>
               <input
                 v-model.number="s._precoFinal"
                 type="number"
@@ -72,10 +72,10 @@
             </div>
           </div>
 
-          <!-- Info for other statuses -->
+          <!-- Info other statuses -->
           <div v-else class="text-right shrink-0">
-            <p v-if="s.precoFinal" class="font-semibold text-gray-900 dark:text-gray-100 text-sm">R$ {{ formatPreco(s.precoFinal) }}/mes</p>
-            <p v-if="s.mensagemConsultor" class="text-gray-500 dark:text-gray-400 text-xs mt-1 italic">"{{ s.mensagemConsultor }}"</p>
+            <p v-if="s.precoFinal" class="font-bold text-sm" style="color: rgb(var(--tl-text));">R$ {{ formatPreco(s.precoFinal) }}/mes</p>
+            <p v-if="s.mensagemConsultor" class="text-xs mt-1 italic" style="color: rgb(var(--tl-text-muted));">"{{ s.mensagemConsultor }}"</p>
           </div>
         </div>
       </div>
@@ -143,11 +143,11 @@ function statusLabel(s) {
 
 function statusClass(s) {
   const m = {
-    PENDENTE: 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-400',
-    ACEITA: 'bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-400',
-    PAGA: 'bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-400',
-    RECUSADA: 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-400',
-    CANCELADA: 'bg-gray-100 text-gray-600 dark:bg-gray-500/20 dark:text-gray-400'
+    PENDENTE: 'bg-amber-100 text-amber-800',
+    ACEITA: 'bg-blue-100 text-blue-800',
+    PAGA: 'bg-green-100 text-green-800',
+    RECUSADA: 'bg-red-100 text-red-800',
+    CANCELADA: 'bg-gray-100 text-gray-600'
   }
   return m[s] || 'bg-gray-100 text-gray-600'
 }

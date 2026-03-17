@@ -9,12 +9,12 @@
 
     <template v-else>
       <!-- Visibilidade -->
-      <div class="card p-6 mb-6">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-4">
-            <div class="w-11 h-11 rounded-xl flex items-center justify-center"
-              :class="perfil.marketplaceVisivel ? 'bg-green-100 dark:bg-green-500/15' : 'bg-gray-100 dark:bg-slate-700/50'">
-              <svg v-if="perfil.marketplaceVisivel" class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="card p-5 sm:p-6 mb-6">
+        <div class="flex items-start sm:items-center justify-between gap-4">
+          <div class="flex items-start sm:items-center gap-3 sm:gap-4">
+            <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center shrink-0"
+              :class="perfil.marketplaceVisivel ? 'bg-green-100' : 'bg-gray-100'">
+              <svg v-if="perfil.marketplaceVisivel" class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
               </svg>
@@ -23,8 +23,8 @@
               </svg>
             </div>
             <div>
-              <h3 class="font-semibold text-gray-900 dark:text-gray-100">Visibilidade no Marketplace</h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+              <h3 class="font-semibold" style="color: rgb(var(--tl-text));">Visibilidade no Marketplace</h3>
+              <p class="text-sm mt-0.5" style="color: rgb(var(--tl-text-muted));">
                 {{ perfil.marketplaceVisivel
                   ? 'Seu perfil esta ativo. Clientes podem encontra-lo e solicitar mentoria.'
                   : 'Seu perfil esta oculto. Ative para aparecer nas buscas de clientes.' }}
@@ -33,8 +33,8 @@
           </div>
           <button
             @click="toggleVisibilidade"
-            :class="perfil.marketplaceVisivel ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'"
-            class="relative inline-flex h-7 w-12 items-center rounded-full transition-colors shrink-0 ml-4"
+            :class="perfil.marketplaceVisivel ? 'bg-green-500' : 'bg-gray-300'"
+            class="relative inline-flex h-7 w-12 items-center rounded-full transition-colors shrink-0"
           >
             <span
               :class="perfil.marketplaceVisivel ? 'translate-x-6' : 'translate-x-1'"
@@ -45,48 +45,48 @@
       </div>
 
       <!-- Stats -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
         <div class="card p-4 text-center">
-          <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Preco Base</p>
-          <p class="text-xl font-bold text-gray-900 dark:text-gray-100">R$ {{ formatPreco(perfil.marketplacePrecoBase) }}</p>
+          <p class="text-xs font-medium mb-1" style="color: rgb(var(--tl-text-muted));">Preco Base</p>
+          <p class="text-lg sm:text-xl font-bold" style="color: rgb(var(--tl-text));">R$ {{ formatPreco(perfil.marketplacePrecoBase) }}</p>
         </div>
         <div class="card p-4 text-center">
-          <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Voce Recebe</p>
-          <p class="text-xl font-bold text-green-600 dark:text-green-400">R$ {{ formatPreco(calcRecebe) }}</p>
+          <p class="text-xs font-medium mb-1" style="color: rgb(var(--tl-text-muted));">Voce Recebe</p>
+          <p class="text-lg sm:text-xl font-bold text-green-600">R$ {{ formatPreco(calcRecebe) }}</p>
         </div>
         <div class="card p-4 text-center">
-          <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Taxa Plataforma</p>
-          <p class="text-xl font-bold text-indigo-600 dark:text-indigo-400">{{ perfil.taxaPlataforma || 15 }}%</p>
+          <p class="text-xs font-medium mb-1" style="color: rgb(var(--tl-text-muted));">Taxa Plataforma</p>
+          <p class="text-lg sm:text-xl font-bold text-indigo-600">{{ perfil.taxaPlataforma || 15 }}%</p>
         </div>
         <div class="card p-4 text-center">
-          <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Desconto Taxa</p>
-          <p class="text-xl font-bold text-red-500 dark:text-red-400">R$ {{ formatPreco(calcTaxa) }}</p>
+          <p class="text-xs font-medium mb-1" style="color: rgb(var(--tl-text-muted));">Desconto Taxa</p>
+          <p class="text-lg sm:text-xl font-bold text-red-500">R$ {{ formatPreco(calcTaxa) }}</p>
         </div>
       </div>
 
       <!-- Formulario -->
-      <div class="card p-6 mb-6">
+      <div class="card p-5 sm:p-6 mb-6">
         <h3 class="section-title">Seu Perfil</h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400 -mt-3 mb-5">Informacoes exibidas para clientes no marketplace</p>
+        <p class="text-sm -mt-3 mb-5" style="color: rgb(var(--tl-text-muted));">Informacoes exibidas para clientes no marketplace</p>
 
         <div class="space-y-5">
           <!-- Descricao -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descricao</label>
+            <label class="block text-sm font-semibold mb-1.5" style="color: rgb(var(--tl-text));">Descricao</label>
             <textarea
               v-model="perfil.marketplaceDescricao"
               rows="4"
               maxlength="500"
-              placeholder="Descreva seus servicos e diferenciais. Ex: Especialista em criptomoedas com foco em gestao de risco e diversificacao de portfolio..."
+              placeholder="Descreva seus servicos e diferenciais. Ex: Especialista em criptomoedas com foco em gestao de risco..."
               class="input-base resize-none"
             ></textarea>
-            <p class="text-xs text-gray-400 mt-1">{{ (perfil.marketplaceDescricao || '').length }}/500 caracteres</p>
+            <p class="text-xs mt-1" style="color: rgb(var(--tl-text-muted));">{{ (perfil.marketplaceDescricao || '').length }}/500 caracteres</p>
           </div>
 
           <!-- Especializacao + Experiencia -->
-          <div class="grid sm:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Especializacao</label>
+              <label class="block text-sm font-semibold mb-1.5" style="color: rgb(var(--tl-text));">Especializacao</label>
               <input
                 v-model="perfil.marketplaceEspecializacao"
                 type="text"
@@ -95,7 +95,7 @@
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Experiencia</label>
+              <label class="block text-sm font-semibold mb-1.5" style="color: rgb(var(--tl-text));">Experiencia</label>
               <input
                 v-model="perfil.marketplaceExperiencia"
                 type="text"
@@ -107,19 +107,19 @@
 
           <!-- Rede Social -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rede Social</label>
+            <label class="block text-sm font-semibold mb-1.5" style="color: rgb(var(--tl-text));">Rede Social</label>
             <input
               v-model="perfil.marketplaceRedeSocial"
               type="url"
               placeholder="https://instagram.com/seu_perfil"
               class="input-base"
             />
-            <p class="text-xs text-gray-400 mt-1">Instagram, LinkedIn, Twitter ou site pessoal</p>
+            <p class="text-xs mt-1" style="color: rgb(var(--tl-text-muted));">Instagram, LinkedIn, Twitter ou site pessoal</p>
           </div>
 
           <!-- Preco -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Preco Mensal por Cliente (R$)</label>
+            <label class="block text-sm font-semibold mb-1.5" style="color: rgb(var(--tl-text));">Preco Mensal por Cliente (R$)</label>
             <div class="max-w-xs">
               <input
                 v-model.number="perfil.marketplacePrecoBase"
@@ -133,31 +133,31 @@
           </div>
 
           <!-- Simulacao de receita -->
-          <div v-if="perfil.marketplacePrecoBase > 0" class="rounded-xl p-4 bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700">
-            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Simulacao de Receita por Cliente</p>
-            <div class="grid grid-cols-3 gap-3">
-              <div class="text-center">
-                <p class="text-sm font-bold text-gray-900 dark:text-gray-100">R$ {{ formatPreco(perfil.marketplacePrecoBase) }}</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400">Cliente paga</p>
+          <div v-if="perfil.marketplacePrecoBase > 0" class="rounded-xl p-4 bg-indigo-50 border border-indigo-200">
+            <p class="text-xs font-bold text-indigo-700 uppercase tracking-wider mb-3">Simulacao de Receita por Cliente</p>
+            <div class="grid grid-cols-3 gap-2 sm:gap-3">
+              <div class="text-center p-2 sm:p-3 bg-white rounded-lg">
+                <p class="text-sm font-bold" style="color: rgb(var(--tl-text));">R$ {{ formatPreco(perfil.marketplacePrecoBase) }}</p>
+                <p class="text-xs mt-0.5" style="color: rgb(var(--tl-text-muted));">Cliente paga</p>
               </div>
-              <div class="text-center">
-                <p class="text-sm font-bold text-red-500">- R$ {{ formatPreco(calcTaxa) }}</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400">Taxa {{ perfil.taxaPlataforma || 15 }}%</p>
+              <div class="text-center p-2 sm:p-3 bg-white rounded-lg">
+                <p class="text-sm font-bold text-red-600">- R$ {{ formatPreco(calcTaxa) }}</p>
+                <p class="text-xs mt-0.5" style="color: rgb(var(--tl-text-muted));">Taxa {{ perfil.taxaPlataforma || 15 }}%</p>
               </div>
-              <div class="text-center">
-                <p class="text-sm font-bold text-green-600 dark:text-green-400">R$ {{ formatPreco(calcRecebe) }}</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400">Voce recebe</p>
+              <div class="text-center p-2 sm:p-3 bg-white rounded-lg">
+                <p class="text-sm font-bold text-green-600">R$ {{ formatPreco(calcRecebe) }}</p>
+                <p class="text-xs mt-0.5" style="color: rgb(var(--tl-text-muted));">Voce recebe</p>
               </div>
             </div>
           </div>
 
           <!-- Botao salvar -->
-          <div class="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
-            <p class="text-xs text-gray-400">Alteracoes visiveis imediatamente apos salvar</p>
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-4 border-t" style="border-color: rgb(var(--tl-border));">
+            <p class="text-xs" style="color: rgb(var(--tl-text-muted));">Alteracoes visiveis imediatamente apos salvar</p>
             <button
               @click="salvar"
               :disabled="saving"
-              class="btn-primary flex items-center gap-2"
+              class="btn-primary flex items-center gap-2 w-full sm:w-auto justify-center"
             >
               <svg v-if="!saving" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
@@ -170,34 +170,34 @@
       </div>
 
       <!-- Pre-visualizacao -->
-      <div class="card p-6">
+      <div class="card p-5 sm:p-6">
         <h3 class="section-title">Pre-visualizacao</h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400 -mt-3 mb-5">Assim os clientes veem seu perfil no marketplace</p>
+        <p class="text-sm -mt-3 mb-5" style="color: rgb(var(--tl-text-muted));">Assim os clientes veem seu perfil no marketplace</p>
 
         <div class="max-w-sm mx-auto">
           <div class="card p-5">
             <div class="flex items-center gap-3 mb-3">
-              <div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-500/20 rounded-xl flex items-center justify-center shrink-0">
-                <span class="text-lg font-bold text-indigo-600 dark:text-indigo-400">{{ getInitials() }}</span>
+              <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center shrink-0">
+                <span class="text-lg font-bold text-indigo-600">{{ getInitials() }}</span>
               </div>
               <div class="min-w-0">
-                <h4 class="font-semibold text-gray-900 dark:text-gray-100 text-sm truncate">{{ perfil.nome || 'Sua Consultoria' }}</h4>
-                <p v-if="perfil.marketplaceEspecializacao" class="text-indigo-600 dark:text-indigo-400 text-xs truncate">{{ perfil.marketplaceEspecializacao }}</p>
-                <p v-else class="text-gray-400 text-xs italic">Sem especializacao</p>
+                <h4 class="font-semibold text-sm truncate" style="color: rgb(var(--tl-text));">{{ perfil.nome || 'Sua Consultoria' }}</h4>
+                <p v-if="perfil.marketplaceEspecializacao" class="text-indigo-600 text-xs truncate">{{ perfil.marketplaceEspecializacao }}</p>
+                <p v-else class="text-xs italic" style="color: rgb(var(--tl-text-muted));">Sem especializacao</p>
               </div>
             </div>
 
-            <p v-if="perfil.marketplaceDescricao" class="text-gray-600 dark:text-gray-300 text-xs mb-3 line-clamp-3">{{ perfil.marketplaceDescricao }}</p>
-            <p v-else class="text-gray-400 text-xs mb-3 italic">Sem descricao...</p>
+            <p v-if="perfil.marketplaceDescricao" class="text-xs mb-3 line-clamp-3" style="color: rgb(var(--tl-text-muted));">{{ perfil.marketplaceDescricao }}</p>
+            <p v-else class="text-xs mb-3 italic" style="color: rgb(var(--tl-text-muted));">Sem descricao...</p>
 
             <div class="space-y-1 mb-3">
-              <div v-if="perfil.marketplaceExperiencia" class="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 text-xs">
+              <div v-if="perfil.marketplaceExperiencia" class="flex items-center gap-1.5 text-xs" style="color: rgb(var(--tl-text-muted));">
                 <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                 </svg>
                 {{ perfil.marketplaceExperiencia }}
               </div>
-              <div v-if="perfil.marketplaceRedeSocial" class="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 text-xs">
+              <div v-if="perfil.marketplaceRedeSocial" class="flex items-center gap-1.5 text-indigo-600 text-xs">
                 <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
                 </svg>
@@ -205,12 +205,12 @@
               </div>
             </div>
 
-            <div class="border-t border-gray-200 dark:border-gray-700 pt-3 flex items-center justify-between">
+            <div class="pt-3 flex items-center justify-between" style="border-top: 1px solid rgb(var(--tl-border));">
               <div>
-                <span class="text-lg font-bold text-gray-900 dark:text-gray-100">R$ {{ formatPreco(perfil.marketplacePrecoBase) }}</span>
-                <span class="text-gray-500 text-xs">/mes</span>
+                <span class="text-lg font-bold" style="color: rgb(var(--tl-text));">R$ {{ formatPreco(perfil.marketplacePrecoBase) }}</span>
+                <span class="text-xs" style="color: rgb(var(--tl-text-muted));">/mes</span>
               </div>
-              <span class="px-4 py-1.5 rounded-lg text-xs font-medium bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30">
+              <span class="px-4 py-1.5 rounded-lg text-xs font-medium bg-indigo-100 text-indigo-600 border border-indigo-200">
                 Solicitar
               </span>
             </div>
