@@ -1,0 +1,1 @@
+import o from"./ChamadosClienteView-pwEuAf90.js";import{H as e,s as r}from"./index-C32sylqF.js";import"./chamadosApi-DM5reVTq.js";const p={__name:"ChamadosConsultorView",setup(t){return(a,s)=>(r(),e(o))}};export{p as default};
