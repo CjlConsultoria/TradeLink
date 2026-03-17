@@ -1,110 +1,220 @@
 <template>
-  <div class="space-y-6">
-    <div>
-      <h1 class="text-2xl font-bold text-white">Marketplace</h1>
-      <p class="text-slate-400 text-sm mt-1">Gerencie seu perfil no marketplace de consultores</p>
-    </div>
+  <div>
+    <h2 class="page-title">Marketplace</h2>
 
     <!-- Loading -->
-    <div v-if="loading" class="flex justify-center py-12">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-400"></div>
+    <div v-if="loading" class="flex justify-center py-16">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
     </div>
 
     <template v-else>
-      <!-- Toggle + Status -->
-      <div class="bg-slate-800/50 rounded-xl border border-slate-700/50 p-5">
+      <!-- Visibilidade -->
+      <div class="card p-6 mb-6">
         <div class="flex items-center justify-between">
-          <div>
-            <h2 class="text-white font-semibold">Visibilidade no Marketplace</h2>
-            <p class="text-slate-400 text-xs mt-1">Quando ativo, clientes podem encontrar voce e solicitar mentoria</p>
+          <div class="flex items-center gap-4">
+            <div class="w-11 h-11 rounded-xl flex items-center justify-center"
+              :class="perfil.marketplaceVisivel ? 'bg-green-100 dark:bg-green-500/15' : 'bg-gray-100 dark:bg-slate-700/50'">
+              <svg v-if="perfil.marketplaceVisivel" class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+              </svg>
+              <svg v-else class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"/>
+              </svg>
+            </div>
+            <div>
+              <h3 class="font-semibold text-gray-900 dark:text-gray-100">Visibilidade no Marketplace</h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                {{ perfil.marketplaceVisivel
+                  ? 'Seu perfil esta ativo. Clientes podem encontra-lo e solicitar mentoria.'
+                  : 'Seu perfil esta oculto. Ative para aparecer nas buscas de clientes.' }}
+              </p>
+            </div>
           </div>
           <button
             @click="toggleVisibilidade"
-            :class="perfil.marketplaceVisivel ? 'bg-green-600' : 'bg-slate-600'"
-            class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+            :class="perfil.marketplaceVisivel ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'"
+            class="relative inline-flex h-7 w-12 items-center rounded-full transition-colors shrink-0 ml-4"
           >
             <span
               :class="perfil.marketplaceVisivel ? 'translate-x-6' : 'translate-x-1'"
-              class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
+              class="inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform"
             ></span>
           </button>
         </div>
       </div>
 
-      <!-- Perfil Form -->
-      <div class="bg-slate-800/50 rounded-xl border border-slate-700/50 p-5">
-        <h2 class="text-white font-semibold mb-4">Seu Perfil</h2>
-        <div class="space-y-4">
+      <!-- Stats -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="card p-4 text-center">
+          <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Preco Base</p>
+          <p class="text-xl font-bold text-gray-900 dark:text-gray-100">R$ {{ formatPreco(perfil.marketplacePrecoBase) }}</p>
+        </div>
+        <div class="card p-4 text-center">
+          <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Voce Recebe</p>
+          <p class="text-xl font-bold text-green-600 dark:text-green-400">R$ {{ formatPreco(calcRecebe) }}</p>
+        </div>
+        <div class="card p-4 text-center">
+          <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Taxa Plataforma</p>
+          <p class="text-xl font-bold text-indigo-600 dark:text-indigo-400">{{ perfil.taxaPlataforma || 15 }}%</p>
+        </div>
+        <div class="card p-4 text-center">
+          <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Desconto Taxa</p>
+          <p class="text-xl font-bold text-red-500 dark:text-red-400">R$ {{ formatPreco(calcTaxa) }}</p>
+        </div>
+      </div>
+
+      <!-- Formulario -->
+      <div class="card p-6 mb-6">
+        <h3 class="section-title">Seu Perfil</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 -mt-3 mb-5">Informacoes exibidas para clientes no marketplace</p>
+
+        <div class="space-y-5">
+          <!-- Descricao -->
           <div>
-            <label class="text-slate-300 text-xs font-medium mb-1 block">Descricao</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descricao</label>
             <textarea
               v-model="perfil.marketplaceDescricao"
-              rows="3"
-              placeholder="Descreva seus servicos e diferenciais..."
-              class="w-full bg-slate-700/50 text-white rounded-lg p-3 text-sm border border-slate-600/50 focus:border-indigo-500 focus:outline-none"
+              rows="4"
+              maxlength="500"
+              placeholder="Descreva seus servicos e diferenciais. Ex: Especialista em criptomoedas com foco em gestao de risco e diversificacao de portfolio..."
+              class="input-base resize-none"
             ></textarea>
+            <p class="text-xs text-gray-400 mt-1">{{ (perfil.marketplaceDescricao || '').length }}/500 caracteres</p>
           </div>
+
+          <!-- Especializacao + Experiencia -->
           <div class="grid sm:grid-cols-2 gap-4">
             <div>
-              <label class="text-slate-300 text-xs font-medium mb-1 block">Especializacao</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Especializacao</label>
               <input
                 v-model="perfil.marketplaceEspecializacao"
                 type="text"
-                placeholder="Ex: Criptomoedas, Renda Variavel..."
-                class="w-full bg-slate-700/50 text-white rounded-lg p-3 text-sm border border-slate-600/50 focus:border-indigo-500 focus:outline-none"
+                placeholder="Ex: Criptomoedas, Renda Variavel, DeFi"
+                class="input-base"
               />
             </div>
             <div>
-              <label class="text-slate-300 text-xs font-medium mb-1 block">Experiencia</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Experiencia</label>
               <input
                 v-model="perfil.marketplaceExperiencia"
                 type="text"
-                placeholder="Ex: 5 anos no mercado..."
-                class="w-full bg-slate-700/50 text-white rounded-lg p-3 text-sm border border-slate-600/50 focus:border-indigo-500 focus:outline-none"
+                placeholder="Ex: 5 anos no mercado cripto"
+                class="input-base"
               />
             </div>
           </div>
-          <div class="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label class="text-slate-300 text-xs font-medium mb-1 block">URL da Foto</label>
-              <input
-                v-model="perfil.marketplaceFotoUrl"
-                type="text"
-                placeholder="https://..."
-                class="w-full bg-slate-700/50 text-white rounded-lg p-3 text-sm border border-slate-600/50 focus:border-indigo-500 focus:outline-none"
-              />
-            </div>
-            <div>
-              <label class="text-slate-300 text-xs font-medium mb-1 block">Preco Base (R$/mes por cliente)</label>
+
+          <!-- Rede Social -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rede Social</label>
+            <input
+              v-model="perfil.marketplaceRedeSocial"
+              type="url"
+              placeholder="https://instagram.com/seu_perfil"
+              class="input-base"
+            />
+            <p class="text-xs text-gray-400 mt-1">Instagram, LinkedIn, Twitter ou site pessoal</p>
+          </div>
+
+          <!-- Preco -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Preco Mensal por Cliente (R$)</label>
+            <div class="max-w-xs">
               <input
                 v-model.number="perfil.marketplacePrecoBase"
                 type="number"
                 step="0.01"
                 min="0"
                 placeholder="99.90"
-                class="w-full bg-slate-700/50 text-white rounded-lg p-3 text-sm border border-slate-600/50 focus:border-indigo-500 focus:outline-none"
+                class="input-base"
               />
             </div>
           </div>
 
-          <!-- Info Taxa -->
-          <div v-if="perfil.marketplacePrecoBase && perfil.taxaPlataforma" class="bg-indigo-500/10 rounded-lg p-4 border border-indigo-500/20">
-            <p class="text-indigo-300 text-sm">
-              <strong>Preco para o cliente:</strong> R$ {{ formatPreco(perfil.marketplacePrecoBase) }}
-              <br />
-              <strong>Taxa da plataforma ({{ perfil.taxaPlataforma }}%):</strong> R$ {{ formatPreco(calcTaxa) }}
-              <br />
-              <strong>Voce recebe:</strong> R$ {{ formatPreco(calcRecebe) }}
-            </p>
+          <!-- Simulacao de receita -->
+          <div v-if="perfil.marketplacePrecoBase > 0" class="rounded-xl p-4 bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700">
+            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Simulacao de Receita por Cliente</p>
+            <div class="grid grid-cols-3 gap-3">
+              <div class="text-center">
+                <p class="text-sm font-bold text-gray-900 dark:text-gray-100">R$ {{ formatPreco(perfil.marketplacePrecoBase) }}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Cliente paga</p>
+              </div>
+              <div class="text-center">
+                <p class="text-sm font-bold text-red-500">- R$ {{ formatPreco(calcTaxa) }}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Taxa {{ perfil.taxaPlataforma || 15 }}%</p>
+              </div>
+              <div class="text-center">
+                <p class="text-sm font-bold text-green-600 dark:text-green-400">R$ {{ formatPreco(calcRecebe) }}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Voce recebe</p>
+              </div>
+            </div>
           </div>
 
-          <button
-            @click="salvar"
-            :disabled="saving"
-            class="bg-indigo-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-          >
-            {{ saving ? 'Salvando...' : 'Salvar Perfil' }}
-          </button>
+          <!-- Botao salvar -->
+          <div class="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
+            <p class="text-xs text-gray-400">Alteracoes visiveis imediatamente apos salvar</p>
+            <button
+              @click="salvar"
+              :disabled="saving"
+              class="btn-primary flex items-center gap-2"
+            >
+              <svg v-if="!saving" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span v-else class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+              {{ saving ? 'Salvando...' : 'Salvar Perfil' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pre-visualizacao -->
+      <div class="card p-6">
+        <h3 class="section-title">Pre-visualizacao</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 -mt-3 mb-5">Assim os clientes veem seu perfil no marketplace</p>
+
+        <div class="max-w-sm mx-auto">
+          <div class="card p-5">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-500/20 rounded-xl flex items-center justify-center shrink-0">
+                <span class="text-lg font-bold text-indigo-600 dark:text-indigo-400">{{ getInitials() }}</span>
+              </div>
+              <div class="min-w-0">
+                <h4 class="font-semibold text-gray-900 dark:text-gray-100 text-sm truncate">{{ perfil.nome || 'Sua Consultoria' }}</h4>
+                <p v-if="perfil.marketplaceEspecializacao" class="text-indigo-600 dark:text-indigo-400 text-xs truncate">{{ perfil.marketplaceEspecializacao }}</p>
+                <p v-else class="text-gray-400 text-xs italic">Sem especializacao</p>
+              </div>
+            </div>
+
+            <p v-if="perfil.marketplaceDescricao" class="text-gray-600 dark:text-gray-300 text-xs mb-3 line-clamp-3">{{ perfil.marketplaceDescricao }}</p>
+            <p v-else class="text-gray-400 text-xs mb-3 italic">Sem descricao...</p>
+
+            <div class="space-y-1 mb-3">
+              <div v-if="perfil.marketplaceExperiencia" class="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 text-xs">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+                {{ perfil.marketplaceExperiencia }}
+              </div>
+              <div v-if="perfil.marketplaceRedeSocial" class="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 text-xs">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                </svg>
+                <span class="truncate">{{ formatRedeSocial(perfil.marketplaceRedeSocial) }}</span>
+              </div>
+            </div>
+
+            <div class="border-t border-gray-200 dark:border-gray-700 pt-3 flex items-center justify-between">
+              <div>
+                <span class="text-lg font-bold text-gray-900 dark:text-gray-100">R$ {{ formatPreco(perfil.marketplacePrecoBase) }}</span>
+                <span class="text-gray-500 text-xs">/mes</span>
+              </div>
+              <span class="px-4 py-1.5 rounded-lg text-xs font-medium bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30">
+                Solicitar
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </template>
@@ -126,7 +236,7 @@ onMounted(async () => {
     const res = await getPerfilMarketplace()
     perfil.value = res.data
   } catch (e) {
-    toast.error('Erro ao carregar perfil')
+    toast.error('Erro ao carregar perfil do marketplace')
   } finally {
     loading.value = false
   }
@@ -142,6 +252,11 @@ const calcRecebe = computed(() => {
   return perfil.value.marketplacePrecoBase - calcTaxa.value
 })
 
+function getInitials() {
+  const nome = perfil.value.nome || ''
+  return nome.split(' ').map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || '?'
+}
+
 async function toggleVisibilidade() {
   perfil.value.marketplaceVisivel = !perfil.value.marketplaceVisivel
   await salvar()
@@ -155,13 +270,13 @@ async function salvar() {
       marketplaceDescricao: perfil.value.marketplaceDescricao,
       marketplaceEspecializacao: perfil.value.marketplaceEspecializacao,
       marketplaceExperiencia: perfil.value.marketplaceExperiencia,
-      marketplaceFotoUrl: perfil.value.marketplaceFotoUrl,
+      marketplaceRedeSocial: perfil.value.marketplaceRedeSocial,
       marketplacePrecoBase: perfil.value.marketplacePrecoBase
     })
     perfil.value = res.data
-    toast.success('Perfil atualizado!')
+    toast.success('Perfil atualizado com sucesso!')
   } catch (e) {
-    toast.error(e.response?.data?.message || 'Erro ao salvar')
+    toast.error(e.response?.data?.message || 'Erro ao salvar perfil')
   } finally {
     saving.value = false
   }
@@ -170,5 +285,15 @@ async function salvar() {
 function formatPreco(v) {
   if (!v && v !== 0) return '0,00'
   return Number(v).toFixed(2).replace('.', ',')
+}
+
+function formatRedeSocial(url) {
+  if (!url) return ''
+  try {
+    const u = new URL(url)
+    return u.hostname.replace('www.', '') + u.pathname.replace(/\/$/, '')
+  } catch {
+    return url
+  }
 }
 </script>

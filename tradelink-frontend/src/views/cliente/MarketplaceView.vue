@@ -1,64 +1,72 @@
 <template>
-  <div class="space-y-6">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      <div>
-        <h1 class="text-2xl font-bold text-white">Marketplace de Consultores</h1>
-        <p class="text-slate-400 text-sm mt-1">Encontre um consultor para orientar seus investimentos</p>
-      </div>
-    </div>
+  <div>
+    <h2 class="page-title">Marketplace de Consultores</h2>
+    <p class="text-sm text-gray-500 dark:text-gray-400 -mt-4 mb-6">Encontre um consultor para orientar seus investimentos</p>
 
     <!-- Busca -->
-    <div class="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4">
+    <div class="card p-4 mb-6">
       <div class="relative">
+        <svg class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
         <input
           v-model="termo"
           @input="debounceBuscar"
           type="text"
           placeholder="Buscar por nome ou especializacao..."
-          class="w-full bg-slate-700/50 text-white rounded-lg pl-10 pr-4 py-3 text-sm border border-slate-600/50 focus:border-indigo-500 focus:outline-none"
+          class="input-base pl-10"
         />
-        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">&#128269;</span>
       </div>
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="flex justify-center py-12">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-400"></div>
+    <div v-if="loading" class="flex justify-center py-16">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
     </div>
 
     <!-- Consultores Grid -->
-    <div v-else-if="consultores.length" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div v-else-if="consultores.length" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
       <div
         v-for="c in consultores"
         :key="c.empresaId"
-        class="bg-slate-800/50 rounded-xl border border-slate-700/50 p-5 hover:border-indigo-500/30 transition-all"
+        class="card p-5"
       >
         <div class="flex items-center gap-3 mb-3">
-          <div class="w-12 h-12 bg-indigo-500/20 rounded-xl flex items-center justify-center overflow-hidden">
-            <img v-if="c.marketplaceFotoUrl" :src="c.marketplaceFotoUrl" class="w-full h-full object-cover rounded-xl" />
-            <span v-else class="text-2xl">&#128100;</span>
+          <div class="w-11 h-11 bg-indigo-100 dark:bg-indigo-500/20 rounded-xl flex items-center justify-center shrink-0">
+            <span class="text-sm font-bold text-indigo-600 dark:text-indigo-400">{{ getInitials(c.nome) }}</span>
           </div>
-          <div>
-            <h3 class="text-white font-semibold text-sm">{{ c.nome }}</h3>
-            <p v-if="c.marketplaceEspecializacao" class="text-indigo-400 text-xs">{{ c.marketplaceEspecializacao }}</p>
+          <div class="min-w-0">
+            <h3 class="font-semibold text-gray-900 dark:text-gray-100 text-sm truncate">{{ c.nome }}</h3>
+            <p v-if="c.marketplaceEspecializacao" class="text-indigo-600 dark:text-indigo-400 text-xs truncate">{{ c.marketplaceEspecializacao }}</p>
           </div>
         </div>
 
-        <p v-if="c.marketplaceDescricao" class="text-slate-300 text-xs mb-3 line-clamp-3">{{ c.marketplaceDescricao }}</p>
+        <p v-if="c.marketplaceDescricao" class="text-gray-600 dark:text-gray-300 text-xs mb-3 line-clamp-3">{{ c.marketplaceDescricao }}</p>
 
-        <div v-if="c.marketplaceExperiencia" class="flex items-center gap-1 text-slate-400 text-xs mb-3">
-          <span>&#128197;</span> {{ c.marketplaceExperiencia }}
+        <div class="space-y-1 mb-3">
+          <div v-if="c.marketplaceExperiencia" class="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 text-xs">
+            <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+            {{ c.marketplaceExperiencia }}
+          </div>
+          <a v-if="c.marketplaceRedeSocial" :href="c.marketplaceRedeSocial" target="_blank" rel="noopener"
+            class="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 text-xs transition-colors">
+            <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+            </svg>
+            <span class="truncate">{{ formatRedeSocial(c.marketplaceRedeSocial) }}</span>
+          </a>
         </div>
 
-        <div class="border-t border-slate-700/50 pt-3 flex items-center justify-between">
+        <div class="border-t border-gray-200 dark:border-gray-700 pt-3 flex items-center justify-between">
           <div>
-            <span class="text-xl font-bold text-white">R$ {{ formatPreco(c.marketplacePrecoBase) }}</span>
-            <span class="text-slate-400 text-xs">/mes</span>
+            <span class="text-xl font-bold text-gray-900 dark:text-gray-100">R$ {{ formatPreco(c.marketplacePrecoBase) }}</span>
+            <span class="text-gray-500 text-xs">/mes</span>
           </div>
           <button
             @click="abrirSolicitacao(c)"
-            class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
+            class="btn-primary text-sm px-4 py-2"
           >
             Solicitar
           </button>
@@ -67,38 +75,40 @@
     </div>
 
     <!-- Empty -->
-    <div v-else class="text-center py-12">
-      <span class="text-4xl mb-4 block">&#128269;</span>
-      <p class="text-slate-300 font-medium">Nenhum consultor encontrado</p>
-      <p class="text-slate-500 text-sm mt-1">Tente uma busca diferente</p>
+    <div v-else class="card p-12 text-center mb-8">
+      <svg class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+      </svg>
+      <p class="font-medium text-gray-700 dark:text-gray-300">Nenhum consultor encontrado</p>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Tente uma busca diferente</p>
     </div>
 
     <!-- Minhas Solicitacoes -->
-    <div v-if="solicitacoes.length" class="mt-8">
-      <h2 class="text-lg font-semibold text-white mb-4">Minhas Solicitacoes</h2>
+    <div v-if="solicitacoes.length">
+      <h3 class="section-title">Minhas Solicitacoes</h3>
       <div class="space-y-3">
         <div
           v-for="s in solicitacoes"
           :key="s.id"
-          class="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4"
+          class="card p-4"
         >
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h3 class="text-white font-medium text-sm">{{ s.empresaNome }}</h3>
-              <p class="text-slate-400 text-xs mt-1">
+              <h4 class="font-medium text-gray-900 dark:text-gray-100 text-sm">{{ s.empresaNome }}</h4>
+              <p class="text-gray-500 dark:text-gray-400 text-xs mt-0.5">
                 Enviada em {{ formatDate(s.createdAt) }}
               </p>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
               <span :class="statusClass(s.status)" class="px-3 py-1 rounded-full text-xs font-medium">
                 {{ statusLabel(s.status) }}
               </span>
               <template v-if="s.status === 'ACEITA'">
-                <span class="text-white text-sm font-semibold">R$ {{ formatPreco(s.precoFinal) }}/mes</span>
+                <span class="text-gray-900 dark:text-gray-100 text-sm font-semibold">R$ {{ formatPreco(s.precoFinal) }}/mes</span>
                 <button
                   @click="iniciarPagamento(s.id)"
                   :disabled="checkoutLoading"
-                  class="bg-green-600 text-white px-3 py-1 rounded-lg text-xs font-medium hover:bg-green-700 transition-colors"
+                  class="px-3 py-1.5 rounded-lg text-xs font-medium bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50"
                 >
                   {{ checkoutLoading ? 'Processando...' : 'Pagar' }}
                 </button>
@@ -106,13 +116,13 @@
               <button
                 v-if="s.status === 'PENDENTE'"
                 @click="cancelar(s.id)"
-                class="text-red-400 hover:text-red-300 text-xs"
+                class="text-red-500 hover:text-red-600 text-xs font-medium"
               >
                 Cancelar
               </button>
             </div>
           </div>
-          <p v-if="s.mensagemConsultor" class="text-slate-300 text-xs mt-2 italic">
+          <p v-if="s.mensagemConsultor" class="text-gray-600 dark:text-gray-300 text-xs mt-2 italic">
             "{{ s.mensagemConsultor }}"
           </p>
         </div>
@@ -120,28 +130,28 @@
     </div>
 
     <!-- Modal Solicitar Mentoria -->
-    <div v-if="showModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" @click.self="showModal = false">
-      <div class="bg-slate-800 rounded-2xl border border-slate-700 p-6 w-full max-w-md">
-        <h3 class="text-lg font-semibold text-white mb-4">Solicitar Mentoria</h3>
-        <p class="text-slate-300 text-sm mb-4">
-          Consultor: <strong class="text-white">{{ selectedConsultor?.nome }}</strong>
-          <br />
-          Valor mensal: <strong class="text-indigo-400">R$ {{ formatPreco(selectedConsultor?.marketplacePrecoBase) }}</strong>
-        </p>
+    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="fixed inset-0 bg-black/50" @click="showModal = false"></div>
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 w-full max-w-md relative z-10">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Solicitar Mentoria</h3>
+        <div class="text-sm text-gray-600 dark:text-gray-300 mb-4">
+          <p>Consultor: <strong class="text-gray-900 dark:text-gray-100">{{ selectedConsultor?.nome }}</strong></p>
+          <p class="mt-1">Valor mensal: <strong class="text-indigo-600 dark:text-indigo-400">R$ {{ formatPreco(selectedConsultor?.marketplacePrecoBase) }}</strong></p>
+        </div>
         <textarea
           v-model="mensagem"
           placeholder="Deixe uma mensagem para o consultor (opcional)..."
           rows="3"
-          class="w-full bg-slate-700/50 text-white rounded-lg p-3 text-sm border border-slate-600/50 focus:border-indigo-500 focus:outline-none mb-4"
+          class="input-base resize-none mb-4"
         ></textarea>
         <div class="flex gap-3">
-          <button @click="showModal = false" class="flex-1 bg-slate-700 text-slate-300 py-2 rounded-lg text-sm hover:bg-slate-600 transition-colors">
+          <button @click="showModal = false" class="flex-1 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
             Cancelar
           </button>
           <button
             @click="enviarSolicitacao"
             :disabled="solicitando"
-            class="flex-1 bg-indigo-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+            class="flex-1 btn-primary text-sm"
           >
             {{ solicitando ? 'Enviando...' : 'Enviar Solicitacao' }}
           </button>
@@ -178,7 +188,6 @@ let debounceTimer = null
 
 onMounted(async () => {
   await carregarDados()
-  // Check for payment return
   const params = new URLSearchParams(window.location.search)
   const sessionId = params.get('session_id')
   if (sessionId) {
@@ -186,9 +195,7 @@ onMounted(async () => {
       await confirmarPagamentoMarketplace(sessionId)
       toast.success('Pagamento confirmado! Voce esta vinculado ao consultor.')
       window.history.replaceState({}, '', window.location.pathname)
-    } catch {
-      // ignore
-    }
+    } catch {}
     await carregarSolicitacoes()
   }
 })
@@ -202,7 +209,7 @@ async function carregarDados() {
     ])
     consultores.value = res1.data
     solicitacoes.value = res2.data
-  } catch (e) {
+  } catch {
     toast.error('Erro ao carregar marketplace')
   } finally {
     loading.value = false
@@ -268,6 +275,21 @@ async function cancelar(solicitacaoId) {
   }
 }
 
+function getInitials(nome) {
+  if (!nome) return '?'
+  return nome.split(' ').map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()
+}
+
+function formatRedeSocial(url) {
+  if (!url) return ''
+  try {
+    const u = new URL(url)
+    return u.hostname.replace('www.', '') + u.pathname.replace(/\/$/, '')
+  } catch {
+    return url
+  }
+}
+
 function formatPreco(v) {
   if (!v) return '0,00'
   return Number(v).toFixed(2).replace('.', ',')
@@ -285,12 +307,12 @@ function statusLabel(s) {
 
 function statusClass(s) {
   const m = {
-    PENDENTE: 'bg-yellow-500/20 text-yellow-400',
-    ACEITA: 'bg-blue-500/20 text-blue-400',
-    PAGA: 'bg-green-500/20 text-green-400',
-    RECUSADA: 'bg-red-500/20 text-red-400',
-    CANCELADA: 'bg-slate-500/20 text-slate-400'
+    PENDENTE: 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-400',
+    ACEITA: 'bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-400',
+    PAGA: 'bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-400',
+    RECUSADA: 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-400',
+    CANCELADA: 'bg-gray-100 text-gray-600 dark:bg-gray-500/20 dark:text-gray-400'
   }
-  return m[s] || 'bg-slate-500/20 text-slate-400'
+  return m[s] || 'bg-gray-100 text-gray-600'
 }
 </script>

@@ -72,7 +72,7 @@ public class MarketplaceService {
                 .marketplaceDescricao(empresa.getMarketplaceDescricao())
                 .marketplaceEspecializacao(empresa.getMarketplaceEspecializacao())
                 .marketplaceExperiencia(empresa.getMarketplaceExperiencia())
-                .marketplaceFotoUrl(empresa.getMarketplaceFotoUrl())
+                .marketplaceRedeSocial(empresa.getMarketplaceRedeSocial())
                 .marketplacePrecoBase(empresa.getMarketplacePrecoBase())
                 .taxaPlataforma(taxa)
                 .build();
@@ -85,7 +85,7 @@ public class MarketplaceService {
         if (request.getMarketplaceDescricao() != null) empresa.setMarketplaceDescricao(request.getMarketplaceDescricao());
         if (request.getMarketplaceEspecializacao() != null) empresa.setMarketplaceEspecializacao(request.getMarketplaceEspecializacao());
         if (request.getMarketplaceExperiencia() != null) empresa.setMarketplaceExperiencia(request.getMarketplaceExperiencia());
-        if (request.getMarketplaceFotoUrl() != null) empresa.setMarketplaceFotoUrl(request.getMarketplaceFotoUrl());
+        if (request.getMarketplaceRedeSocial() != null) empresa.setMarketplaceRedeSocial(request.getMarketplaceRedeSocial());
         if (request.getMarketplacePrecoBase() != null) empresa.setMarketplacePrecoBase(request.getMarketplacePrecoBase());
         empresaRepository.save(empresa);
         return getPerfilMarketplace(consultor);
@@ -334,7 +334,7 @@ public class MarketplaceService {
                         .marketplaceDescricao(e.getMarketplaceDescricao())
                         .marketplaceEspecializacao(e.getMarketplaceEspecializacao())
                         .marketplaceExperiencia(e.getMarketplaceExperiencia())
-                        .marketplaceFotoUrl(e.getMarketplaceFotoUrl())
+                        .marketplaceRedeSocial(e.getMarketplaceRedeSocial())
                         .marketplacePrecoBase(e.getMarketplacePrecoBase())
                         .taxaPlataforma(taxa)
                         .build())
@@ -357,7 +357,7 @@ public class MarketplaceService {
         if (request.getMarketplaceDescricao() != null) empresa.setMarketplaceDescricao(request.getMarketplaceDescricao());
         if (request.getMarketplaceEspecializacao() != null) empresa.setMarketplaceEspecializacao(request.getMarketplaceEspecializacao());
         if (request.getMarketplaceExperiencia() != null) empresa.setMarketplaceExperiencia(request.getMarketplaceExperiencia());
-        if (request.getMarketplaceFotoUrl() != null) empresa.setMarketplaceFotoUrl(request.getMarketplaceFotoUrl());
+        if (request.getMarketplaceRedeSocial() != null) empresa.setMarketplaceRedeSocial(request.getMarketplaceRedeSocial());
         if (request.getMarketplacePrecoBase() != null) empresa.setMarketplacePrecoBase(request.getMarketplacePrecoBase());
         empresaRepository.save(empresa);
     }
@@ -370,7 +370,7 @@ public class MarketplaceService {
         empresa.setMarketplaceDescricao(null);
         empresa.setMarketplaceEspecializacao(null);
         empresa.setMarketplaceExperiencia(null);
-        empresa.setMarketplaceFotoUrl(null);
+        empresa.setMarketplaceRedeSocial(null);
         empresa.setMarketplacePrecoBase(null);
         empresaRepository.save(empresa);
     }
@@ -443,7 +443,7 @@ public class MarketplaceService {
                 .marketplaceDescricao(e.getMarketplaceDescricao())
                 .marketplaceEspecializacao(e.getMarketplaceEspecializacao())
                 .marketplaceExperiencia(e.getMarketplaceExperiencia())
-                .marketplaceFotoUrl(e.getMarketplaceFotoUrl())
+                .marketplaceRedeSocial(e.getMarketplaceRedeSocial())
                 .marketplacePrecoBase(e.getMarketplacePrecoBase())
                 .build();
     }

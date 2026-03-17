@@ -13,7 +13,7 @@ public class MarketplacePerfilResponse {
     private String marketplaceDescricao;
     private String marketplaceEspecializacao;
     private String marketplaceExperiencia;
-    private String marketplaceFotoUrl;
+    private String marketplaceRedeSocial;
     private BigDecimal marketplacePrecoBase;
     /** Informativo: taxa da plataforma em percentual. */
     private BigDecimal taxaPlataforma;

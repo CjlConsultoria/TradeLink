@@ -12,6 +12,6 @@ public class MarketplaceConsultorResponse {
     private String marketplaceDescricao;
     private String marketplaceEspecializacao;
     private String marketplaceExperiencia;
-    private String marketplaceFotoUrl;
+    private String marketplaceRedeSocial;
     private BigDecimal marketplacePrecoBase;
 }

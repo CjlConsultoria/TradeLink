@@ -130,8 +130,8 @@ public class Empresa {
     @Column(name = "marketplace_experiencia", length = 200)
     private String marketplaceExperiencia;
 
-    @Column(name = "marketplace_foto_url", length = 500)
-    private String marketplaceFotoUrl;
+    @Column(name = "marketplace_rede_social", length = 500)
+    private String marketplaceRedeSocial;
 
     @Column(name = "marketplace_preco_base", precision = 10, scale = 2)
     private BigDecimal marketplacePrecoBase;
