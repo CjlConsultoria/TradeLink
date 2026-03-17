@@ -117,7 +117,7 @@ public class Empresa {
 
     // --- Campos do Marketplace ---
 
-    @Column(name = "marketplace_visivel", nullable = false)
+    @Column(name = "marketplace_visivel")
     @Builder.Default
     private Boolean marketplaceVisivel = false;
 
