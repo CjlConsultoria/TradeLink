@@ -1,75 +1,97 @@
 <template>
-  <div class="space-y-6">
-    <div>
-      <h1 class="text-2xl font-bold text-white">Marketplace</h1>
-      <p class="text-slate-400 text-sm mt-1">Gestao completa do marketplace de consultores</p>
-    </div>
+  <div>
+    <h2 class="page-title">Marketplace</h2>
+    <p class="text-sm -mt-4 mb-6" style="color: rgb(var(--tl-text-muted));">Gestao completa do marketplace de consultores</p>
 
     <!-- Stats Cards -->
-    <div v-if="stats" class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <div class="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4">
-        <p class="text-slate-400 text-xs">Consultores Ativos</p>
-        <p class="text-2xl font-bold text-white mt-1">{{ stats.totalConsultores }}</p>
+    <div v-if="stats" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="card p-4">
+        <p class="text-xs font-medium" style="color: rgb(var(--tl-text-muted));">Consultores Ativos</p>
+        <p class="text-2xl font-bold mt-1" style="color: rgb(var(--tl-text));">{{ stats.totalConsultores }}</p>
       </div>
-      <div class="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4">
-        <p class="text-slate-400 text-xs">Solicitacoes Pendentes</p>
-        <p class="text-2xl font-bold text-yellow-400 mt-1">{{ stats.solicitacoesPendentes }}</p>
+      <div class="card p-4">
+        <p class="text-xs font-medium" style="color: rgb(var(--tl-text-muted));">Solicitacoes Pendentes</p>
+        <p class="text-2xl font-bold mt-1 text-amber-500">{{ stats.solicitacoesPendentes }}</p>
       </div>
-      <div class="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4">
-        <p class="text-slate-400 text-xs">Receita Bruta</p>
-        <p class="text-2xl font-bold text-green-400 mt-1">R$ {{ formatPreco(stats.receitaBruta) }}</p>
+      <div class="card p-4">
+        <p class="text-xs font-medium" style="color: rgb(var(--tl-text-muted));">Receita Bruta</p>
+        <p class="text-2xl font-bold mt-1 text-green-600">R$ {{ formatPreco(stats.receitaBruta) }}</p>
       </div>
-      <div class="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4">
-        <p class="text-slate-400 text-xs">Taxa Acumulada ({{ stats.taxaPercentual }}%)</p>
-        <p class="text-2xl font-bold text-indigo-400 mt-1">R$ {{ formatPreco(stats.taxaAcumulada) }}</p>
+      <div class="card p-4">
+        <p class="text-xs font-medium" style="color: rgb(var(--tl-text-muted));">Taxa Acumulada ({{ stats.taxaPercentual }}%)</p>
+        <p class="text-2xl font-bold mt-1 text-indigo-600">R$ {{ formatPreco(stats.taxaAcumulada) }}</p>
       </div>
     </div>
 
     <!-- Tabs -->
-    <div class="flex gap-1 bg-slate-800/50 rounded-xl p-1 border border-slate-700/50">
-      <button
-        v-for="t in tabs"
-        :key="t.key"
-        @click="activeTab = t.key"
-        :class="activeTab === t.key ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'"
-        class="flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-colors"
-      >
-        {{ t.label }}
-      </button>
+    <div class="card p-1 mb-6">
+      <div class="flex gap-1">
+        <button
+          v-for="t in tabs"
+          :key="t.key"
+          @click="activeTab = t.key"
+          class="flex-1 py-2.5 px-3 rounded-lg text-sm font-medium transition-colors"
+          :style="activeTab === t.key
+            ? 'background: rgb(var(--tl-primary)); color: white;'
+            : 'color: rgb(var(--tl-text-muted));'"
+          @mouseenter="activeTab !== t.key && ($event.target.style.color = 'rgb(var(--tl-text))')"
+          @mouseleave="activeTab !== t.key && ($event.target.style.color = 'rgb(var(--tl-text-muted))')"
+        >
+          {{ t.icon }} {{ t.label }}
+        </button>
+      </div>
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="flex justify-center py-12">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-400"></div>
+    <div v-if="loading" class="flex justify-center py-16">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
     </div>
 
     <!-- Tab: Consultores -->
     <div v-else-if="activeTab === 'consultores'" class="space-y-3">
-      <div v-if="!consultores.length" class="text-center py-8 text-slate-400">Nenhum consultor com perfil marketplace</div>
+      <div v-if="!consultores.length" class="card p-12 text-center">
+        <svg class="w-12 h-12 mx-auto mb-3" style="color: rgb(var(--tl-border));" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        <p class="font-medium" style="color: rgb(var(--tl-text));">Nenhum consultor com perfil marketplace</p>
+        <p class="text-sm mt-1" style="color: rgb(var(--tl-text-muted));">Consultores aparecerao aqui ao ativar o marketplace</p>
+      </div>
+
       <div
         v-for="c in consultores"
         :key="c.empresaId"
-        class="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4"
+        class="card p-4 sm:p-5"
       >
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <h3 class="text-white font-semibold text-sm">{{ c.nome }}</h3>
-            <p class="text-slate-400 text-xs">{{ c.marketplaceEspecializacao || 'Sem especializacao' }}</p>
-            <p class="text-slate-500 text-xs mt-1">Preco: R$ {{ formatPreco(c.marketplacePrecoBase) }}/mes</p>
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center shrink-0">
+              <span class="text-sm font-bold text-indigo-600">{{ getInitials(c.nome) }}</span>
+            </div>
+            <div class="min-w-0">
+              <h3 class="font-semibold text-sm truncate" style="color: rgb(var(--tl-text));">{{ c.nome }}</h3>
+              <p class="text-xs truncate" style="color: rgb(var(--tl-text-muted));">{{ c.marketplaceEspecializacao || 'Sem especializacao' }}</p>
+              <p class="text-xs mt-0.5" style="color: rgb(var(--tl-text-muted));">
+                Preco: <strong style="color: rgb(var(--tl-text));">R$ {{ formatPreco(c.marketplacePrecoBase) }}/mes</strong>
+              </p>
+            </div>
           </div>
-          <div class="flex items-center gap-2">
-            <span :class="c.marketplaceVisivel ? 'bg-green-500/20 text-green-400' : 'bg-slate-500/20 text-slate-400'" class="px-2 py-1 rounded-full text-xs font-medium">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span
+              :class="c.marketplaceVisivel ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'"
+              class="px-2.5 py-0.5 rounded-full text-xs font-medium"
+            >
               {{ c.marketplaceVisivel ? 'Visivel' : 'Invisivel' }}
             </span>
             <button
               @click="toggleVisibilidade(c)"
-              class="bg-slate-700 text-slate-300 px-3 py-1 rounded-lg text-xs hover:bg-slate-600 transition-colors"
+              class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+              style="border: 1px solid rgb(var(--tl-border)); color: rgb(var(--tl-text));"
             >
               {{ c.marketplaceVisivel ? 'Ocultar' : 'Mostrar' }}
             </button>
             <button
               @click="removerDoMarketplace(c.empresaId)"
-              class="bg-red-600/20 text-red-400 px-3 py-1 rounded-lg text-xs hover:bg-red-600/30 transition-colors"
+              class="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
             >
               Remover
             </button>
@@ -79,76 +101,158 @@
     </div>
 
     <!-- Tab: Solicitacoes -->
-    <div v-else-if="activeTab === 'solicitacoes'" class="space-y-3">
-      <!-- Filter -->
+    <div v-else-if="activeTab === 'solicitacoes'" class="space-y-4">
+      <!-- Status Filter -->
       <div class="flex gap-2 flex-wrap">
         <button
           v-for="f in statusFilters"
           :key="f.value"
           @click="filtroStatus = f.value; carregarSolicitacoes()"
-          :class="filtroStatus === f.value ? 'bg-indigo-600 text-white' : 'bg-slate-700 text-slate-300'"
-          class="px-3 py-1 rounded-lg text-xs font-medium transition-colors"
+          class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+          :style="filtroStatus === f.value
+            ? 'background: rgb(var(--tl-primary)); color: white;'
+            : 'border: 1px solid rgb(var(--tl-border)); color: rgb(var(--tl-text-muted));'"
         >
           {{ f.label }}
         </button>
       </div>
-      <div v-if="!solicitacoesAdmin.length" class="text-center py-8 text-slate-400">Nenhuma solicitacao encontrada</div>
-      <div
-        v-for="s in solicitacoesAdmin"
-        :key="s.id"
-        class="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4"
-      >
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <p class="text-white text-sm"><strong>{{ s.clienteNome }}</strong> &#8594; {{ s.empresaNome }}</p>
-            <p class="text-slate-400 text-xs mt-1">{{ formatDate(s.createdAt) }}</p>
-            <p v-if="s.precoFinal" class="text-slate-300 text-xs">Preco: R$ {{ formatPreco(s.precoFinal) }}</p>
-          </div>
-          <div class="flex items-center gap-2">
-            <span :class="statusClass(s.status)" class="px-2 py-1 rounded-full text-xs font-medium">
-              {{ statusLabel(s.status) }}
-            </span>
-            <select
-              v-if="s.status !== 'PAGA'"
-              @change="alterarStatus(s.id, $event.target.value); $event.target.value = ''"
-              class="bg-slate-700 text-slate-300 rounded-lg text-xs px-2 py-1 border border-slate-600"
-            >
-              <option value="">Alterar...</option>
-              <option value="PENDENTE">Pendente</option>
-              <option value="ACEITA">Aceita</option>
-              <option value="RECUSADA">Recusada</option>
-              <option value="CANCELADA">Cancelada</option>
-            </select>
-          </div>
+
+      <div v-if="!solicitacoesAdmin.length" class="card p-12 text-center">
+        <svg class="w-12 h-12 mx-auto mb-3" style="color: rgb(var(--tl-border));" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+        </svg>
+        <p class="font-medium" style="color: rgb(var(--tl-text));">Nenhuma solicitacao encontrada</p>
+        <p class="text-sm mt-1" style="color: rgb(var(--tl-text-muted));">{{ filtroStatus ? 'Tente outro filtro de status' : 'Solicitacoes aparecerao aqui' }}</p>
+      </div>
+
+      <!-- Solicitacoes Table for desktop, cards for mobile -->
+      <div v-else class="card overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full table-responsive">
+            <thead>
+              <tr style="border-bottom: 1px solid rgb(var(--tl-border));">
+                <th class="text-left text-xs font-semibold uppercase tracking-wider py-3 px-4" style="color: rgb(var(--tl-text-muted));">Cliente</th>
+                <th class="text-left text-xs font-semibold uppercase tracking-wider py-3 px-4" style="color: rgb(var(--tl-text-muted));">Consultor</th>
+                <th class="text-left text-xs font-semibold uppercase tracking-wider py-3 px-4" style="color: rgb(var(--tl-text-muted));">Preco</th>
+                <th class="text-left text-xs font-semibold uppercase tracking-wider py-3 px-4" style="color: rgb(var(--tl-text-muted));">Data</th>
+                <th class="text-left text-xs font-semibold uppercase tracking-wider py-3 px-4" style="color: rgb(var(--tl-text-muted));">Status</th>
+                <th class="text-right text-xs font-semibold uppercase tracking-wider py-3 px-4" style="color: rgb(var(--tl-text-muted));">Acao</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="s in solicitacoesAdmin"
+                :key="s.id"
+                style="border-bottom: 1px solid rgb(var(--tl-border));"
+                class="last:border-0"
+              >
+                <td class="py-3 px-4">
+                  <p class="text-sm font-medium" style="color: rgb(var(--tl-text));">{{ s.clienteNome || s.clienteEmail }}</p>
+                  <p class="text-xs" style="color: rgb(var(--tl-text-muted));">{{ s.clienteEmail }}</p>
+                </td>
+                <td class="py-3 px-4">
+                  <p class="text-sm" style="color: rgb(var(--tl-text));">{{ s.empresaNome }}</p>
+                </td>
+                <td class="py-3 px-4">
+                  <p v-if="s.precoFinal" class="text-sm font-semibold" style="color: rgb(var(--tl-text));">R$ {{ formatPreco(s.precoFinal) }}</p>
+                  <p v-else class="text-xs" style="color: rgb(var(--tl-text-muted));">-</p>
+                </td>
+                <td class="py-3 px-4">
+                  <p class="text-xs" style="color: rgb(var(--tl-text-muted));">{{ formatDate(s.createdAt) }}</p>
+                </td>
+                <td class="py-3 px-4">
+                  <span :class="statusClass(s.status)" class="px-2.5 py-0.5 rounded-full text-xs font-medium">
+                    {{ statusLabel(s.status) }}
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-right">
+                  <select
+                    v-if="s.status !== 'PAGA'"
+                    @change="alterarStatus(s.id, $event.target.value); $event.target.value = ''"
+                    class="input-base text-xs py-1 px-2 w-auto"
+                    style="width: auto; min-width: 7rem;"
+                  >
+                    <option value="">Alterar...</option>
+                    <option value="PENDENTE">Pendente</option>
+                    <option value="ACEITA">Aceita</option>
+                    <option value="RECUSADA">Recusada</option>
+                    <option value="CANCELADA">Cancelada</option>
+                  </select>
+                  <span v-else class="text-xs" style="color: rgb(var(--tl-text-muted));">—</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
 
     <!-- Tab: Configuracoes -->
     <div v-else-if="activeTab === 'config'" class="space-y-4">
-      <div class="bg-slate-800/50 rounded-xl border border-slate-700/50 p-5">
-        <h2 class="text-white font-semibold mb-4">Taxa da Plataforma</h2>
+      <div class="card p-5 sm:p-6">
+        <h3 class="section-title">Taxa da Plataforma</h3>
+        <p class="text-sm mb-4" style="color: rgb(var(--tl-text-muted));">
+          Esta taxa e aplicada sobre o valor pago pelo cliente no marketplace. O consultor recebe o valor restante.
+        </p>
         <div class="flex items-end gap-4">
           <div>
-            <label class="text-slate-300 text-xs font-medium mb-1 block">Percentual (%)</label>
+            <label class="text-xs font-semibold block mb-1" style="color: rgb(var(--tl-text));">Percentual (%)</label>
             <input
               v-model.number="novaTaxa"
               type="number"
               step="0.5"
               min="0"
               max="100"
-              class="bg-slate-700/50 text-white rounded-lg p-3 text-sm border border-slate-600/50 focus:border-indigo-500 focus:outline-none w-32"
+              class="input-base text-sm"
+              style="width: 8rem;"
             />
           </div>
           <button
             @click="salvarTaxa"
             :disabled="salvandoTaxa"
-            class="bg-indigo-600 text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+            class="btn-primary text-sm"
           >
             {{ salvandoTaxa ? 'Salvando...' : 'Salvar Taxa' }}
           </button>
         </div>
-        <p class="text-slate-500 text-xs mt-3">Esta taxa e aplicada sobre o valor pago pelo cliente no marketplace. O consultor recebe o valor restante.</p>
+
+        <!-- Preview da taxa -->
+        <div v-if="stats" class="mt-6 p-4 rounded-lg" style="background: rgb(var(--tl-surface-alt)); border: 1px solid rgb(var(--tl-border));">
+          <p class="text-xs font-semibold mb-2" style="color: rgb(var(--tl-text));">Simulacao (exemplo R$ 100,00/mes)</p>
+          <div class="grid grid-cols-3 gap-4">
+            <div>
+              <p class="text-xs" style="color: rgb(var(--tl-text-muted));">Cliente paga</p>
+              <p class="text-sm font-bold" style="color: rgb(var(--tl-text));">R$ 100,00</p>
+            </div>
+            <div>
+              <p class="text-xs" style="color: rgb(var(--tl-text-muted));">Taxa plataforma ({{ novaTaxa }}%)</p>
+              <p class="text-sm font-bold text-indigo-600">R$ {{ formatPreco(100 * novaTaxa / 100) }}</p>
+            </div>
+            <div>
+              <p class="text-xs" style="color: rgb(var(--tl-text-muted));">Consultor recebe</p>
+              <p class="text-sm font-bold text-green-600">R$ {{ formatPreco(100 - (100 * novaTaxa / 100)) }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resumo Financeiro -->
+      <div v-if="stats" class="card p-5 sm:p-6">
+        <h3 class="section-title">Resumo Financeiro</h3>
+        <div class="space-y-3">
+          <div class="flex justify-between items-center py-2" style="border-bottom: 1px solid rgb(var(--tl-border));">
+            <span class="text-sm" style="color: rgb(var(--tl-text-muted));">Receita bruta total</span>
+            <span class="text-sm font-bold" style="color: rgb(var(--tl-text));">R$ {{ formatPreco(stats.receitaBruta) }}</span>
+          </div>
+          <div class="flex justify-between items-center py-2" style="border-bottom: 1px solid rgb(var(--tl-border));">
+            <span class="text-sm" style="color: rgb(var(--tl-text-muted));">Taxa acumulada ({{ stats.taxaPercentual }}%)</span>
+            <span class="text-sm font-bold text-indigo-600">R$ {{ formatPreco(stats.taxaAcumulada) }}</span>
+          </div>
+          <div class="flex justify-between items-center py-2">
+            <span class="text-sm" style="color: rgb(var(--tl-text-muted));">Repassado a consultores</span>
+            <span class="text-sm font-bold text-green-600">R$ {{ formatPreco((stats.receitaBruta || 0) - (stats.taxaAcumulada || 0)) }}</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -167,15 +271,15 @@ const toast = useToast()
 const loading = ref(true)
 const activeTab = ref('consultores')
 const tabs = [
-  { key: 'consultores', label: 'Consultores' },
-  { key: 'solicitacoes', label: 'Solicitacoes' },
-  { key: 'config', label: 'Configuracoes' }
+  { key: 'consultores', label: 'Consultores', icon: '👥' },
+  { key: 'solicitacoes', label: 'Solicitacoes', icon: '📩' },
+  { key: 'config', label: 'Configuracoes', icon: '⚙️' }
 ]
 const statusFilters = [
   { value: '', label: 'Todas' },
   { value: 'PENDENTE', label: 'Pendentes' },
   { value: 'ACEITA', label: 'Aceitas' },
-  { value: 'PAGA', label: 'Pagas' },
+  { value: 'PAGA', label: 'Ativas' },
   { value: 'RECUSADA', label: 'Recusadas' },
   { value: 'CANCELADA', label: 'Canceladas' }
 ]
@@ -265,6 +369,11 @@ async function salvarTaxa() {
   }
 }
 
+function getInitials(nome) {
+  if (!nome) return '?'
+  return nome.split(' ').map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()
+}
+
 function formatPreco(v) {
   if (!v && v !== 0) return '0,00'
   return Number(v).toFixed(2).replace('.', ',')
@@ -272,7 +381,7 @@ function formatPreco(v) {
 
 function formatDate(d) {
   if (!d) return ''
-  return new Date(d).toLocaleDateString('pt-BR')
+  return new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
 function statusLabel(s) {
@@ -282,12 +391,12 @@ function statusLabel(s) {
 
 function statusClass(s) {
   const m = {
-    PENDENTE: 'bg-yellow-500/20 text-yellow-400',
-    ACEITA: 'bg-blue-500/20 text-blue-400',
-    PAGA: 'bg-green-500/20 text-green-400',
-    RECUSADA: 'bg-red-500/20 text-red-400',
-    CANCELADA: 'bg-slate-500/20 text-slate-400'
+    PENDENTE: 'bg-amber-100 text-amber-800',
+    ACEITA: 'bg-blue-100 text-blue-800',
+    PAGA: 'bg-green-100 text-green-800',
+    RECUSADA: 'bg-red-100 text-red-800',
+    CANCELADA: 'bg-gray-100 text-gray-600'
   }
-  return m[s] || 'bg-slate-500/20 text-slate-400'
+  return m[s] || 'bg-gray-100 text-gray-600'
 }
 </script>
