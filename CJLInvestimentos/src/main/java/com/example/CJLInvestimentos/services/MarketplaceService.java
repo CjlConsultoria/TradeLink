@@ -244,6 +244,24 @@ public class MarketplaceService {
         cliente.setSubscriptionStatus("NONE");
         cliente.setCurrentPeriodEnd(null);
         cliente.setDataExclusao(null);
+        cliente.setMarketplaceStatus("ACTIVE");
+
+        // Obter periodo da subscription se existir, senão default +30 dias
+        if (sol.getStripeSubscriptionId() != null && !sol.getStripeSubscriptionId().isBlank()) {
+            try {
+                com.stripe.model.Subscription sub = com.stripe.model.Subscription.retrieve(sol.getStripeSubscriptionId());
+                if (sub.getCurrentPeriodEnd() != null) {
+                    cliente.setMarketplaceCurrentPeriodEnd(java.time.Instant.ofEpochSecond(sub.getCurrentPeriodEnd()));
+                } else {
+                    cliente.setMarketplaceCurrentPeriodEnd(java.time.Instant.now().plus(30, java.time.temporal.ChronoUnit.DAYS));
+                }
+            } catch (Exception e) {
+                log.warn("Erro ao obter periodo da subscription marketplace {}: {}", sol.getStripeSubscriptionId(), e.getMessage());
+                cliente.setMarketplaceCurrentPeriodEnd(java.time.Instant.now().plus(30, java.time.temporal.ChronoUnit.DAYS));
+            }
+        } else {
+            cliente.setMarketplaceCurrentPeriodEnd(java.time.Instant.now().plus(30, java.time.temporal.ChronoUnit.DAYS));
+        }
         userRepository.save(cliente);
 
         // Registrar fatura marketplace
@@ -321,6 +339,7 @@ public class MarketplaceService {
         cliente.setSubscriptionStatus("NONE");
         cliente.setCurrentPeriodEnd(null);
         cliente.setDataExclusao(null);
+        cliente.setMarketplaceStatus("ACTIVE");
 
         // Obter periodo da subscription
         if (subscriptionId != null) {
@@ -359,6 +378,7 @@ public class MarketplaceService {
         cliente.setMarketplacePrecoCliente(null);
         cliente.setMarketplaceSubscriptionId(null);
         cliente.setMarketplaceCurrentPeriodEnd(null);
+        cliente.setMarketplaceStatus(null);
         cliente.setDataExclusao(java.time.LocalDateTime.now());
         userRepository.save(cliente);
 
@@ -404,6 +424,7 @@ public class MarketplaceService {
         cliente.setMarketplacePrecoCliente(null);
         cliente.setMarketplaceSubscriptionId(null);
         cliente.setMarketplaceCurrentPeriodEnd(null);
+        cliente.setMarketplaceStatus(null);
         cliente.setDataExclusao(java.time.LocalDateTime.now());
         userRepository.save(cliente);
 
@@ -412,6 +433,43 @@ public class MarketplaceService {
                 cliente.getEmail(),
                 cliente.getNome() != null ? cliente.getNome() : cliente.getEmail(),
                 empresaNome);
+    }
+
+    // ─── Cliente: cancelar subscription + status ────────────────
+
+    @Transactional
+    public void cancelarSubscriptionPeloCliente(User cliente) {
+        if (cliente.getMarketplaceSubscriptionId() == null || cliente.getMarketplaceSubscriptionId().isBlank()) {
+            throw new BusinessException("Voce nao possui uma assinatura marketplace ativa.");
+        }
+        try {
+            com.stripe.model.Subscription sub = com.stripe.model.Subscription.retrieve(cliente.getMarketplaceSubscriptionId());
+            sub.update(java.util.Map.of("cancel_at_period_end", true));
+            cliente.setMarketplaceStatus("CANCELED");
+            userRepository.save(cliente);
+            log.info("Cliente {} solicitou cancelamento da subscription marketplace {}", cliente.getId(), cliente.getMarketplaceSubscriptionId());
+        } catch (Exception e) {
+            log.error("Erro ao cancelar subscription marketplace para cliente {}: {}", cliente.getId(), e.getMessage());
+            throw new BusinessException("Erro ao cancelar assinatura: " + e.getMessage());
+        }
+
+        String empresaNome = cliente.getEmpresa() != null ? cliente.getEmpresa().getNome() : "";
+        notificationAsyncRunner.enviarEmailMarketplaceCancelamentoAsync(
+                cliente.getEmail(),
+                cliente.getNome() != null ? cliente.getNome() : cliente.getEmail(),
+                empresaNome,
+                cliente.getMarketplaceCurrentPeriodEnd());
+    }
+
+    public java.util.Map<String, Object> getSubscriptionStatus(User cliente) {
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        result.put("origemVinculo", cliente.getOrigemVinculo());
+        result.put("marketplaceStatus", cliente.getMarketplaceStatus());
+        result.put("marketplaceCurrentPeriodEnd", cliente.getMarketplaceCurrentPeriodEnd());
+        result.put("marketplacePrecoCliente", cliente.getMarketplacePrecoCliente());
+        result.put("empresaNome", cliente.getEmpresa() != null ? cliente.getEmpresa().getNome() : null);
+        result.put("faturas", faturaService.listarFaturasPorUsuario(cliente.getId()));
+        return result;
     }
 
     // ─── Consultor: clientes vindos do marketplace ───────────────

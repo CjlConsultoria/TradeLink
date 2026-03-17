@@ -137,9 +137,18 @@ api.interceptors.response.use(
         const user = JSON.parse(localStorage.getItem('user') || '{}')
         if (user.role === 'Admin' && path !== '/consultor/faturas') {
           window.location.href = '/consultor/faturas'
-        } else if (user.role === 'Cliente' && path !== '/acesso-bloqueado') {
-          sessionStorage.setItem('motivoBloqueio', motivo || 'Assinatura vencida. Entre em contato com seu consultor.')
-          window.location.href = '/acesso-bloqueado'
+        } else if (user.role === 'Cliente') {
+          // Marketplace bloqueado → redirecionar para pos-exclusao
+          if (motivo && motivo.includes('mentoria')) {
+            user.marketplaceBloqueado = true
+            localStorage.setItem('user', JSON.stringify(user))
+            if (path !== '/cliente/pos-exclusao') {
+              window.location.href = '/cliente/pos-exclusao'
+            }
+          } else if (path !== '/acesso-bloqueado') {
+            sessionStorage.setItem('motivoBloqueio', motivo || 'Assinatura vencida. Entre em contato com seu consultor.')
+            window.location.href = '/acesso-bloqueado'
+          }
         }
       } catch (_) {}
       return Promise.reject(error)

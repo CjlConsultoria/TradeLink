@@ -303,7 +303,8 @@ public class AuthController {
                 .userId(user.getId())
                 .nome(user.getNome())
                 .empresaId(user.getEmpresa() != null ? user.getEmpresa().getId() : null)
-                .autoCadastro(Boolean.TRUE.equals(user.getAutoCadastro()));
+                .autoCadastro(Boolean.TRUE.equals(user.getAutoCadastro()))
+                .origemVinculo(user.getOrigemVinculo());
 
         // Bloqueio por admin, inativação ou pagamento (empresa)
         if (user.getEmpresa() != null && !faturaService.acessoPermitidoPorUsuarioId(user.getId())) {
@@ -332,6 +333,13 @@ public class AuthController {
                 response.bloqueado(true).motivoBloqueio("Seu período de teste expirou. Escolha um plano para continuar acessando.");
                 response.precisaEscolherPlano(true);
             }
+        }
+
+        // Marketplace com pagamento em atraso
+        if ("MARKETPLACE".equals(user.getOrigemVinculo()) && "PAST_DUE".equals(user.getMarketplaceStatus())) {
+            response.marketplaceBloqueado(true);
+            response.bloqueado(true);
+            response.motivoBloqueio("Pagamento da mentoria em atraso.");
         }
 
         // Cliente excluído ou auto-cadastro (sem empresa, ativo)

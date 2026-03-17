@@ -1288,6 +1288,47 @@ public class EmailTemplateService {
                 "Sua mentoria foi encerrada.", body);
     }
 
+    /** Template: falha no pagamento marketplace (para o cliente). */
+    public String buildMarketplacePagamentoFalhou(String clienteNome, String empresaNome) {
+        String body = "<p style='margin:0 0 16px; color:#334155; font-size:15px; line-height:1.6;'>"
+                + "Ola <strong>" + escape(clienteNome) + "</strong>,</p>"
+                + "<p style='margin:0 0 16px; color:#334155; font-size:15px; line-height:1.6;'>"
+                + "Nao conseguimos processar o pagamento da sua mentoria com <strong>"
+                + escape(empresaNome) + "</strong>.</p>"
+                + "<p style='margin:0 0 16px; color:#334155; font-size:15px; line-height:1.6;'>"
+                + "Seu acesso ficara bloqueado ate a regularizacao. Atualize seu metodo de pagamento para continuar recebendo acompanhamento do seu consultor.</p>";
+
+        body += buildButton("Regularizar Pagamento", APP_URL + "/cliente/pos-exclusao");
+
+        return wrapInLayout("Falha no Pagamento",
+                "Nao foi possivel processar seu pagamento.", body);
+    }
+
+    /** Template: cancelamento de assinatura marketplace (para o cliente). */
+    public String buildMarketplaceCancelamento(String clienteNome, String empresaNome, java.time.Instant fimPeriodo) {
+        String dataFim = fimPeriodo != null
+                ? java.time.LocalDate.ofInstant(fimPeriodo, java.time.ZoneId.of("America/Sao_Paulo")).format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                : "-";
+
+        String body = "<p style='margin:0 0 16px; color:#334155; font-size:15px; line-height:1.6;'>"
+                + "Ola <strong>" + escape(clienteNome) + "</strong>,</p>"
+                + "<p style='margin:0 0 16px; color:#334155; font-size:15px; line-height:1.6;'>"
+                + "Sua assinatura de mentoria com <strong>" + escape(empresaNome) + "</strong> foi cancelada conforme solicitado.</p>";
+
+        body += buildInfoTable(new String[][]{
+                {"Consultor", escape(empresaNome)},
+                {"Acesso ate", dataFim}
+        });
+
+        body += "<p style='margin:16px 0 0; color:#334155; font-size:15px; line-height:1.6;'>"
+                + "Voce continuara com acesso ate o fim do periodo pago. Apos essa data, podera optar pela auto-gestao ou encontrar outro consultor no marketplace.</p>";
+
+        body += buildButton("Ver Opcoes", APP_URL + "/cliente/pos-exclusao");
+
+        return wrapInLayout("Assinatura Cancelada",
+                "Sua mentoria sera encerrada em " + dataFim + ".", body);
+    }
+
     private static String escape(String s) {
         if (s == null) return "";
         return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");

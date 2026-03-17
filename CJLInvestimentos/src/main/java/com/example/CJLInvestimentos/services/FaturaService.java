@@ -69,7 +69,12 @@ public class FaturaService {
     @Transactional(readOnly = true)
     public boolean acessoPermitidoPorUsuarioId(Long usuarioId) {
         User user = userRepository.findByIdWithEmpresa(usuarioId).orElse(null);
-        if (user == null || user.getEmpresa() == null) return true;
+        if (user == null) return true;
+        // Cliente marketplace: validar pela propria subscription, nao pela empresa
+        if ("MARKETPLACE".equals(user.getOrigemVinculo())) {
+            return !"PAST_DUE".equals(user.getMarketplaceStatus());
+        }
+        if (user.getEmpresa() == null) return true;
         return acessoPermitido(user.getEmpresa());
     }
 
@@ -77,7 +82,15 @@ public class FaturaService {
     @Transactional(readOnly = true)
     public String getMotivoBloqueioPorUsuarioId(Long usuarioId) {
         User user = userRepository.findByIdWithEmpresa(usuarioId).orElse(null);
-        if (user == null || user.getEmpresa() == null) return null;
+        if (user == null) return null;
+        // Cliente marketplace: validar pela propria subscription, nao pela empresa
+        if ("MARKETPLACE".equals(user.getOrigemVinculo())) {
+            if ("PAST_DUE".equals(user.getMarketplaceStatus())) {
+                return "Pagamento da mentoria em atraso. Regularize para continuar.";
+            }
+            return null; // marketplace ACTIVE/CANCELED — sem bloqueio por empresa
+        }
+        if (user.getEmpresa() == null) return null;
         Empresa empresa = user.getEmpresa();
         if (!Boolean.TRUE.equals(empresa.getAtivo())) {
             if (user.getRole() == com.example.CJLInvestimentos.entities.enums.Role.Cliente) {
@@ -104,6 +117,8 @@ public class FaturaService {
     public boolean isBloqueadoPorAdmin(Long usuarioId) {
         User user = userRepository.findByIdWithEmpresa(usuarioId).orElse(null);
         if (user == null || user.getEmpresa() == null) return false;
+        // Cliente marketplace nao e bloqueado por admin da empresa
+        if ("MARKETPLACE".equals(user.getOrigemVinculo())) return false;
         Empresa e = user.getEmpresa();
         return Boolean.TRUE.equals(e.getAcessoBloqueadoPorAdmin()) || !Boolean.TRUE.equals(e.getAtivo());
     }
@@ -368,6 +383,15 @@ public class FaturaService {
                 .referenciaExterna(referenciaExterna)
                 .descricaoServico("Mentoria Marketplace - " + empresa.getNome())
                 .build());
+    }
+
+    /** Retorna lista de faturas de um usuário (para marketplace ou auto-gestão). */
+    @Transactional(readOnly = true)
+    public List<FaturaResponse> listarFaturasPorUsuario(Long userId) {
+        return faturaRepository.findByUserIdOrderByDataVencimentoDesc(userId)
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
     }
 
     /** Retorna faturas do cliente individual (auto-gestão). */

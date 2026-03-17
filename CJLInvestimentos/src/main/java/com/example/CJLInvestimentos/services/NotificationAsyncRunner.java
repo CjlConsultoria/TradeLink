@@ -292,4 +292,24 @@ public class NotificationAsyncRunner {
             log.warn("Falha ao enviar e-mail marketplace desvinculação: {}", e.getMessage());
         }
     }
+
+    @Async
+    public void enviarEmailMarketplacePagamentoFalhouAsync(
+            String clienteEmail, String clienteNome, String empresaNome) {
+        try {
+            notificationService.enviarEmailMarketplacePagamentoFalhou(clienteEmail, clienteNome, empresaNome);
+        } catch (Exception e) {
+            log.warn("Falha ao enviar e-mail marketplace pagamento falhou: {}", e.getMessage());
+        }
+    }
+
+    @Async
+    public void enviarEmailMarketplaceCancelamentoAsync(
+            String clienteEmail, String clienteNome, String empresaNome, java.time.Instant fimPeriodo) {
+        try {
+            notificationService.enviarEmailMarketplaceCancelamento(clienteEmail, clienteNome, empresaNome, fimPeriodo);
+        } catch (Exception e) {
+            log.warn("Falha ao enviar e-mail marketplace cancelamento: {}", e.getMessage());
+        }
+    }
 }

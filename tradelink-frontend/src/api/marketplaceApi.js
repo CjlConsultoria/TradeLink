@@ -33,6 +33,22 @@ export function cancelarSolicitacao(solicitacaoId) {
   return api.post(`/cliente/marketplace/cancelar/${solicitacaoId}`)
 }
 
+export function getMarketplaceSubscription() {
+  return api.get('/cliente/marketplace/subscription')
+}
+
+export function cancelarMarketplaceSubscription() {
+  return api.post('/cliente/marketplace/cancelar-subscription')
+}
+
+export function portalPagamentoMarketplace() {
+  return api.post('/cliente/marketplace/portal-pagamento')
+}
+
+export function downloadFaturaPdf(faturaId) {
+  return api.get(`/cliente/faturas/${faturaId}/pdf`, { responseType: 'blob' })
+}
+
 // ─── Consultor ───────────────────────────────────────────────
 
 export function getPerfilMarketplace() {

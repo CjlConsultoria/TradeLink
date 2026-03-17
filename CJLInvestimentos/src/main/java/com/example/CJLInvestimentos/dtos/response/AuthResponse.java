@@ -34,6 +34,10 @@ public class AuthResponse {
     private Boolean autoCadastro;
     /** true quando login requer verificação 2FA (OTP por e-mail). */
     private Boolean requires2FA;
+    /** true quando cliente marketplace tem pagamento em atraso. */
+    private Boolean marketplaceBloqueado;
+    /** Origem do vínculo do cliente (MARKETPLACE, CONVITE, etc). */
+    private String origemVinculo;
     /** Refresh token para renovação silenciosa de sessão (7 dias). */
     private String refreshToken;
 }

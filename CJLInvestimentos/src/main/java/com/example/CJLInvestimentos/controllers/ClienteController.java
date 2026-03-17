@@ -77,6 +77,7 @@ public class ClienteController {
     private final AutoGestaoService autoGestaoService;
     private final ChatService chatService;
     private final com.example.CJLInvestimentos.services.MarketplaceService marketplaceService;
+    private final com.example.CJLInvestimentos.services.FaturaPdfService faturaPdfService;
 
     private User getUser(UserDetails userDetails) {
         return userRepository.findByEmail(userDetails.getUsername())
@@ -572,5 +573,37 @@ public class ClienteController {
         User cliente = getUser(userDetails);
         marketplaceService.cancelarSolicitacao(solicitacaoId, cliente);
         return ResponseEntity.ok(Map.of("message", "Solicitação cancelada"));
+    }
+
+    @GetMapping("/marketplace/subscription")
+    public ResponseEntity<?> getMarketplaceSubscription(@AuthenticationPrincipal UserDetails userDetails) {
+        User cliente = getUser(userDetails);
+        return ResponseEntity.ok(marketplaceService.getSubscriptionStatus(cliente));
+    }
+
+    @PostMapping("/marketplace/cancelar-subscription")
+    public ResponseEntity<?> cancelarMarketplaceSubscription(@AuthenticationPrincipal UserDetails userDetails) {
+        User cliente = getUser(userDetails);
+        marketplaceService.cancelarSubscriptionPeloCliente(cliente);
+        return ResponseEntity.ok(Map.of("message", "Assinatura cancelada. Acesso continua ate o fim do periodo pago."));
+    }
+
+    @PostMapping("/marketplace/portal-pagamento")
+    public ResponseEntity<?> portalPagamentoMarketplace(@AuthenticationPrincipal UserDetails userDetails) {
+        User cliente = getUser(userDetails);
+        String portalUrl = stripePaymentService.createCustomerPortalSession(cliente);
+        return ResponseEntity.ok(Map.of("portalUrl", portalUrl));
+    }
+
+    @GetMapping("/faturas/{faturaId}/pdf")
+    public ResponseEntity<byte[]> downloadFaturaPdf(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long faturaId) {
+        User cliente = getUser(userDetails);
+        byte[] pdf = faturaPdfService.gerarPdfParaUsuario(cliente.getId(), faturaId);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=fatura-" + faturaId + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
     }
 }

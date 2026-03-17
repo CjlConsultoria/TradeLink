@@ -113,6 +113,7 @@ const routes = [
       { path: 'chamados', name: 'ChamadosCliente', component: () => import('../views/cliente/ChamadosClienteView.vue') },
       { path: 'marketplace', name: 'MarketplaceCliente', component: () => import('../views/cliente/MarketplaceView.vue') },
       { path: 'faq', name: 'FaqCliente', component: () => import('../views/common/FaqInternaView.vue') },
+      { path: 'minha-mentoria', name: 'MinhaMentoria', component: () => import('../views/cliente/MinhaMentoriaView.vue') },
       { path: 'configuracoes', name: 'ConfiguracoesCliente', component: ConfiguracoesNotificacaoView }
     ]
   },
@@ -142,6 +143,10 @@ router.beforeEach((to, from, next) => {
   if (to.meta.requiresAuth && !authStore.isAuthenticated) return next('/login')
   if (to.name === 'AcessoBloqueado') return next()
   if (to.name === 'PosExclusao') return next()
+  // Marketplace com pagamento em atraso → tela pós-exclusão
+  if (authStore.user?.role === 'Cliente' && authStore.user?.marketplaceBloqueado) {
+    if (to.name !== 'PosExclusao' && to.name !== 'MarketplaceCliente') return next('/cliente/pos-exclusao')
+  }
   // Redirecionar cliente excluído sem auto-gestão para tela pós-exclusão
   // Permitir acesso ao marketplace mesmo quando excluído
   if (authStore.user?.role === 'Cliente' && authStore.user?.clienteExcluido && !authStore.user?.autoGestaoAtiva) {

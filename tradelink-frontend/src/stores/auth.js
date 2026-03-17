@@ -15,6 +15,7 @@ export const useAuthStore = defineStore('auth', () => {
         if (user.value?.precisaEscolherPlano) return '/consultor/faturas'
         return '/consultor'
       case 'Cliente':
+        if (user.value?.marketplaceBloqueado) return '/cliente/pos-exclusao'
         if (user.value?.clienteExcluido && !user.value?.autoGestaoAtiva) return '/cliente/pos-exclusao'
         if (user.value?.autoCadastro && user.value?.precisaEscolherPlano) return '/cliente/pos-exclusao'
         return '/cliente'
@@ -34,7 +35,9 @@ export const useAuthStore = defineStore('auth', () => {
       trialAtivo: data.trialAtivo || false,
       trialFim: data.trialFim || null,
       precisaEscolherPlano: data.precisaEscolherPlano || false,
-      autoCadastro: data.autoCadastro || false
+      autoCadastro: data.autoCadastro || false,
+      marketplaceBloqueado: data.marketplaceBloqueado || false,
+      origemVinculo: data.origemVinculo || null
     }
     localStorage.setItem('token', data.token)
     localStorage.setItem('user', JSON.stringify(user.value))

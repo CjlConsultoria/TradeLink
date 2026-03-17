@@ -433,4 +433,16 @@ public class NotificationService {
         String html = emailTemplateService.buildMarketplaceDesvinculacao(clienteNome, empresaNome);
         enviarEmailHtml(clienteEmail, "Mentoria Encerrada - TradeLink", html);
     }
+
+    public void enviarEmailMarketplacePagamentoFalhou(
+            String clienteEmail, String clienteNome, String empresaNome) {
+        String html = emailTemplateService.buildMarketplacePagamentoFalhou(clienteNome, empresaNome);
+        enviarEmailHtml(clienteEmail, "Falha no Pagamento - Mentoria TradeLink", html);
+    }
+
+    public void enviarEmailMarketplaceCancelamento(
+            String clienteEmail, String clienteNome, String empresaNome, java.time.Instant fimPeriodo) {
+        String html = emailTemplateService.buildMarketplaceCancelamento(clienteNome, empresaNome, fimPeriodo);
+        enviarEmailHtml(clienteEmail, "Assinatura Cancelada - Mentoria TradeLink", html);
+    }
 }

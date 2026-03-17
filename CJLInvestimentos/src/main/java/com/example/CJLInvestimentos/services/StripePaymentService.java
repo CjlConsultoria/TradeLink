@@ -84,9 +84,16 @@ public class StripePaymentService {
     /** Injetado via setter para evitar dependência circular (MarketplaceService → StripePaymentService → MarketplaceService). */
     private MarketplaceService marketplaceService;
 
+    private NotificationAsyncRunner notificationAsyncRunner;
+
     @org.springframework.beans.factory.annotation.Autowired
     public void setMarketplaceService(@org.springframework.context.annotation.Lazy MarketplaceService marketplaceService) {
         this.marketplaceService = marketplaceService;
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setNotificationAsyncRunner(NotificationAsyncRunner notificationAsyncRunner) {
+        this.notificationAsyncRunner = notificationAsyncRunner;
     }
 
     public StripePaymentService(EmpresaRepository empresaRepository, PlanoRepository planoRepository, FaturaService faturaService, UserRepository userRepository, PlanoService planoService) {
@@ -450,6 +457,7 @@ public class StripePaymentService {
             case "customer.subscription.updated" -> handleSubscriptionUpdated(event);
             case "customer.subscription.deleted" -> handleSubscriptionDeleted(event);
             case "invoice.paid" -> handleInvoicePaid(event);
+            case "invoice.payment_failed" -> handleInvoicePaymentFailed(event);
             case "payment_intent.succeeded" -> handlePaymentIntentSucceeded(event);
             default -> log.debug("Evento Stripe ignorado: {}", eventType);
         }
@@ -893,8 +901,16 @@ public class StripePaymentService {
             if (sub.getCurrentPeriodEnd() != null) {
                 user.setMarketplaceCurrentPeriodEnd(Instant.ofEpochSecond(sub.getCurrentPeriodEnd()));
             }
+            String status = sub.getStatus();
+            if ("active".equals(status)) {
+                user.setMarketplaceStatus("ACTIVE");
+            } else if ("past_due".equals(status) || "unpaid".equals(status)) {
+                user.setMarketplaceStatus("PAST_DUE");
+            } else if ("canceled".equals(status)) {
+                user.setMarketplaceStatus("CANCELED");
+            }
             userRepository.save(user);
-            log.info("Marketplace subscription atualizada para user {}", user.getId());
+            log.info("Marketplace subscription atualizada para user {}: status={}", user.getId(), status);
         });
     }
 
@@ -924,5 +940,58 @@ public class StripePaymentService {
 
     private void handleInvoicePaid(Event event) {
         // Opcional: atualizar currentPeriodEnd a partir da invoice se necessário
+    }
+
+    private void handleInvoicePaymentFailed(Event event) {
+        com.stripe.model.Invoice invoice = (com.stripe.model.Invoice) event.getDataObjectDeserializer().getObject().orElse(null);
+        if (invoice == null) return;
+
+        String subscriptionId = invoice.getSubscription();
+        if (subscriptionId == null) return;
+
+        // Verificar se e subscription de marketplace (usuario)
+        userRepository.findByMarketplaceSubscriptionId(subscriptionId).ifPresent(user -> {
+            user.setMarketplaceStatus("PAST_DUE");
+            userRepository.save(user);
+
+            String empresaNome = user.getEmpresa() != null ? user.getEmpresa().getNome() : "";
+            notificationAsyncRunner.enviarEmailMarketplacePagamentoFalhouAsync(
+                    user.getEmail(),
+                    user.getNome() != null ? user.getNome() : user.getEmail(),
+                    empresaNome);
+
+            log.info("Marketplace payment failed for user {}, subscription {}", user.getId(), subscriptionId);
+        });
+
+        // Verificar se e subscription de empresa
+        empresaRepository.findByStripeSubscriptionId(subscriptionId).ifPresent(empresa -> {
+            empresa.setSubscriptionStatus(SubscriptionStatus.PAST_DUE);
+            empresaRepository.save(empresa);
+            log.info("Payment failed for empresa {}, subscription {}", empresa.getId(), subscriptionId);
+        });
+    }
+
+    /**
+     * Cria sessao do Stripe Customer Portal para o usuario atualizar metodo de pagamento.
+     */
+    public String createCustomerPortalSession(User user) {
+        if (!isConfigured()) throw new BusinessException("Pagamentos nao configurados.");
+        String customerId = user.getStripeCustomerId();
+        if (customerId == null || customerId.isBlank()) {
+            throw new BusinessException("Cliente sem customer ID no Stripe.");
+        }
+        try {
+            com.stripe.param.billingportal.SessionCreateParams params =
+                    com.stripe.param.billingportal.SessionCreateParams.builder()
+                            .setCustomer(customerId)
+                            .setReturnUrl(successUrlPagamentoCliente)
+                            .build();
+            com.stripe.model.billingportal.Session session =
+                    com.stripe.model.billingportal.Session.create(params);
+            return session.getUrl();
+        } catch (Exception e) {
+            log.error("Erro ao criar portal session para user {}", user.getId(), e);
+            throw new BusinessException("Erro ao abrir portal de pagamento.");
+        }
     }
 }

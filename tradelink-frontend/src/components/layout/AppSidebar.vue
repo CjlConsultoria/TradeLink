@@ -242,6 +242,9 @@ const menuItems = computed(() => {
           ]
         },
         { to: '/cliente/relatorios', label: 'Relatorios', icon: '📈' },
+        ...(authStore.user?.origemVinculo === 'MARKETPLACE'
+          ? [{ to: '/cliente/minha-mentoria', label: 'Minha Mentoria', icon: '🎓' }]
+          : []),
         { to: '/cliente/atividades', label: 'Atividades', icon: '🕐' },
         { to: '/cliente/chamados', label: 'Chamados', icon: '🎫' },
         { to: '/cliente/faq', label: 'FAQ', icon: '❓' },

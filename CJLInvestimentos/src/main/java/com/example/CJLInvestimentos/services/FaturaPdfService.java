@@ -51,6 +51,16 @@ public class FaturaPdfService {
         return buildPdf(fatura);
     }
 
+    @Transactional(readOnly = true)
+    public byte[] gerarPdfParaUsuario(Long userId, Long faturaId) {
+        Fatura fatura = faturaRepository.findById(faturaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Fatura não encontrada"));
+        if (fatura.getUser() == null || !fatura.getUser().getId().equals(userId)) {
+            throw new ResourceNotFoundException("Fatura não pertence a este usuário");
+        }
+        return buildPdf(fatura);
+    }
+
     private byte[] buildPdf(Fatura fatura) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {

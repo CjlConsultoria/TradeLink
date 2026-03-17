@@ -15,9 +15,14 @@
         </div>
         <h1 class="text-2xl font-bold text-white mb-2">TradeLink</h1>
         <p class="text-slate-300 text-lg">
-          Ola, <strong class="text-white">{{ status?.nomeCliente || 'Cliente' }}</strong>
+          Ola, <strong class="text-white">{{ nomeCliente }}</strong>
         </p>
-        <p class="text-slate-400 text-sm mt-2 max-w-lg mx-auto">
+        <!-- Mensagem diferente para marketplace bloqueado vs exclusao -->
+        <p v-if="isMarketplaceBloqueado" class="text-slate-400 text-sm mt-2 max-w-lg mx-auto">
+          O pagamento da sua mentoria esta em atraso. Seu acesso foi bloqueado ate a regularizacao.
+          Escolha como deseja prosseguir:
+        </p>
+        <p v-else class="text-slate-400 text-sm mt-2 max-w-lg mx-auto">
           Seu consultor desvinculou sua conta do grupo de atendimento.
           Seus dados e historico de investimentos estao preservados.
           Escolha como deseja prosseguir:
@@ -26,6 +31,34 @@
 
       <!-- Cards -->
       <div class="grid md:grid-cols-2 gap-6 mb-8">
+
+        <!-- Card: Regularizar Pagamento (marketplace bloqueado) -->
+        <div v-if="isMarketplaceBloqueado" class="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10 p-6 hover:border-amber-400/30 transition-all">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 bg-amber-500/20 rounded-xl flex items-center justify-center">
+              <span class="text-xl">&#128179;</span>
+            </div>
+            <h2 class="text-lg font-semibold text-white">Regularizar Pagamento</h2>
+          </div>
+          <p class="text-slate-300 text-sm mb-4">
+            Atualize seu metodo de pagamento e regularize sua assinatura para continuar com seu consultor.
+          </p>
+          <div v-if="subscriptionInfo" class="space-y-2 mb-6">
+            <div class="flex items-center gap-2 text-sm text-slate-300">
+              <span class="text-amber-400">&#9679;</span> Consultor: {{ subscriptionInfo.empresaNome || '-' }}
+            </div>
+            <div class="flex items-center gap-2 text-sm text-slate-300">
+              <span class="text-amber-400">&#9679;</span> Valor: R$ {{ subscriptionInfo.marketplacePrecoCliente ? Number(subscriptionInfo.marketplacePrecoCliente).toFixed(2).replace('.', ',') : '-' }}/mes
+            </div>
+          </div>
+          <button
+            @click="regularizarPagamento"
+            :disabled="portalLoading"
+            class="w-full bg-amber-600 text-white py-3 px-4 rounded-xl font-medium hover:bg-amber-700 disabled:opacity-50 transition-colors text-sm"
+          >
+            {{ portalLoading ? 'Abrindo...' : 'Atualizar Pagamento' }}
+          </button>
+        </div>
 
         <!-- Card A: Auto-Gestao -->
         <div class="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10 p-6 hover:border-indigo-400/30 transition-all">
@@ -54,7 +87,7 @@
           </ul>
           <div class="border-t border-white/10 pt-4">
             <div class="flex items-baseline gap-1 mb-3">
-              <span class="text-3xl font-bold text-white">R$ {{ status.precoAutoGestao ? Number(status.precoAutoGestao).toFixed(2).replace('.', ',') : '9,99' }}</span>
+              <span class="text-3xl font-bold text-white">R$ {{ status?.precoAutoGestao ? Number(status.precoAutoGestao).toFixed(2).replace('.', ',') : '9,99' }}</span>
               <span class="text-slate-400 text-sm">/mes</span>
             </div>
             <button
@@ -67,8 +100,8 @@
           </div>
         </div>
 
-        <!-- Card B: Relatorio Completo -->
-        <div class="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10 p-6 hover:border-emerald-400/30 transition-all">
+        <!-- Card B: Relatorio Completo (somente quando NAO e marketplace bloqueado) -->
+        <div v-if="!isMarketplaceBloqueado" class="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10 p-6 hover:border-emerald-400/30 transition-all">
           <div class="flex items-center gap-3 mb-4">
             <div class="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center">
               <span class="text-xl">&#128196;</span>
@@ -197,10 +230,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import autoGestaoApi from '../../api/autoGestaoApi'
+import { getMarketplaceSubscription, portalPagamentoMarketplace } from '../../api/marketplaceApi'
 
 const router = useRouter()
 const route = useRoute()
@@ -208,30 +242,68 @@ const authStore = useAuthStore()
 
 const loading = ref(true)
 const status = ref(null)
+const subscriptionInfo = ref(null)
 const erro = ref('')
 const checkoutLoading = ref(false)
 const checkoutRelatorioLoading = ref(false)
 const downloadLoading = ref(false)
+const portalLoading = ref(false)
 const pagamentoRelatorioOk = ref(false)
 const pagamentoAutoGestaoOk = ref(false)
 const downloadingPago = ref(false)
 
+const isMarketplaceBloqueado = computed(() => authStore.user?.marketplaceBloqueado === true)
+
+const nomeCliente = computed(() => {
+  if (isMarketplaceBloqueado.value && subscriptionInfo.value) {
+    return authStore.user?.nome || 'Cliente'
+  }
+  return status.value?.nomeCliente || authStore.user?.nome || 'Cliente'
+})
+
 async function loadStatus() {
   loading.value = true
   try {
+    // Carregar status de auto-gestao
     const res = await autoGestaoApi.getStatus()
     status.value = res.data
     // Se tem auto-gestao ativa, redirecionar para dashboard
     if (status.value.autoGestaoAtiva) {
       authStore.user.autoGestaoAtiva = true
+      authStore.user.marketplaceBloqueado = false
       localStorage.setItem('user', JSON.stringify(authStore.user))
       router.push('/cliente')
       return
     }
   } catch (e) {
-    erro.value = 'Erro ao carregar dados. Tente novamente.'
-  } finally {
-    loading.value = false
+    // Se marketplace bloqueado, o endpoint pode dar 403, ignora
+    if (!isMarketplaceBloqueado.value) {
+      erro.value = 'Erro ao carregar dados. Tente novamente.'
+    }
+  }
+
+  // Carregar info da subscription marketplace se bloqueado
+  if (isMarketplaceBloqueado.value) {
+    try {
+      const res = await getMarketplaceSubscription()
+      subscriptionInfo.value = res.data
+    } catch (e) {
+      // ignora
+    }
+  }
+
+  loading.value = false
+}
+
+async function regularizarPagamento() {
+  portalLoading.value = true
+  erro.value = ''
+  try {
+    const res = await portalPagamentoMarketplace()
+    window.location.href = res.data.portalUrl
+  } catch (e) {
+    erro.value = e.response?.data?.erro || e.response?.data?.message || 'Erro ao abrir portal de pagamento.'
+    portalLoading.value = false
   }
 }
 

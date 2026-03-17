@@ -153,6 +153,9 @@ public class User implements UserDetails {
     @Column(name = "marketplace_current_period_end")
     private Instant marketplaceCurrentPeriodEnd;
 
+    @Column(name = "marketplace_status", length = 20)
+    private String marketplaceStatus; // ACTIVE, PAST_DUE, CANCELED, null
+
     // --- Campos de recuperação de senha ---
 
     @Column(name = "token_reset_senha", length = 128, unique = true)
