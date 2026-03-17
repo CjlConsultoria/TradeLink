@@ -6,6 +6,7 @@ import com.example.CJLInvestimentos.entities.Recomendacao;
 import com.example.CJLInvestimentos.entities.User;
 import com.example.CJLInvestimentos.entities.enums.Role;
 import com.example.CJLInvestimentos.repositories.PushSubscriptionRepository;
+import com.example.CJLInvestimentos.repositories.UserRepository;
 import jakarta.annotation.PostConstruct;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
@@ -32,6 +33,7 @@ public class NotificationService {
 
     private final JavaMailSender mailSender;
     private final PushSubscriptionRepository pushSubscriptionRepository;
+    private final UserRepository userRepository;
     private final EmailTemplateService emailTemplateService;
     private final NotificacaoInAppService notificacaoInAppService;
     private final AtividadeLogService atividadeLogService;
@@ -39,11 +41,13 @@ public class NotificationService {
     public NotificationService(
             @org.springframework.beans.factory.annotation.Autowired(required = false) JavaMailSender mailSender,
             PushSubscriptionRepository pushSubscriptionRepository,
+            UserRepository userRepository,
             EmailTemplateService emailTemplateService,
             NotificacaoInAppService notificacaoInAppService,
             AtividadeLogService atividadeLogService) {
         this.mailSender = mailSender;
         this.pushSubscriptionRepository = pushSubscriptionRepository;
+        this.userRepository = userRepository;
         this.emailTemplateService = emailTemplateService;
         this.notificacaoInAppService = notificacaoInAppService;
         this.atividadeLogService = atividadeLogService;
@@ -387,5 +391,46 @@ public class NotificationService {
                                         String tipoAlerta, String precoAlerta, String precoAtual) {
         String html = emailTemplateService.buildAlertaPreco(nome, par, tipoAlerta, precoAlerta, precoAtual);
         enviarEmailHtml(para, "Alerta de Preco: " + par + " - TradeLink", html);
+    }
+
+    // ─── Marketplace ─────────────────────────────────────────────
+
+    /** Nova solicitação de mentoria (para o consultor/admin da empresa). */
+    public void enviarEmailMarketplaceNovaSolicitacao(
+            com.example.CJLInvestimentos.entities.Empresa empresa, String clienteNome, String clienteEmail, String mensagem) {
+        // Enviar para todos os admins da empresa
+        var admins = userRepository.findByEmpresaIdAndRole(empresa.getId(), com.example.CJLInvestimentos.entities.enums.Role.Admin);
+        String html = emailTemplateService.buildMarketplaceNovaSolicitacao(clienteNome, clienteEmail, mensagem, empresa.getNome());
+        for (var admin : admins) {
+            enviarEmailHtml(admin.getEmail(), "Nova Solicitação de Mentoria - TradeLink Marketplace", html);
+        }
+    }
+
+    /** Solicitação aceita (para o cliente). */
+    public void enviarEmailMarketplaceSolicitacaoAceita(
+            String clienteEmail, String clienteNome, String empresaNome, java.math.BigDecimal preco) {
+        String html = emailTemplateService.buildMarketplaceSolicitacaoAceita(clienteNome, empresaNome, preco);
+        enviarEmailHtml(clienteEmail, "Solicitação de Mentoria Aceita - TradeLink", html);
+    }
+
+    /** Solicitação recusada (para o cliente). */
+    public void enviarEmailMarketplaceSolicitacaoRecusada(
+            String clienteEmail, String clienteNome, String empresaNome) {
+        String html = emailTemplateService.buildMarketplaceSolicitacaoRecusada(clienteNome, empresaNome);
+        enviarEmailHtml(clienteEmail, "Solicitação de Mentoria - TradeLink", html);
+    }
+
+    /** Pagamento confirmado (para o cliente). */
+    public void enviarEmailMarketplacePagamentoConfirmado(
+            String clienteEmail, String clienteNome, String empresaNome, java.math.BigDecimal preco) {
+        String html = emailTemplateService.buildMarketplacePagamentoConfirmado(clienteNome, empresaNome, preco);
+        enviarEmailHtml(clienteEmail, "Pagamento Confirmado - Mentoria TradeLink", html);
+    }
+
+    /** Desvinculação marketplace (para o cliente). */
+    public void enviarEmailMarketplaceDesvinculacao(
+            String clienteEmail, String clienteNome, String empresaNome) {
+        String html = emailTemplateService.buildMarketplaceDesvinculacao(clienteNome, empresaNome);
+        enviarEmailHtml(clienteEmail, "Mentoria Encerrada - TradeLink", html);
     }
 }

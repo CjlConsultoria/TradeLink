@@ -239,4 +239,57 @@ public class NotificationAsyncRunner {
             log.warn("Falha ao notificar alerta de preco em background: {}", e.getMessage());
         }
     }
+
+    // ─── Marketplace ─────────────────────────────────────────────
+
+    @Async
+    public void enviarEmailMarketplaceNovaSolicitacaoAsync(
+            com.example.CJLInvestimentos.entities.Empresa empresa,
+            String clienteNome, String clienteEmail, String mensagem) {
+        try {
+            notificationService.enviarEmailMarketplaceNovaSolicitacao(empresa, clienteNome, clienteEmail, mensagem);
+        } catch (Exception e) {
+            log.warn("Falha ao enviar e-mail marketplace nova solicitação: {}", e.getMessage());
+        }
+    }
+
+    @Async
+    public void enviarEmailMarketplaceSolicitacaoAceitaAsync(
+            String clienteEmail, String clienteNome, String empresaNome, java.math.BigDecimal preco) {
+        try {
+            notificationService.enviarEmailMarketplaceSolicitacaoAceita(clienteEmail, clienteNome, empresaNome, preco);
+        } catch (Exception e) {
+            log.warn("Falha ao enviar e-mail marketplace solicitação aceita: {}", e.getMessage());
+        }
+    }
+
+    @Async
+    public void enviarEmailMarketplaceSolicitacaoRecusadaAsync(
+            String clienteEmail, String clienteNome, String empresaNome) {
+        try {
+            notificationService.enviarEmailMarketplaceSolicitacaoRecusada(clienteEmail, clienteNome, empresaNome);
+        } catch (Exception e) {
+            log.warn("Falha ao enviar e-mail marketplace solicitação recusada: {}", e.getMessage());
+        }
+    }
+
+    @Async
+    public void enviarEmailMarketplacePagamentoConfirmadoAsync(
+            String clienteEmail, String clienteNome, String empresaNome, java.math.BigDecimal preco) {
+        try {
+            notificationService.enviarEmailMarketplacePagamentoConfirmado(clienteEmail, clienteNome, empresaNome, preco);
+        } catch (Exception e) {
+            log.warn("Falha ao enviar e-mail marketplace pagamento confirmado: {}", e.getMessage());
+        }
+    }
+
+    @Async
+    public void enviarEmailMarketplaceDesvinculacaoAsync(
+            String clienteEmail, String clienteNome, String empresaNome) {
+        try {
+            notificationService.enviarEmailMarketplaceDesvinculacao(clienteEmail, clienteNome, empresaNome);
+        } catch (Exception e) {
+            log.warn("Falha ao enviar e-mail marketplace desvinculação: {}", e.getMessage());
+        }
+    }
 }

@@ -189,6 +189,10 @@ public class UserService {
 
         // Vincular à empresa e resetar estado de auto-gestão
         cliente.setEmpresa(empresa);
+        cliente.setOrigemVinculo("CONVITE");
+        cliente.setMarketplacePrecoCliente(null);
+        cliente.setMarketplaceSubscriptionId(null);
+        cliente.setMarketplaceCurrentPeriodEnd(null);
         cliente.setAutoGestao(false);
         cliente.setSubscriptionStatus("NONE");
         cliente.setCurrentPeriodEnd(null);
@@ -351,6 +355,7 @@ public class UserService {
                         .email(emailNorm)
                         .role(Role.Cliente)
                         .empresa(empresa)
+                        .origemVinculo("CONVITE")
                         .ativo(false)
                         .tokenConvite(token)
                         .tokenConviteExpiracao(LocalDateTime.now().plusHours(48))

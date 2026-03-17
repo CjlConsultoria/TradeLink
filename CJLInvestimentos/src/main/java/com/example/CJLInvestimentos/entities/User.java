@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -137,6 +138,20 @@ public class User implements UserDetails {
 
     @Column(length = 18)
     private String cnpj;
+
+    // --- Campos do Marketplace ---
+
+    @Column(name = "origem_vinculo", length = 20)
+    private String origemVinculo;
+
+    @Column(name = "marketplace_preco_cliente", precision = 10, scale = 2)
+    private BigDecimal marketplacePrecoCliente;
+
+    @Column(name = "marketplace_subscription_id", length = 128)
+    private String marketplaceSubscriptionId;
+
+    @Column(name = "marketplace_current_period_end")
+    private Instant marketplaceCurrentPeriodEnd;
 
     // --- Campos de recuperação de senha ---
 

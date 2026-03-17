@@ -81,6 +81,14 @@ public class StripePaymentService {
     private final UserRepository userRepository;
     private final PlanoService planoService;
 
+    /** Injetado via setter para evitar dependência circular (MarketplaceService → StripePaymentService → MarketplaceService). */
+    private MarketplaceService marketplaceService;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setMarketplaceService(@org.springframework.context.annotation.Lazy MarketplaceService marketplaceService) {
+        this.marketplaceService = marketplaceService;
+    }
+
     public StripePaymentService(EmpresaRepository empresaRepository, PlanoRepository planoRepository, FaturaService faturaService, UserRepository userRepository, PlanoService planoService) {
         this.empresaRepository = empresaRepository;
         this.planoRepository = planoRepository;
@@ -462,10 +470,20 @@ public class StripePaymentService {
         BigDecimal amount = BigDecimal.valueOf(pi.getAmount()).divide(BigDecimal.valueOf(100));
         FormaPagamento forma = obterFormaPagamentoDoPaymentIntent(pi);
 
-        // Pagamento individual de cliente (auto-gestão ou relatório)
+        // Pagamento individual de cliente (auto-gestão, relatório ou marketplace)
         if (meta.containsKey("user_id")) {
             Long userId = Long.parseLong(meta.get("user_id"));
             String tipo = meta.getOrDefault("tipo", "autogestao");
+            if ("marketplace".equals(tipo) && meta.containsKey("solicitacao_id")) {
+                Long solicitacaoId = Long.parseLong(meta.get("solicitacao_id"));
+                try {
+                    marketplaceService.processarPagamentoMarketplace(solicitacaoId);
+                    log.info("Marketplace pago via payment_intent.succeeded: user={}, solicitacao={}", userId, solicitacaoId);
+                } catch (Exception ex) {
+                    log.error("Erro ao processar pagamento marketplace via webhook: solicitacao={}", solicitacaoId, ex);
+                }
+                return;
+            }
             if ("relatorio".equals(tipo)) {
                 faturaService.registrarPagamentoRelatorioCliente(userId, amount, forma, pi.getId());
                 log.info("Relatório pago via payment_intent.succeeded: user={}, valor={}", userId, amount);
@@ -684,6 +702,76 @@ public class StripePaymentService {
             }
         }
         return FormaPagamento.CARTAO;
+    }
+
+    // ─── Marketplace checkout ─────────────────────────────────────
+
+    @Value("${stripe.success-url-marketplace:http://localhost:5173/cliente/marketplace?pagamento=ok}")
+    private String successUrlMarketplace;
+
+    @Value("${stripe.cancel-url-marketplace:http://localhost:5173/cliente/marketplace}")
+    private String cancelUrlMarketplace;
+
+    /**
+     * Cria Checkout Session para pagamento de mentoria do marketplace.
+     * Modo PAYMENT (pagamento único mensal, sem subscription Stripe na v1).
+     */
+    public Map<String, String> createCheckoutSessionMarketplace(User cliente,
+            com.example.CJLInvestimentos.entities.SolicitacaoMentoria solicitacao) {
+        if (!isConfigured()) throw new BusinessException("Pagamentos não estão configurados.");
+
+        BigDecimal preco = solicitacao.getPrecoFinal();
+        long amountCentavos = preco.multiply(BigDecimal.valueOf(100)).longValue();
+        if (amountCentavos < 100) amountCentavos = 100;
+
+        String customerId = getOrCreateStripeCustomerForUser(cliente);
+        try {
+            SessionCreateParams.LineItem.PriceData.ProductData productData =
+                    SessionCreateParams.LineItem.PriceData.ProductData.builder()
+                            .setName("Mentoria TradeLink - " + solicitacao.getEmpresa().getNome())
+                            .build();
+            SessionCreateParams.LineItem.PriceData priceData = SessionCreateParams.LineItem.PriceData.builder()
+                    .setCurrency("brl")
+                    .setUnitAmount(amountCentavos)
+                    .setProductData(productData)
+                    .build();
+            SessionCreateParams.LineItem lineItem = SessionCreateParams.LineItem.builder()
+                    .setPriceData(priceData)
+                    .setQuantity(1L)
+                    .build();
+            SessionCreateParams.PaymentIntentData paymentIntentData = SessionCreateParams.PaymentIntentData.builder()
+                    .putMetadata("user_id", cliente.getId().toString())
+                    .putMetadata("tipo", "marketplace")
+                    .putMetadata("solicitacao_id", solicitacao.getId().toString())
+                    .build();
+            String successWithSession = successUrlMarketplace
+                    + (successUrlMarketplace.contains("?") ? "&" : "?")
+                    + "session_id={CHECKOUT_SESSION_ID}&solicitacao_id=" + solicitacao.getId();
+            SessionCreateParams.Builder paramsBuilder = SessionCreateParams.builder()
+                    .setMode(SessionCreateParams.Mode.PAYMENT)
+                    .setSuccessUrl(successWithSession)
+                    .setCancelUrl(cancelUrlMarketplace)
+                    .putMetadata("user_id", cliente.getId().toString())
+                    .putMetadata("tipo", "marketplace")
+                    .putMetadata("solicitacao_id", solicitacao.getId().toString())
+                    .addLineItem(lineItem)
+                    .setPaymentIntentData(paymentIntentData)
+                    .addPaymentMethodType(SessionCreateParams.PaymentMethodType.CARD)
+                    .addPaymentMethodType(SessionCreateParams.PaymentMethodType.BOLETO);
+            if (customerId != null) paramsBuilder.setCustomer(customerId);
+            Session session = Session.create(paramsBuilder.build());
+
+            // Salvar session ID na solicitação
+            solicitacao.setStripeCheckoutSessionId(session.getId());
+
+            Map<String, String> result = new HashMap<>();
+            result.put("checkoutUrl", session.getUrl());
+            result.put("sessionId", session.getId());
+            return result;
+        } catch (Exception e) {
+            log.error("Erro ao criar Checkout Session marketplace", e);
+            throw new BusinessException("Erro ao iniciar pagamento: " + e.getMessage());
+        }
     }
 
     private void handleCheckoutSessionCompleted(Event event) {

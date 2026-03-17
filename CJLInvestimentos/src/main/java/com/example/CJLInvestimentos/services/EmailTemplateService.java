@@ -1192,6 +1192,102 @@ public class EmailTemplateService {
                 nomeAdmin + " respondeu ao chamado " + numero + ".", body);
     }
 
+    // ─── Marketplace ─────────────────────────────────────────────
+
+    /** Template: nova solicitação de mentoria recebida (para o consultor). */
+    public String buildMarketplaceNovaSolicitacao(String clienteNome, String clienteEmail, String mensagem, String empresaNome) {
+        String body = "<p style='margin:0 0 16px; color:#334155; font-size:15px; line-height:1.6;'>"
+                + "Você recebeu uma nova solicitação de mentoria no Marketplace TradeLink.</p>";
+
+        body += buildInfoTable(new String[][]{
+                {"Cliente", escape(clienteNome)},
+                {"E-mail", escape(clienteEmail)},
+                {"Mensagem", mensagem != null ? escape(mensagem) : "<em>Sem mensagem</em>"}
+        });
+
+        body += "<p style='margin:16px 0 0; color:#64748b; font-size:13px;'>"
+                + "Acesse o painel para aceitar ou recusar esta solicitação.</p>";
+
+        body += buildButton("Ver Solicitações", APP_URL + "/consultor/solicitacoes");
+
+        return wrapInLayout("Nova Solicitação de Mentoria",
+                "Um cliente deseja ser mentorado por " + escape(empresaNome) + ".", body);
+    }
+
+    /** Template: solicitação aceita (para o cliente). */
+    public String buildMarketplaceSolicitacaoAceita(String clienteNome, String empresaNome, java.math.BigDecimal preco) {
+        String body = "<p style='margin:0 0 16px; color:#334155; font-size:15px; line-height:1.6;'>"
+                + "Olá <strong>" + escape(clienteNome) + "</strong>,</p>"
+                + "<p style='margin:0 0 16px; color:#334155; font-size:15px; line-height:1.6;'>"
+                + "Sua solicitação de mentoria com <strong>" + escape(empresaNome) + "</strong> foi <strong style='color:#16a34a;'>aceita</strong>!</p>";
+
+        body += buildInfoTable(new String[][]{
+                {"Consultor", escape(empresaNome)},
+                {"Valor mensal", "R$ " + (preco != null ? preco.toPlainString() : "a definir")}
+        });
+
+        body += "<p style='margin:16px 0 0; color:#334155; font-size:15px; line-height:1.6;'>"
+                + "Para iniciar a mentoria, realize o pagamento acessando o marketplace.</p>";
+
+        body += buildButton("Realizar Pagamento", APP_URL + "/cliente/marketplace");
+
+        return wrapInLayout("Solicitação Aceita",
+                "Sua mentoria com " + escape(empresaNome) + " foi aceita.", body);
+    }
+
+    /** Template: solicitação recusada (para o cliente). */
+    public String buildMarketplaceSolicitacaoRecusada(String clienteNome, String empresaNome) {
+        String body = "<p style='margin:0 0 16px; color:#334155; font-size:15px; line-height:1.6;'>"
+                + "Olá <strong>" + escape(clienteNome) + "</strong>,</p>"
+                + "<p style='margin:0 0 16px; color:#334155; font-size:15px; line-height:1.6;'>"
+                + "Infelizmente, sua solicitação de mentoria com <strong>" + escape(empresaNome)
+                + "</strong> não foi aceita neste momento.</p>"
+                + "<p style='margin:0 0 16px; color:#334155; font-size:15px; line-height:1.6;'>"
+                + "Você pode buscar outros consultores disponíveis no marketplace.</p>";
+
+        body += buildButton("Ver Outros Consultores", APP_URL + "/cliente/marketplace");
+
+        return wrapInLayout("Solicitação de Mentoria",
+                "Atualização sobre sua solicitação de mentoria.", body);
+    }
+
+    /** Template: pagamento confirmado (para o cliente). */
+    public String buildMarketplacePagamentoConfirmado(String clienteNome, String empresaNome, java.math.BigDecimal preco) {
+        String body = "<p style='margin:0 0 16px; color:#334155; font-size:15px; line-height:1.6;'>"
+                + "Olá <strong>" + escape(clienteNome) + "</strong>,</p>"
+                + "<p style='margin:0 0 16px; color:#334155; font-size:15px; line-height:1.6;'>"
+                + "Seu pagamento foi confirmado! Você agora está vinculado ao consultor <strong>"
+                + escape(empresaNome) + "</strong>.</p>";
+
+        body += buildInfoTable(new String[][]{
+                {"Consultor", escape(empresaNome)},
+                {"Valor pago", "R$ " + (preco != null ? preco.toPlainString() : "-")}
+        });
+
+        body += "<p style='margin:16px 0 0; color:#334155; font-size:15px; line-height:1.6;'>"
+                + "Acesse sua conta para começar a receber recomendações e acompanhamento do seu consultor.</p>";
+
+        body += buildButton("Acessar Minha Conta", APP_URL + "/cliente");
+
+        return wrapInLayout("Pagamento Confirmado",
+                "Sua mentoria com " + escape(empresaNome) + " está ativa.", body);
+    }
+
+    /** Template: desvinculação marketplace (para o cliente). */
+    public String buildMarketplaceDesvinculacao(String clienteNome, String empresaNome) {
+        String body = "<p style='margin:0 0 16px; color:#334155; font-size:15px; line-height:1.6;'>"
+                + "Olá <strong>" + escape(clienteNome) + "</strong>,</p>"
+                + "<p style='margin:0 0 16px; color:#334155; font-size:15px; line-height:1.6;'>"
+                + "Sua mentoria com <strong>" + escape(empresaNome) + "</strong> foi encerrada.</p>"
+                + "<p style='margin:0 0 16px; color:#334155; font-size:15px; line-height:1.6;'>"
+                + "Caso deseje, você pode buscar um novo consultor no marketplace ou continuar gerindo seus investimentos de forma independente.</p>";
+
+        body += buildButton("Encontrar Consultor", APP_URL + "/cliente/marketplace");
+
+        return wrapInLayout("Mentoria Encerrada",
+                "Sua mentoria foi encerrada.", body);
+    }
+
     private static String escape(String s) {
         if (s == null) return "";
         return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");

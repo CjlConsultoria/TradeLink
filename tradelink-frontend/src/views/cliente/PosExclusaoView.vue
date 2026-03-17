@@ -145,6 +145,25 @@
         </div>
       </div>
 
+      <!-- Card C: Encontrar Consultor -->
+      <div class="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10 p-6 hover:border-purple-400/30 transition-all mb-8">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 bg-purple-500/20 rounded-xl flex items-center justify-center">
+            <span class="text-xl">&#128269;</span>
+          </div>
+          <h2 class="text-lg font-semibold text-white">Encontrar um Consultor</h2>
+        </div>
+        <p class="text-slate-300 text-sm mb-4">
+          Busque consultores disponiveis no marketplace e contrate uma mentoria personalizada para seus investimentos.
+        </p>
+        <button
+          @click="router.push('/cliente/marketplace')"
+          class="w-full bg-purple-600 text-white py-3 px-4 rounded-xl font-medium hover:bg-purple-700 transition-colors text-sm"
+        >
+          Ver Consultores Disponiveis
+        </button>
+      </div>
+
       <!-- Pagamento OK: relatorio -->
       <div v-if="pagamentoRelatorioOk" class="bg-green-500/10 border border-green-500/20 rounded-xl p-4 mb-6 text-center">
         <p class="text-green-300 text-sm font-medium">

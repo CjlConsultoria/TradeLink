@@ -354,6 +354,22 @@ public class FaturaService {
         userRepository.save(user);
     }
 
+    /** Registra fatura de pagamento marketplace (mentoria). */
+    @Transactional
+    public void registrarFaturaMarketplace(User cliente, Empresa empresa, BigDecimal valor, String referenciaExterna) {
+        faturaRepository.save(Fatura.builder()
+                .user(cliente)
+                .empresa(empresa)
+                .dataVencimento(Instant.now().plus(DIAS_PERIODO, ChronoUnit.DAYS))
+                .dataPagamento(Instant.now())
+                .valor(valor)
+                .status(StatusFatura.PAGA)
+                .formaPagamento(FormaPagamento.CARTAO)
+                .referenciaExterna(referenciaExterna)
+                .descricaoServico("Mentoria Marketplace - " + empresa.getNome())
+                .build());
+    }
+
     /** Retorna faturas do cliente individual (auto-gestão). */
     @Transactional(readOnly = true)
     public FaturasComProximaResponse getFaturasParaClienteIndividual(Long userId) {

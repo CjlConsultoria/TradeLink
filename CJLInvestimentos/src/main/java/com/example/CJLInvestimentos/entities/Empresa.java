@@ -4,6 +4,7 @@ import com.example.CJLInvestimentos.entities.enums.SubscriptionStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 
@@ -113,6 +114,27 @@ public class Empresa {
     @Column(name = "auto_cadastro", nullable = false)
     @Builder.Default
     private Boolean autoCadastro = false;
+
+    // --- Campos do Marketplace ---
+
+    @Column(name = "marketplace_visivel", nullable = false)
+    @Builder.Default
+    private Boolean marketplaceVisivel = false;
+
+    @Column(name = "marketplace_descricao", columnDefinition = "text")
+    private String marketplaceDescricao;
+
+    @Column(name = "marketplace_especializacao", length = 200)
+    private String marketplaceEspecializacao;
+
+    @Column(name = "marketplace_experiencia", length = 200)
+    private String marketplaceExperiencia;
+
+    @Column(name = "marketplace_foto_url", length = 500)
+    private String marketplaceFotoUrl;
+
+    @Column(name = "marketplace_preco_base", precision = 10, scale = 2)
+    private BigDecimal marketplacePrecoBase;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

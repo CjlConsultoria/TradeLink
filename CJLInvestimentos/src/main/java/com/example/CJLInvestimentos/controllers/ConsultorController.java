@@ -88,6 +88,7 @@ public class ConsultorController {
     private final ChatService chatService;
     private final CopyTradingService copyTradingService;
     private final RecomendacaoRepository recomendacaoRepository;
+    private final com.example.CJLInvestimentos.services.MarketplaceService marketplaceService;
 
     private User getUser(UserDetails userDetails) {
         return userRepository.findByEmail(userDetails.getUsername())
@@ -668,5 +669,51 @@ public class ConsultorController {
     public ResponseEntity<Map<String, Long>> contarNaoLidasChat(@AuthenticationPrincipal UserDetails userDetails) {
         User user = getUser(userDetails);
         return ResponseEntity.ok(Map.of("total", chatService.contarNaoLidas(user.getId())));
+    }
+
+    // ─── Marketplace (consultor) ─────────────────────────────────
+
+    @GetMapping("/marketplace/perfil")
+    public ResponseEntity<?> getPerfilMarketplace(@AuthenticationPrincipal UserDetails userDetails) {
+        User consultor = getUser(userDetails);
+        return ResponseEntity.ok(marketplaceService.getPerfilMarketplace(consultor));
+    }
+
+    @PutMapping("/marketplace/perfil")
+    public ResponseEntity<?> atualizarPerfilMarketplace(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody com.example.CJLInvestimentos.dtos.request.MarketplacePerfilRequest request) {
+        User consultor = getUser(userDetails);
+        return ResponseEntity.ok(marketplaceService.atualizarPerfilMarketplace(consultor, request));
+    }
+
+    @GetMapping("/marketplace/solicitacoes")
+    public ResponseEntity<?> listarSolicitacoes(@AuthenticationPrincipal UserDetails userDetails) {
+        User consultor = getUser(userDetails);
+        return ResponseEntity.ok(marketplaceService.listarSolicitacoesConsultor(consultor.getEmpresa().getId()));
+    }
+
+    @PutMapping("/marketplace/solicitacoes/{id}/responder")
+    public ResponseEntity<?> responderSolicitacao(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long id,
+            @RequestBody com.example.CJLInvestimentos.dtos.request.ResponderSolicitacaoRequest request) {
+        User consultor = getUser(userDetails);
+        return ResponseEntity.ok(marketplaceService.responderSolicitacao(id, consultor, request));
+    }
+
+    @GetMapping("/marketplace/clientes")
+    public ResponseEntity<?> listarClientesMarketplace(@AuthenticationPrincipal UserDetails userDetails) {
+        User consultor = getUser(userDetails);
+        return ResponseEntity.ok(marketplaceService.listarClientesMarketplace(consultor.getEmpresa().getId()));
+    }
+
+    @PostMapping("/marketplace/desvincular/{clienteId}")
+    public ResponseEntity<?> desvincularClienteMarketplace(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long clienteId) {
+        User consultor = getUser(userDetails);
+        marketplaceService.desvincularClienteMarketplace(clienteId, consultor);
+        return ResponseEntity.ok(Map.of("message", "Cliente desvinculado do marketplace"));
     }
 }

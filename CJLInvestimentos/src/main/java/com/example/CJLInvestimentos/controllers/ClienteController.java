@@ -76,6 +76,7 @@ public class ClienteController {
     private final NotificationAsyncRunner notificationAsyncRunner;
     private final AutoGestaoService autoGestaoService;
     private final ChatService chatService;
+    private final com.example.CJLInvestimentos.services.MarketplaceService marketplaceService;
 
     private User getUser(UserDetails userDetails) {
         return userRepository.findByEmail(userDetails.getUsername())
@@ -528,5 +529,48 @@ public class ClienteController {
     public ResponseEntity<Map<String, Long>> contarNaoLidasChat(@AuthenticationPrincipal UserDetails userDetails) {
         User user = getUser(userDetails);
         return ResponseEntity.ok(Map.of("total", chatService.contarNaoLidas(user.getId())));
+    }
+
+    // ─── Marketplace (cliente) ───────────────────────────────────
+
+    @PostMapping("/marketplace/solicitar")
+    public ResponseEntity<?> solicitarMentoria(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody com.example.CJLInvestimentos.dtos.request.SolicitacaoMentoriaRequest request) {
+        User cliente = getUser(userDetails);
+        return ResponseEntity.ok(marketplaceService.solicitarMentoria(cliente, request));
+    }
+
+    @GetMapping("/marketplace/solicitacoes")
+    public ResponseEntity<?> listarMinhasSolicitacoes(@AuthenticationPrincipal UserDetails userDetails) {
+        User cliente = getUser(userDetails);
+        return ResponseEntity.ok(marketplaceService.listarSolicitacoesCliente(cliente.getId()));
+    }
+
+    @PostMapping("/marketplace/checkout/{solicitacaoId}")
+    public ResponseEntity<?> criarCheckoutMarketplace(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long solicitacaoId) {
+        User cliente = getUser(userDetails);
+        return ResponseEntity.ok(marketplaceService.criarCheckoutMarketplace(cliente, solicitacaoId));
+    }
+
+    @PostMapping("/marketplace/confirmar-pagamento")
+    public ResponseEntity<?> confirmarPagamentoMarketplace(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody Map<String, String> body) {
+        User cliente = getUser(userDetails);
+        String sessionId = body.get("sessionId");
+        boolean ok = marketplaceService.confirmarPagamentoMarketplacePorSessionId(sessionId, cliente);
+        return ResponseEntity.ok(Map.of("confirmado", ok));
+    }
+
+    @PostMapping("/marketplace/cancelar/{solicitacaoId}")
+    public ResponseEntity<?> cancelarSolicitacao(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long solicitacaoId) {
+        User cliente = getUser(userDetails);
+        marketplaceService.cancelarSolicitacao(solicitacaoId, cliente);
+        return ResponseEntity.ok(Map.of("message", "Solicitação cancelada"));
     }
 }

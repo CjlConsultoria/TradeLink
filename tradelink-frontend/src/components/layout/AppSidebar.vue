@@ -63,6 +63,7 @@ const menuItems = computed(() => {
         { to: '/admin-max/faq', label: 'FAQ', icon: '❓' },
         { to: '/admin-max/chat', label: 'Chat Suporte', icon: '💬' },
         { to: '/admin-max/chamados', label: 'Chamados', icon: '🎫' },
+        { to: '/admin-max/marketplace', label: 'Marketplace', icon: '🏪' },
         { to: '/admin-max/emails-apresentacao', label: 'Emails', icon: '📧' },
         { to: '/admin-max/configuracoes', label: 'Configurações', icon: '⚙️' }
       ]
@@ -84,6 +85,8 @@ const menuItems = computed(() => {
         { to: '/consultor/relatorios', label: 'Histórico e Relatórios', icon: '📈' },
         { to: '/consultor/atividades', label: 'Atividades', icon: '🕐' },
         { to: '/consultor/chamados', label: 'Chamados', icon: '🎫' },
+        { to: '/consultor/marketplace', label: 'Marketplace', icon: '🏪' },
+        { to: '/consultor/solicitacoes', label: 'Solicitações', icon: '📩' },
         { to: '/consultor/faq', label: 'FAQ', icon: '❓' },
         { label: 'Suporte', icon: '💬', action: 'openChat' },
         { to: '/consultor/configuracoes', label: 'Configurações', icon: '⚙️' }
@@ -106,6 +109,7 @@ const menuItems = computed(() => {
           { to: '/cliente/relatorios', label: 'Relatórios', icon: '📈' },
           { to: '/cliente/atividades', label: 'Atividades', icon: '🕐' },
           { to: '/cliente/chamados', label: 'Chamados', icon: '🎫' },
+          { to: '/cliente/marketplace', label: 'Encontrar Consultor', icon: '🔍' },
           { to: '/cliente/faq', label: 'FAQ', icon: '❓' },
           { label: 'Suporte', icon: '💬', action: 'openChat' },
           { to: '/cliente/configuracoes', label: 'Configurações', icon: '⚙️' }

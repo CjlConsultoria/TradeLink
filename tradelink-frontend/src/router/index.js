@@ -55,6 +55,7 @@ const routes = [
       { path: 'faq', name: 'FaqAdmin', component: () => import('../views/admin-max/FaqAdminView.vue') },
       { path: 'chat', name: 'ChatAdmin', component: () => import('../views/admin-max/ChatAdminView.vue') },
       { path: 'chamados', name: 'ChamadosAdmin', component: () => import('../views/admin-max/ChamadosAdminView.vue') },
+      { path: 'marketplace', name: 'MarketplaceAdmin', component: () => import('../views/admin-max/MarketplaceAdminView.vue') },
       { path: 'emails-apresentacao', name: 'EmailsApresentacao', component: () => import('../views/admin-max/EmailsApresentacaoView.vue') },
       { path: 'configuracoes', name: 'ConfiguracoesAdminMax', component: ConfiguracoesNotificacaoView }
     ]
@@ -82,6 +83,8 @@ const routes = [
       { path: 'atividades', name: 'AtividadesConsultor', component: () => import('../views/common/AtividadeTimelineView.vue') },
       { path: 'faturas', name: 'FaturasConsultor', component: () => import('../views/consultor/FaturasView.vue') },
       { path: 'chamados', name: 'ChamadosConsultor', component: () => import('../views/consultor/ChamadosConsultorView.vue') },
+      { path: 'marketplace', name: 'MarketplaceConsultor', component: () => import('../views/consultor/MarketplacePerfilView.vue') },
+      { path: 'solicitacoes', name: 'SolicitacoesMentoria', component: () => import('../views/consultor/SolicitacoesMentoriaView.vue') },
       { path: 'faq', name: 'FaqConsultor', component: () => import('../views/common/FaqInternaView.vue') },
       { path: 'configuracoes', name: 'ConfiguracoesConsultor', component: ConfiguracoesNotificacaoView }
     ]
@@ -108,6 +111,7 @@ const routes = [
       { path: 'atividades', name: 'AtividadesCliente', component: () => import('../views/common/AtividadeTimelineView.vue') },
       { path: 'faturas', name: 'FaturasCliente', component: () => import('../views/cliente/FaturasClienteView.vue') },
       { path: 'chamados', name: 'ChamadosCliente', component: () => import('../views/cliente/ChamadosClienteView.vue') },
+      { path: 'marketplace', name: 'MarketplaceCliente', component: () => import('../views/cliente/MarketplaceView.vue') },
       { path: 'faq', name: 'FaqCliente', component: () => import('../views/common/FaqInternaView.vue') },
       { path: 'configuracoes', name: 'ConfiguracoesCliente', component: ConfiguracoesNotificacaoView }
     ]
@@ -139,8 +143,9 @@ router.beforeEach((to, from, next) => {
   if (to.name === 'AcessoBloqueado') return next()
   if (to.name === 'PosExclusao') return next()
   // Redirecionar cliente excluído sem auto-gestão para tela pós-exclusão
+  // Permitir acesso ao marketplace mesmo quando excluído
   if (authStore.user?.role === 'Cliente' && authStore.user?.clienteExcluido && !authStore.user?.autoGestaoAtiva) {
-    if (to.name !== 'PosExclusao') return next('/cliente/pos-exclusao')
+    if (to.name !== 'PosExclusao' && to.name !== 'MarketplaceCliente') return next('/cliente/pos-exclusao')
   }
   // Consultor com trial expirado e sem plano → faturas para escolher plano
   if (authStore.user?.role === 'Admin' && authStore.user?.precisaEscolherPlano) {
