@@ -165,8 +165,7 @@ const menuItems = computed(() => {
           children: [
             { to: '/consultor/clientes', label: 'Clientes', icon: '👥' },
             { to: '/consultor/faturas', label: 'Faturas', icon: '🧾' },
-            { to: '/consultor/relatorios', label: 'Historico e Relatorios', icon: '📈' },
-            { to: '/consultor/atividades', label: 'Atividades', icon: '🕐' }
+            { to: '/consultor/relatorios', label: 'Historico e Relatorios', icon: '📈' }
           ]
         },
         {
@@ -176,6 +175,7 @@ const menuItems = computed(() => {
             { to: '/consultor/solicitacoes', label: 'Solicitacoes', icon: '📩' }
           ]
         },
+        { to: '/consultor/atividades', label: 'Atividades', icon: '🕐' },
         { to: '/consultor/chamados', label: 'Chamados', icon: '🎫' },
         { to: '/consultor/faq', label: 'FAQ', icon: '❓' },
         { label: 'Suporte', icon: '💬', action: 'openChat' },
@@ -208,11 +208,11 @@ const menuItems = computed(() => {
             group: 'Financeiro', icon: '🧾',
             children: [
               { to: '/cliente/faturas', label: 'Faturas', icon: '🧾' },
-              { to: '/cliente/relatorios', label: 'Relatorios', icon: '📈' },
-              { to: '/cliente/atividades', label: 'Atividades', icon: '🕐' }
+              { to: '/cliente/relatorios', label: 'Relatorios', icon: '📈' }
             ]
           },
           { to: '/cliente/marketplace', label: 'Encontrar Consultor', icon: '🔍' },
+          { to: '/cliente/atividades', label: 'Atividades', icon: '🕐' },
           { to: '/cliente/chamados', label: 'Chamados', icon: '🎫' },
           { to: '/cliente/faq', label: 'FAQ', icon: '❓' },
           { label: 'Suporte', icon: '💬', action: 'openChat' },
@@ -241,13 +241,8 @@ const menuItems = computed(() => {
             { to: '/cliente/alertas-preco', label: 'Alertas de Preco', icon: '🔔' }
           ]
         },
-        {
-          group: 'Financeiro', icon: '📈',
-          children: [
-            { to: '/cliente/relatorios', label: 'Relatorios', icon: '📈' },
-            { to: '/cliente/atividades', label: 'Atividades', icon: '🕐' }
-          ]
-        },
+        { to: '/cliente/relatorios', label: 'Relatorios', icon: '📈' },
+        { to: '/cliente/atividades', label: 'Atividades', icon: '🕐' },
         { to: '/cliente/chamados', label: 'Chamados', icon: '🎫' },
         { to: '/cliente/faq', label: 'FAQ', icon: '❓' },
         { label: 'Suporte', icon: '💬', action: 'openChat' },
