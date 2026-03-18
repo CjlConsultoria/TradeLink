@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
+import LandingView from '../views/LandingView.vue'
 import LoginView from '../views/auth/LoginView.vue'
 import AcessoBloqueadoView from '../views/auth/AcessoBloqueadoView.vue'
 import AppLayout from '../components/layout/AppLayout.vue'
@@ -27,9 +28,9 @@ import ConfiguracoesNotificacaoView from '../views/ConfiguracoesNotificacaoView.
 import CotacaoDetailView from '../views/CotacaoDetailView.vue'
 
 const routes = [
+  { path: '/', name: 'Landing', component: LandingView, meta: { public: true } },
   { path: '/login', name: 'Login', component: LoginView, meta: { public: true } },
   { path: '/acesso-bloqueado', name: 'AcessoBloqueado', component: AcessoBloqueadoView, meta: { requiresAuth: true } },
-  { path: '/', redirect: '/login' },
   {
     path: '/admin-max',
     component: AppLayout,
@@ -74,18 +75,26 @@ const routes = [
       { path: 'configuracoes', name: 'ConfiguracoesCliente', component: ConfiguracoesNotificacaoView }
     ]
   },
-  { path: '/:pathMatch(.*)*', redirect: '/login' }
+  { path: '/:pathMatch(.*)*', redirect: '/' }
 ]
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes,
+  scrollBehavior(to) {
+    if (to.hash) return { el: to.hash, behavior: 'smooth' }
+    return { top: 0 }
+  }
 })
 
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
+  // Authenticated users visiting landing or login go to their dashboard
+  if ((to.name === 'Landing' || to.name === 'Login') && authStore.isAuthenticated) {
+    return next(authStore.dashboardRoute)
+  }
   if (to.meta.public) return next()
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) return next('/login')
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) return next('/')
   if (to.name === 'AcessoBloqueado') return next()
   if (to.meta.role && authStore.user?.role !== to.meta.role) return next(authStore.dashboardRoute)
   next()

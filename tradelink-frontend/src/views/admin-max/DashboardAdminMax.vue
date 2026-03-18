@@ -91,8 +91,8 @@
               <td class="py-3 px-2 text-center">{{ e.totalConsultores }}</td>
               <td class="py-3 px-2 text-center">{{ e.totalClientes }}</td>
               <td class="py-3 px-2 text-center">
-                <span class="px-2 py-0.5 rounded-full text-xs" :class="e.ativo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
-                  {{ e.ativo ? 'Ativa' : 'Inativa' }}
+                <span class="px-2 py-0.5 rounded-full text-xs" :class="e.ativo !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
+                  {{ e.ativo !== false ? 'Ativa' : 'Inativa' }}
                 </span>
               </td>
             </tr>
@@ -145,7 +145,7 @@ const empresasPaginadas = computed(() => {
 
 const totalConsultores = computed(() => empresas.value.reduce((sum, e) => sum + (e.totalConsultores || 0), 0))
 const totalClientes = computed(() => empresas.value.reduce((sum, e) => sum + (e.totalClientes || 0), 0))
-const empresasAtivas = computed(() => (empresas.value || []).filter(e => e.ativo === true).length)
+const empresasAtivas = computed(() => (empresas.value || []).filter(e => e.ativo !== false).length)
 const empresasInativas = computed(() => (empresas.value || []).filter(e => e.ativo === false).length)
 
 onMounted(async () => {

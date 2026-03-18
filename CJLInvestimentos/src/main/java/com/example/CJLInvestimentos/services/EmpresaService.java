@@ -193,7 +193,7 @@ public class EmpresaService {
                 .cpfResponsavel(empresa.getCpfResponsavel())
                 .emailAlternativo(empresa.getEmailAlternativo())
                 .telefone(empresa.getTelefone())
-                .ativo(empresa.getAtivo())
+                .ativo(empresa.getAtivo() == null ? true : empresa.getAtivo())
                 .createdAt(empresa.getCreatedAt())
                 .planoId(empresa.getPlano() != null ? empresa.getPlano().getId() : null)
                 .planoNome(empresa.getPlano() != null ? empresa.getPlano().getNome() : null)

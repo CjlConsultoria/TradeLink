@@ -139,8 +139,8 @@
           <h3 class="font-semibold text-gray-900">{{ e.nome }}</h3>
           <div class="flex items-center gap-2">
             <span v-if="e.acessoBloqueadoPorAdmin" class="px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-800" title="Consultores e clientes sem acesso à plataforma">Acesso bloqueado</span>
-            <span class="px-2 py-0.5 rounded-full text-xs" :class="e.ativo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
-              {{ e.ativo ? 'Ativa' : 'Inativa' }}
+            <span class="px-2 py-0.5 rounded-full text-xs" :class="e.ativo !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
+              {{ e.ativo !== false ? 'Ativa' : 'Inativa' }}
             </span>
           </div>
         </div>
@@ -174,7 +174,7 @@
           />
           <button @click="editar(e)" class="text-sm text-blue-600 hover:underline">Editar</button>
           <ToggleSwitch
-            :model-value="!!e.ativo"
+            :model-value="e.ativo !== false"
             label-on="Ativa"
             label-off="Inativa"
             variant="success"

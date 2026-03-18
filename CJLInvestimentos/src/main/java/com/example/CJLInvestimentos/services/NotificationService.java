@@ -20,11 +20,16 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Security;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Service
@@ -58,9 +63,20 @@ public class NotificationService {
     @Value("${app.notificacao.email.resend-api-key:${RESEND_API_KEY:}}")
     private String resendApiKey;
 
+    @Value("${app.notificacao.whatsapp.account-sid:${TWILIO_ACCOUNT_SID:}}")
+    private String twilioAccountSid;
+
+    @Value("${app.notificacao.whatsapp.auth-token:${TWILIO_AUTH_TOKEN:}}")
+    private String twilioAuthToken;
+
+    @Value("${app.notificacao.whatsapp.from:${TWILIO_WHATSAPP_FROM:}}")
+    private String twilioWhatsappFrom;
+
     private static final String TELEGRAM_API = "https://api.telegram.org/bot";
     private static final String RESEND_API = "https://api.resend.com/emails";
+    private static final String TWILIO_API = "https://api.twilio.com/2010-04-01/Accounts/%s/Messages.json";
     private static final String FROM_DISPLAY_NAME = "TradeLink";
+    private static final Pattern ONLY_DIGITS = Pattern.compile("\\D+");
 
     @PostConstruct
     public void logEmailConfig() {
@@ -70,6 +86,11 @@ public class NotificationService {
             log.info("Notificação e-mail: CONFIGURADO (SMTP). Remetente: {}. Os e-mails serão enviados.", emailFrom);
         } else {
             log.warn("Notificação e-mail: NÃO CONFIGURADO. Para Render: defina RESEND_API_KEY e app.notificacao.email.from (ex: onboarding@resend.dev). Veja docs/CONFIGURAR-EMAIL-GMAIL.md");
+        }
+        if (twilioAccountSid != null && !twilioAccountSid.isBlank() && twilioAuthToken != null && !twilioAuthToken.isBlank() && twilioWhatsappFrom != null && !twilioWhatsappFrom.isBlank()) {
+            log.info("Notificação WhatsApp: CONFIGURADO (Twilio). From: {}. Será usado quando empresa tiver notificacao_whatsapp=true e usuário tiver telefone.", twilioWhatsappFrom);
+        } else {
+            log.debug("Notificação WhatsApp: não configurado (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_FROM). Veja docs/CONFIGURAR-WHATSAPP-TWILIO.md");
         }
     }
 
@@ -220,6 +241,52 @@ public class NotificationService {
         return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
     }
 
+    /** Envia mensagem WhatsApp via Twilio. Número em formato livre (ex: 11999998888) é normalizado para E.164 (+5511999998888). */
+    private void enviarWhatsApp(String telefone, String texto) {
+        if (twilioAccountSid == null || twilioAccountSid.isBlank() || twilioAuthToken == null || twilioAuthToken.isBlank() || twilioWhatsappFrom == null || twilioWhatsappFrom.isBlank()) {
+            log.debug("WhatsApp não configurado (Twilio), ignorando envio.");
+            return;
+        }
+        String toE164 = normalizarTelefoneWhatsApp(telefone);
+        if (toE164 == null || toE164.isBlank()) {
+            log.warn("WhatsApp: número inválido ou não suportado: {}", telefone);
+            return;
+        }
+        try {
+            String url = String.format(TWILIO_API, twilioAccountSid.trim());
+            MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+            body.add("To", "whatsapp:" + toE164);
+            body.add("From", twilioWhatsappFrom.trim().startsWith("whatsapp:") ? twilioWhatsappFrom.trim() : "whatsapp:" + twilioWhatsappFrom.trim());
+            body.add("Body", texto != null ? texto : "");
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            String auth = twilioAccountSid.trim() + ":" + twilioAuthToken.trim();
+            headers.set("Authorization", "Basic " + Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8)));
+            HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
+            RestTemplate rest = new RestTemplate();
+            rest.postForObject(url, request, String.class);
+            log.info("WhatsApp enviado para {}", toE164);
+        } catch (Exception e) {
+            log.warn("Falha ao enviar WhatsApp para {}: {} - {}", telefone, e.getClass().getSimpleName(), e.getMessage());
+            if (log.isDebugEnabled()) {
+                log.debug("Detalhe da exceção WhatsApp", e);
+            }
+        }
+    }
+
+    /** Normaliza telefone para E.164 (Brasil: +55 + DDD + número). Apenas dígitos; se 10 ou 11 dígitos, adiciona +55. */
+    private static String normalizarTelefoneWhatsApp(String telefone) {
+        if (telefone == null || telefone.isBlank()) return null;
+        String digits = ONLY_DIGITS.matcher(telefone).replaceAll("");
+        if (digits.startsWith("55") && (digits.length() == 12 || digits.length() == 13)) {
+            return "+" + digits;
+        }
+        if (digits.length() == 10 || digits.length() == 11) {
+            return "+55" + digits;
+        }
+        return null;
+    }
+
     /** Notifica um usuário conforme canais habilitados na empresa. Se htmlBody não for nulo, e-mail é enviado em HTML. */
     public void notificarUsuario(Empresa empresa, User usuario, String titulo, String corpo, String htmlBody) {
         if (empresa == null || usuario == null) return;
@@ -248,6 +315,11 @@ public class NotificationService {
                     enviarPush(sub, titulo, corpo);
                 }
             }
+        }
+        if (Boolean.TRUE.equals(empresa.getNotificacaoWhatsApp()) && usuario.getTelefone() != null && !usuario.getTelefone().isBlank()) {
+            enviarWhatsApp(usuario.getTelefone(), titulo + "\n\n" + corpo);
+        } else if (Boolean.TRUE.equals(empresa.getNotificacaoWhatsApp()) && (usuario.getTelefone() == null || usuario.getTelefone().isBlank())) {
+            log.debug("WhatsApp não enviado para usuário id={}: telefone não cadastrado.", usuario.getId());
         }
     }
 

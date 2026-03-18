@@ -3,6 +3,7 @@ package com.example.CJLInvestimentos.controllers;
 import com.example.CJLInvestimentos.dtos.request.LoginRequest;
 import com.example.CJLInvestimentos.dtos.request.RegisterRequest;
 import com.example.CJLInvestimentos.dtos.response.AuthResponse;
+import com.example.CJLInvestimentos.dtos.response.PlanoResponse;
 import com.example.CJLInvestimentos.entities.Empresa;
 import com.example.CJLInvestimentos.entities.User;
 import com.example.CJLInvestimentos.entities.enums.Role;
@@ -11,16 +12,19 @@ import com.example.CJLInvestimentos.repositories.UserRepository;
 import com.example.CJLInvestimentos.services.FaturaService;
 import com.example.CJLInvestimentos.services.JwtService;
 import com.example.CJLInvestimentos.services.NotificationAsyncRunner;
+import com.example.CJLInvestimentos.services.PlanoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import java.util.List;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -39,6 +43,12 @@ public class AuthController {
     private final UserDetailsService userDetailsService;
     private final AuthenticationManager authenticationManager;
     private final NotificationAsyncRunner notificationAsyncRunner;
+    private final PlanoService planoService;
+
+    @GetMapping("/planos")
+    public ResponseEntity<List<PlanoResponse>> listarPlanosPublicos() {
+        return ResponseEntity.ok(planoService.listarAtivos());
+    }
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
