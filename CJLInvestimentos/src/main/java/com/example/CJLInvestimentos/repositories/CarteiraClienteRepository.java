@@ -17,4 +17,7 @@ public interface CarteiraClienteRepository extends JpaRepository<CarteiraCliente
     Optional<CarteiraCliente> findByCarteiraIdAndClienteId(Long carteiraId, Long clienteId);
     boolean existsByCarteiraIdAndClienteId(Long carteiraId, Long clienteId);
     long countByCarteiraId(Long carteiraId);
+
+    @Query("SELECT cc FROM CarteiraCliente cc JOIN FETCH cc.carteira c JOIN FETCH c.consultor WHERE cc.cliente.id = :clienteId")
+    List<CarteiraCliente> findByClienteIdWithCarteiraConsultor(@Param("clienteId") Long clienteId);
 }

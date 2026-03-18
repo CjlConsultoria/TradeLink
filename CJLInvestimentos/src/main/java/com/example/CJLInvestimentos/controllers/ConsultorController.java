@@ -2,10 +2,24 @@ package com.example.CJLInvestimentos.controllers;
 
 import com.example.CJLInvestimentos.dtos.request.CarteiraClienteRequest;
 import com.example.CJLInvestimentos.dtos.request.CarteiraRequest;
+import com.example.CJLInvestimentos.dtos.request.ConviteClienteRequest;
+import com.example.CJLInvestimentos.dtos.request.LoteRecomendacaoRequest;
+import com.example.CJLInvestimentos.dtos.request.PreviewPercentualRequest;
 import com.example.CJLInvestimentos.dtos.request.RecomendacaoRequest;
 import com.example.CJLInvestimentos.dtos.request.RegisterRequest;
+import com.example.CJLInvestimentos.dtos.request.SalvarAlocacoesRequest;
+import com.example.CJLInvestimentos.dtos.response.LicencaResponse;
+import com.example.CJLInvestimentos.dtos.response.AnaliseConsolidadaResponse;
+import com.example.CJLInvestimentos.dtos.response.AlocacaoAlvoResponse;
+import com.example.CJLInvestimentos.dtos.response.CarteiraPortfolioResumoResponse;
+import com.example.CJLInvestimentos.dtos.response.PortfolioResumoResponse;
+import com.example.CJLInvestimentos.dtos.response.PreviewPercentualResponse;
+import com.example.CJLInvestimentos.dtos.response.RebalanceamentoCarteiraResponse;
+import com.example.CJLInvestimentos.dtos.response.RebalanceamentoClienteResponse;
+import com.example.CJLInvestimentos.dtos.response.SaudeGeralResponse;
 import com.example.CJLInvestimentos.dtos.response.CarteiraResponse;
 import com.example.CJLInvestimentos.dtos.response.OperacaoClienteResponse;
+import com.example.CJLInvestimentos.dtos.response.RecomendacaoImpactoResponse;
 import com.example.CJLInvestimentos.dtos.response.RecomendacaoResponse;
 import com.example.CJLInvestimentos.dtos.response.RelatorioConsultorResponse;
 import com.example.CJLInvestimentos.dtos.response.ResumoRelatorioResponse;
@@ -14,17 +28,30 @@ import com.example.CJLInvestimentos.dtos.response.UserResponse;
 import com.example.CJLInvestimentos.entities.User;
 import com.example.CJLInvestimentos.exceptions.BusinessException;
 import jakarta.validation.Valid;
+import com.example.CJLInvestimentos.entities.Recomendacao;
 import com.example.CJLInvestimentos.exceptions.ResourceNotFoundException;
+import com.example.CJLInvestimentos.repositories.RecomendacaoRepository;
 import com.example.CJLInvestimentos.repositories.UserRepository;
 import com.example.CJLInvestimentos.services.CarteiraService;
 import com.example.CJLInvestimentos.services.FaturaPdfService;
 import com.example.CJLInvestimentos.services.FaturaService;
 import com.example.CJLInvestimentos.services.OperacaoClienteService;
+import com.example.CJLInvestimentos.services.PortfolioService;
 import com.example.CJLInvestimentos.services.RelatorioConsultorService;
 import com.example.CJLInvestimentos.services.RelatorioPdfService;
+import com.example.CJLInvestimentos.services.RebalanceamentoService;
 import com.example.CJLInvestimentos.services.RecomendacaoService;
+import com.example.CJLInvestimentos.services.CopyTradingService;
+import com.example.CJLInvestimentos.services.MovimentacaoService;
+import com.example.CJLInvestimentos.services.SnapshotService;
+import com.example.CJLInvestimentos.services.ChatService;
 import com.example.CJLInvestimentos.services.StripePaymentService;
 import com.example.CJLInvestimentos.services.UserService;
+import com.example.CJLInvestimentos.dtos.response.ChatConversaResponse;
+import com.example.CJLInvestimentos.dtos.response.ChatMensagemResponse;
+import com.example.CJLInvestimentos.dtos.request.MovimentacaoRequest;
+import com.example.CJLInvestimentos.dtos.response.MovimentacaoResponse;
+import com.example.CJLInvestimentos.dtos.response.SaldoResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -54,13 +81,51 @@ public class ConsultorController {
     private final FaturaService faturaService;
     private final FaturaPdfService faturaPdfService;
     private final StripePaymentService stripePaymentService;
+    private final PortfolioService portfolioService;
+    private final RebalanceamentoService rebalanceamentoService;
+    private final SnapshotService snapshotService;
+    private final MovimentacaoService movimentacaoService;
+    private final ChatService chatService;
+    private final CopyTradingService copyTradingService;
+    private final RecomendacaoRepository recomendacaoRepository;
+    private final com.example.CJLInvestimentos.services.MarketplaceService marketplaceService;
 
     private User getUser(UserDetails userDetails) {
         return userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
     }
 
+    // === LICENÇA ===
+
+    @GetMapping("/licenca")
+    public ResponseEntity<LicencaResponse> licenca(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User consultor = getUser(userDetails);
+        return ResponseEntity.ok(userService.getLicenca(consultor.getEmpresa().getId()));
+    }
+
     // === CLIENTES ===
+
+    @PostMapping("/clientes/convidar")
+    public ResponseEntity<UserResponse> convidarCliente(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @Valid @RequestBody ConviteClienteRequest request) {
+        User consultor = getUser(userDetails);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(userService.convidarCliente(request.getEmail(), consultor.getEmpresa().getId()));
+    }
+
+    @PostMapping("/clientes/vincular")
+    public ResponseEntity<UserResponse> vincularClienteExistente(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody Map<String, String> body) {
+        User consultor = getUser(userDetails);
+        String email = body.get("email");
+        if (email == null || email.isBlank()) {
+            throw new BusinessException("E-mail é obrigatório.");
+        }
+        return ResponseEntity.ok(userService.vincularClienteExistente(email, consultor));
+    }
 
     @PostMapping("/clientes")
     public ResponseEntity<UserResponse> criarCliente(
@@ -109,7 +174,7 @@ public class ConsultorController {
                 // Cliente não estava nesta carteira
             }
         }
-        userService.inativarClientePorConsultor(id, consultor);
+        userService.excluirClientePorConsultor(id, consultor);
         return ResponseEntity.noContent().build();
     }
 
@@ -241,6 +306,184 @@ public class ConsultorController {
             @PathVariable Long id) {
         User consultor = getUser(userDetails);
         return ResponseEntity.ok(operacaoClienteService.listarPorRecomendacaoComoConsultor(id, consultor));
+    }
+
+    @PostMapping("/recomendacoes/preview-percentual")
+    public ResponseEntity<PreviewPercentualResponse> previewPercentual(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @Valid @RequestBody PreviewPercentualRequest request) {
+        User consultor = getUser(userDetails);
+        return ResponseEntity.ok(recomendacaoService.previewPercentual(request, consultor));
+    }
+
+    // === COPY TRADING ===
+
+    @PostMapping("/recomendacoes/{id}/copy")
+    public ResponseEntity<?> copyTrading(@PathVariable Long id, @RequestBody Map<String, List<Long>> body) {
+        Recomendacao rec = recomendacaoRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Recomendação não encontrada"));
+        List<Long> carteiraIds = body.get("carteiraIds");
+        if (carteiraIds == null || carteiraIds.isEmpty()) return ResponseEntity.badRequest().body(Map.of("message", "Informe as carteiras destino"));
+        List<Recomendacao> replicadas = copyTradingService.replicar(rec, carteiraIds);
+        return ResponseEntity.ok(Map.of("replicadas", replicadas.size()));
+    }
+
+    // === ALOCACOES / REBALANCEAMENTO ===
+
+    @PutMapping("/carteiras/{carteiraId}/alocacoes")
+    public ResponseEntity<List<AlocacaoAlvoResponse>> salvarAlocacoes(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long carteiraId,
+            @Valid @RequestBody SalvarAlocacoesRequest request) {
+        User consultor = getUser(userDetails);
+        return ResponseEntity.ok(rebalanceamentoService.salvarAlocacoes(carteiraId, request, consultor));
+    }
+
+    @GetMapping("/carteiras/{carteiraId}/alocacoes")
+    public ResponseEntity<List<AlocacaoAlvoResponse>> listarAlocacoes(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long carteiraId) {
+        User consultor = getUser(userDetails);
+        return ResponseEntity.ok(rebalanceamentoService.listarAlocacoes(carteiraId, consultor));
+    }
+
+    @GetMapping("/carteiras/{carteiraId}/rebalanceamento")
+    public ResponseEntity<RebalanceamentoCarteiraResponse> analisarRebalanceamento(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long carteiraId) {
+        User consultor = getUser(userDetails);
+        return ResponseEntity.ok(rebalanceamentoService.analisarCarteira(carteiraId, consultor));
+    }
+
+    @GetMapping("/carteiras/{carteiraId}/rebalanceamento/{clienteId}")
+    public ResponseEntity<RebalanceamentoClienteResponse> analisarRebalanceamentoCliente(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long carteiraId,
+            @PathVariable Long clienteId) {
+        User consultor = getUser(userDetails);
+        return ResponseEntity.ok(rebalanceamentoService.analisarCliente(carteiraId, clienteId, consultor));
+    }
+
+    @PostMapping("/carteiras/{carteiraId}/rebalanceamento/gerar-recomendacoes")
+    public ResponseEntity<List<RecomendacaoResponse>> gerarRecomendacoesRebalanceamento(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long carteiraId) {
+        User consultor = getUser(userDetails);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(rebalanceamentoService.gerarRecomendacoes(carteiraId, consultor));
+    }
+
+    @GetMapping("/saude-clientes")
+    public ResponseEntity<SaudeGeralResponse> saudeClientes(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User consultor = getUser(userDetails);
+        return ResponseEntity.ok(rebalanceamentoService.saudeGeral(consultor));
+    }
+
+    @GetMapping("/rebalanceamento/consolidado")
+    public ResponseEntity<AnaliseConsolidadaResponse> analiseConsolidada(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User consultor = getUser(userDetails);
+        return ResponseEntity.ok(rebalanceamentoService.analiseConsolidada(consultor));
+    }
+
+    @PostMapping("/rebalanceamento/gerar-recomendacoes-lote")
+    public ResponseEntity<Map<String, Object>> gerarRecomendacoesLote(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody LoteRecomendacaoRequest request) {
+        User consultor = getUser(userDetails);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(rebalanceamentoService.gerarRecomendacoesLote(request, consultor));
+    }
+
+    @GetMapping("/recomendacoes/{recomendacaoId}/impacto")
+    public ResponseEntity<RecomendacaoImpactoResponse> impactoRecomendacao(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long recomendacaoId) {
+        User consultor = getUser(userDetails);
+        return ResponseEntity.ok(rebalanceamentoService.impactoRecomendacao(recomendacaoId, consultor));
+    }
+
+    // === MOVIMENTACOES (APORTE/SAQUE) ===
+
+    @PostMapping("/carteiras/{carteiraId}/clientes/{clienteId}/movimentacoes")
+    public ResponseEntity<MovimentacaoResponse> registrarMovimentacao(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long carteiraId,
+            @PathVariable Long clienteId,
+            @Valid @RequestBody MovimentacaoRequest request) {
+        User consultor = getUser(userDetails);
+        carteiraService.buscarPorId(carteiraId, consultor);
+        User cliente = userRepository.findById(clienteId)
+                .orElseThrow(() -> new BusinessException("Cliente não encontrado."));
+        return ResponseEntity.ok(movimentacaoService.registrar(carteiraId, cliente, request));
+    }
+
+    @GetMapping("/carteiras/{carteiraId}/movimentacoes")
+    public ResponseEntity<List<MovimentacaoResponse>> listarMovimentacoesCarteira(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long carteiraId) {
+        User consultor = getUser(userDetails);
+        carteiraService.buscarPorId(carteiraId, consultor);
+        return ResponseEntity.ok(movimentacaoService.listarPorCarteira(carteiraId));
+    }
+
+    @GetMapping("/carteiras/{carteiraId}/clientes/{clienteId}/saldo")
+    public ResponseEntity<SaldoResponse> saldoCliente(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long carteiraId,
+            @PathVariable Long clienteId) {
+        User consultor = getUser(userDetails);
+        carteiraService.buscarPorId(carteiraId, consultor);
+        return ResponseEntity.ok(movimentacaoService.calcularSaldo(carteiraId, clienteId));
+    }
+
+    // === SNAPSHOT / PERFORMANCE ===
+
+    @PostMapping("/carteiras/{carteiraId}/snapshot")
+    public ResponseEntity<Map<String, String>> criarSnapshot(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long carteiraId) {
+        User consultor = getUser(userDetails);
+        carteiraService.buscarPorId(carteiraId, consultor);
+        snapshotService.criarSnapshotCarteira(carteiraId);
+        return ResponseEntity.ok(Map.of("mensagem", "Snapshot criado com sucesso."));
+    }
+
+    @GetMapping("/carteiras/{carteiraId}/performance")
+    public ResponseEntity<List<Map<String, Object>>> performance(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long carteiraId,
+            @RequestParam(required = false) Long clienteId) {
+        User consultor = getUser(userDetails);
+        carteiraService.buscarPorId(carteiraId, consultor);
+        return ResponseEntity.ok(snapshotService.dadosPerformance(carteiraId, clienteId));
+    }
+
+    // === PORTFOLIO DOS CLIENTES ===
+
+    @GetMapping("/clientes/{clienteId}/portfolio")
+    public ResponseEntity<PortfolioResumoResponse> portfolioCliente(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long clienteId) {
+        getUser(userDetails);
+        return ResponseEntity.ok(portfolioService.resumoPortfolioByClienteId(clienteId));
+    }
+
+    @GetMapping("/carteiras/{carteiraId}/portfolio-resumo")
+    public ResponseEntity<CarteiraPortfolioResumoResponse> portfolioResumoCarteira(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long carteiraId) {
+        User consultor = getUser(userDetails);
+        var carteira = carteiraService.buscarPorId(carteiraId, consultor);
+        var clientes = carteiraService.listarClientesDaCarteira(carteiraId, consultor);
+        List<PortfolioResumoResponse> resumos = clientes.stream()
+                .map(c -> portfolioService.resumoPortfolioByClienteId(c.getId()))
+                .toList();
+        return ResponseEntity.ok(CarteiraPortfolioResumoResponse.builder()
+                .carteiraId(carteiraId)
+                .carteiraNome(carteira.getNome())
+                .clientes(resumos)
+                .build());
     }
 
     // === RELATÓRIOS E HISTÓRICO ===
@@ -388,5 +631,98 @@ public class ConsultorController {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    // === CHAT ===
+
+    @GetMapping("/chat/conversas")
+    public ResponseEntity<List<ChatConversaResponse>> listarConversasChat(@AuthenticationPrincipal UserDetails userDetails) {
+        User user = getUser(userDetails);
+        return ResponseEntity.ok(chatService.listarConversasUsuario(user.getId()));
+    }
+
+    @PostMapping("/chat/conversas")
+    public ResponseEntity<ChatConversaResponse> iniciarConversa(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody(required = false) Map<String, String> body) {
+        User user = getUser(userDetails);
+        String assunto = body != null ? body.get("assunto") : null;
+        return ResponseEntity.ok(chatService.iniciarConversa(user, assunto));
+    }
+
+    @GetMapping("/chat/conversas/{id}/mensagens")
+    public ResponseEntity<List<ChatMensagemResponse>> listarMensagensChat(
+            @PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
+        User user = getUser(userDetails);
+        return ResponseEntity.ok(chatService.listarMensagens(id, user));
+    }
+
+    @PostMapping("/chat/conversas/{id}/mensagens")
+    public ResponseEntity<ChatMensagemResponse> enviarMensagemChat(
+            @PathVariable Long id, @RequestBody Map<String, String> body,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User user = getUser(userDetails);
+        return ResponseEntity.ok(chatService.enviarMensagem(id, user, body.get("conteudo")));
+    }
+
+    @GetMapping("/chat/nao-lidas")
+    public ResponseEntity<Map<String, Long>> contarNaoLidasChat(@AuthenticationPrincipal UserDetails userDetails) {
+        User user = getUser(userDetails);
+        return ResponseEntity.ok(Map.of("total", chatService.contarNaoLidas(user.getId())));
+    }
+
+    // ─── Marketplace (consultor) ─────────────────────────────────
+
+    @GetMapping("/marketplace/perfil")
+    public ResponseEntity<?> getPerfilMarketplace(@AuthenticationPrincipal UserDetails userDetails) {
+        User consultor = getUser(userDetails);
+        return ResponseEntity.ok(marketplaceService.getPerfilMarketplace(consultor));
+    }
+
+    @PutMapping("/marketplace/perfil")
+    public ResponseEntity<?> atualizarPerfilMarketplace(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody com.example.CJLInvestimentos.dtos.request.MarketplacePerfilRequest request) {
+        User consultor = getUser(userDetails);
+        return ResponseEntity.ok(marketplaceService.atualizarPerfilMarketplace(consultor, request));
+    }
+
+    @GetMapping("/marketplace/solicitacoes")
+    public ResponseEntity<?> listarSolicitacoes(@AuthenticationPrincipal UserDetails userDetails) {
+        User consultor = getUser(userDetails);
+        return ResponseEntity.ok(marketplaceService.listarSolicitacoesConsultor(consultor.getEmpresa().getId()));
+    }
+
+    @PutMapping("/marketplace/solicitacoes/{id}/responder")
+    public ResponseEntity<?> responderSolicitacao(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long id,
+            @RequestBody com.example.CJLInvestimentos.dtos.request.ResponderSolicitacaoRequest request) {
+        User consultor = getUser(userDetails);
+        return ResponseEntity.ok(marketplaceService.responderSolicitacao(id, consultor, request));
+    }
+
+    @PostMapping("/marketplace/confirmar-pagamento/{solicitacaoId}")
+    public ResponseEntity<?> confirmarPagamentoManual(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long solicitacaoId) {
+        User consultor = getUser(userDetails);
+        marketplaceService.confirmarPagamentoManual(solicitacaoId, consultor);
+        return ResponseEntity.ok(Map.of("message", "Pagamento confirmado manualmente"));
+    }
+
+    @GetMapping("/marketplace/clientes")
+    public ResponseEntity<?> listarClientesMarketplace(@AuthenticationPrincipal UserDetails userDetails) {
+        User consultor = getUser(userDetails);
+        return ResponseEntity.ok(marketplaceService.listarClientesMarketplace(consultor.getEmpresa().getId()));
+    }
+
+    @PostMapping("/marketplace/desvincular/{clienteId}")
+    public ResponseEntity<?> desvincularClienteMarketplace(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long clienteId) {
+        User consultor = getUser(userDetails);
+        marketplaceService.desvincularClienteMarketplace(clienteId, consultor);
+        return ResponseEntity.ok(Map.of("message", "Cliente desvinculado do marketplace"));
     }
 }

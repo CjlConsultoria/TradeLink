@@ -43,6 +43,19 @@ public class OperacaoCliente {
     @Column(length = 500)
     private String observacao;
 
+    @Column(name = "moeda_base", length = 50)
+    private String moedaBase;
+
+    @Column(name = "moeda_contra", length = 50)
+    private String moedaContra;
+
+    @Column(name = "valor_total", precision = 18, scale = 8)
+    private BigDecimal valorTotal;
+
+    @Column(name = "portfolio_atualizado")
+    @Builder.Default
+    private Boolean portfolioAtualizado = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

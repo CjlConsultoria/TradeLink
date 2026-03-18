@@ -22,4 +22,6 @@ public class FaturaResponse {
     private String formaPagamento;
     private String descricaoServico;
     private String observacao;
+    /** ID do usuário individual (para faturas de auto-gestão, quando empresaId é null). */
+    private Long userId;
 }

@@ -12,6 +12,8 @@ import java.time.LocalDateTime;
 public class PlanoResponse {
     private Long id;
     private String nome;
+    /** Tipo do plano: CONSULTOR ou AUTO_GESTAO */
+    private String tipo;
     private Integer maxUsuarios;
     private BigDecimal preco;
     private Boolean ativo;

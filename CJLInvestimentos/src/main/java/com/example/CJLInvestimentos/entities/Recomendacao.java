@@ -46,6 +46,13 @@ public class Recomendacao {
     @Column(precision = 18, scale = 8)
     private BigDecimal quantidade;
 
+    @Column(name = "percentual", precision = 5, scale = 2)
+    private BigDecimal percentual;
+
+    @Column(name = "modo_percentual")
+    @Builder.Default
+    private Boolean modoPercentual = false;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default

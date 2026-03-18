@@ -1,8 +1,0 @@
-{
-  "appId": "com.cjlconsultoria.tradelink",
-  "appName": "TradeLink",
-  "webDir": "dist",
-  "server": {
-    "androidScheme": "https"
-  }
-}

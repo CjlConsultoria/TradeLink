@@ -6,6 +6,7 @@ import com.example.CJLInvestimentos.entities.Recomendacao;
 import com.example.CJLInvestimentos.entities.User;
 import com.example.CJLInvestimentos.entities.enums.Role;
 import com.example.CJLInvestimentos.repositories.PushSubscriptionRepository;
+import com.example.CJLInvestimentos.repositories.UserRepository;
 import jakarta.annotation.PostConstruct;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
@@ -37,15 +38,24 @@ public class NotificationService {
 
     private final JavaMailSender mailSender;
     private final PushSubscriptionRepository pushSubscriptionRepository;
+    private final UserRepository userRepository;
     private final EmailTemplateService emailTemplateService;
+    private final NotificacaoInAppService notificacaoInAppService;
+    private final AtividadeLogService atividadeLogService;
 
     public NotificationService(
             @org.springframework.beans.factory.annotation.Autowired(required = false) JavaMailSender mailSender,
             PushSubscriptionRepository pushSubscriptionRepository,
-            EmailTemplateService emailTemplateService) {
+            UserRepository userRepository,
+            EmailTemplateService emailTemplateService,
+            NotificacaoInAppService notificacaoInAppService,
+            AtividadeLogService atividadeLogService) {
         this.mailSender = mailSender;
         this.pushSubscriptionRepository = pushSubscriptionRepository;
+        this.userRepository = userRepository;
         this.emailTemplateService = emailTemplateService;
+        this.notificacaoInAppService = notificacaoInAppService;
+        this.atividadeLogService = atividadeLogService;
     }
 
     @Value("${app.notificacao.telegram.bot-token:}")
@@ -291,6 +301,20 @@ public class NotificationService {
     public void notificarUsuario(Empresa empresa, User usuario, String titulo, String corpo, String htmlBody) {
         if (empresa == null || usuario == null) return;
 
+        // Criar notificacao in-app
+        try {
+            notificacaoInAppService.criar(usuario, titulo, corpo, "SISTEMA", null);
+        } catch (Exception e) {
+            log.warn("Falha ao criar notificacao in-app para usuario id={}: {}", usuario.getId(), e.getMessage());
+        }
+
+        // Registrar na timeline de atividades
+        try {
+            atividadeLogService.registrar(usuario, "NOTIFICACAO", titulo, null);
+        } catch (Exception e) {
+            log.warn("Falha ao registrar atividade para usuario id={}: {}", usuario.getId(), e.getMessage());
+        }
+
         if (Boolean.TRUE.equals(empresa.getNotificacaoEmail()) && usuario.getEmail() != null && !usuario.getEmail().isBlank()) {
             if (htmlBody != null && !htmlBody.isBlank()) {
                 enviarEmailHtml(usuario.getEmail(), titulo, htmlBody);
@@ -353,5 +377,144 @@ public class NotificationService {
                 rec.getParMoeda() != null ? rec.getParMoeda() : "-",
                 rec.getCarteira() != null && rec.getCarteira().getNome() != null ? rec.getCarteira().getNome() : "-");
         notificarUsuario(empresa, consultor, titulo, corpo, html);
+    }
+
+    /** Chamado quando um portfolio entra em estado CRITICO: notificar consultor. */
+    public void notificarPortfolioCritico(Empresa empresa, User consultor, String nomeCliente,
+                                           String carteiraNome, int totalDesvios, String maiorDesvio,
+                                           List<String[]> ativos) {
+        String titulo = "Portfolio Critico: " + nomeCliente;
+        String corpo = String.format("ALERTA: O portfolio de %s (carteira %s) esta CRITICO. %d ativo(s) fora da margem. Maior desvio: %s.",
+                nomeCliente, carteiraNome, totalDesvios, maiorDesvio);
+        String html = emailTemplateService.buildPortfolioCritico(nomeCliente, carteiraNome, totalDesvios, maiorDesvio, ativos);
+        notificarUsuario(empresa, consultor, titulo, corpo, html);
+    }
+
+    /** Chamado quando recomendacoes sao geradas em lote: notificar consultor com resumo. */
+    public void notificarRecomendacoesGeradas(Empresa empresa, User consultor,
+                                               int totalRecomendacoes, int totalClientes, String carteiraNome) {
+        String titulo = "Recomendacoes Geradas";
+        String corpo = String.format("%d recomendacoes geradas para %d clientes%s.",
+                totalRecomendacoes, totalClientes,
+                carteiraNome != null ? " (carteira " + carteiraNome + ")" : "");
+        String html = emailTemplateService.buildRecomendacoesGeradas(totalRecomendacoes, totalClientes, carteiraNome);
+        notificarUsuario(empresa, consultor, titulo, corpo, html);
+    }
+
+    /** Chamado quando um cliente faz aporte/saque: notificar consultor. */
+    public void notificarNovaMovimentacao(Empresa empresa, User consultor, String nomeCliente,
+                                           String carteiraNome, String tipo, String valor, String data) {
+        String titulo = "Movimentacao: " + tipo + " de " + valor;
+        String corpo = String.format("%s registrou um %s de %s na carteira %s em %s.",
+                nomeCliente, tipo, valor, carteiraNome, data);
+        String html = emailTemplateService.buildNovaMovimentacao(nomeCliente, carteiraNome, tipo, valor, data);
+        notificarUsuario(empresa, consultor, titulo, corpo, html);
+    }
+
+    /** Envia e-mail de convite para novo cliente (sempre envia, ignora config da empresa). */
+    public void enviarEmailConvite(String para, String token, String empresaNome) {
+        String html = emailTemplateService.buildConviteCliente(para, token, empresaNome);
+        enviarEmailHtml(para, "Voce foi convidado para o TradeLink", html);
+    }
+
+    /** Envia e-mail informando o cliente que foi desvinculado pelo consultor. */
+    public void enviarEmailExclusaoCliente(String para, String nome) {
+        String html = emailTemplateService.buildExclusaoCliente(nome);
+        enviarEmailHtml(para, "Alteracao na sua conta TradeLink", html);
+    }
+
+    /** Envia e-mail informando o cliente que foi vinculado a um novo consultor. */
+    public void enviarEmailVinculacaoCliente(String para, String nome, String empresaNome) {
+        String html = emailTemplateService.buildVinculacaoCliente(nome, empresaNome);
+        enviarEmailHtml(para, "Bem-vindo de volta ao TradeLink!", html);
+    }
+
+    /** Envia e-mail de boas-vindas para auto-cadastro (cliente ou consultor). */
+    public void enviarBoasVindasAutoCadastro(String para, String nome, String tipo, java.time.LocalDateTime trialFim) {
+        String html = emailTemplateService.buildBoasVindasAutoCadastro(nome, tipo, trialFim);
+        enviarEmailHtml(para, "Bem-vindo ao TradeLink! Seu trial gratuito comecou", html);
+    }
+
+    /** Envia e-mail de recuperação de senha. Sempre envia, ignora config da empresa. */
+    public void enviarEmailResetSenha(String para, String nome, String token) {
+        String html = emailTemplateService.buildResetSenha(nome, token);
+        enviarEmailHtml(para, "Redefinir Senha - TradeLink", html);
+    }
+
+    /** Envia e-mail com codigo OTP para autenticacao de dois fatores. Sempre envia, ignora config da empresa. */
+    public void enviarEmailOtp(String para, String nome, String code) {
+        String html = emailTemplateService.buildOtp(nome, code);
+        enviarEmailHtml(para, "Codigo de Verificacao - TradeLink", html);
+    }
+
+    /** Chamado quando um cliente registra operacao: notificar consultor. */
+    public void notificarOperacaoRegistrada(Empresa empresa, User consultor, String nomeCliente,
+                                             String carteiraNome, String tipoOp, String ativo,
+                                             String quantidade, String precoExecutado) {
+        String titulo = "Operacao: " + nomeCliente + " " + tipoOp + " " + ativo;
+        String corpo = String.format("%s executou %s de %s %s a $%s (carteira %s).",
+                nomeCliente, tipoOp, quantidade, ativo, precoExecutado, carteiraNome);
+        String html = emailTemplateService.buildOperacaoRegistrada(nomeCliente, carteiraNome, tipoOp, ativo, quantidade, precoExecutado);
+        notificarUsuario(empresa, consultor, titulo, corpo, html);
+    }
+
+    /** Envia e-mail de alerta de preco (para usuarios sem empresa / auto-gestao). */
+    public void enviarEmailAlertaPreco(String para, String nome, String par,
+                                        String tipoAlerta, String precoAlerta, String precoAtual) {
+        String html = emailTemplateService.buildAlertaPreco(nome, par, tipoAlerta, precoAlerta, precoAtual);
+        enviarEmailHtml(para, "Alerta de Preco: " + par + " - TradeLink", html);
+    }
+
+    // ─── Marketplace ─────────────────────────────────────────────
+
+    /** Nova solicitação de mentoria (para o consultor/admin da empresa). */
+    public void enviarEmailMarketplaceNovaSolicitacao(
+            com.example.CJLInvestimentos.entities.Empresa empresa, String clienteNome, String clienteEmail, String mensagem) {
+        // Enviar para todos os admins da empresa
+        var admins = userRepository.findByEmpresaIdAndRole(empresa.getId(), com.example.CJLInvestimentos.entities.enums.Role.Admin);
+        String html = emailTemplateService.buildMarketplaceNovaSolicitacao(clienteNome, clienteEmail, mensagem, empresa.getNome());
+        for (var admin : admins) {
+            enviarEmailHtml(admin.getEmail(), "Nova Solicitação de Mentoria - TradeLink Marketplace", html);
+        }
+    }
+
+    /** Solicitação aceita (para o cliente). */
+    public void enviarEmailMarketplaceSolicitacaoAceita(
+            String clienteEmail, String clienteNome, String empresaNome, java.math.BigDecimal preco) {
+        String html = emailTemplateService.buildMarketplaceSolicitacaoAceita(clienteNome, empresaNome, preco);
+        enviarEmailHtml(clienteEmail, "Solicitação de Mentoria Aceita - TradeLink", html);
+    }
+
+    /** Solicitação recusada (para o cliente). */
+    public void enviarEmailMarketplaceSolicitacaoRecusada(
+            String clienteEmail, String clienteNome, String empresaNome) {
+        String html = emailTemplateService.buildMarketplaceSolicitacaoRecusada(clienteNome, empresaNome);
+        enviarEmailHtml(clienteEmail, "Solicitação de Mentoria - TradeLink", html);
+    }
+
+    /** Pagamento confirmado (para o cliente). */
+    public void enviarEmailMarketplacePagamentoConfirmado(
+            String clienteEmail, String clienteNome, String empresaNome, java.math.BigDecimal preco) {
+        String html = emailTemplateService.buildMarketplacePagamentoConfirmado(clienteNome, empresaNome, preco);
+        enviarEmailHtml(clienteEmail, "Pagamento Confirmado - Mentoria TradeLink", html);
+    }
+
+    /** Desvinculação marketplace (para o cliente). */
+    public void enviarEmailMarketplaceDesvinculacao(
+            String clienteEmail, String clienteNome, String empresaNome) {
+        String html = emailTemplateService.buildMarketplaceDesvinculacao(clienteNome, empresaNome);
+        enviarEmailHtml(clienteEmail, "Mentoria Encerrada - TradeLink", html);
+    }
+
+    public void enviarEmailMarketplacePagamentoFalhou(
+            String clienteEmail, String clienteNome, String empresaNome) {
+        String html = emailTemplateService.buildMarketplacePagamentoFalhou(clienteNome, empresaNome);
+        enviarEmailHtml(clienteEmail, "Falha no Pagamento - Mentoria TradeLink", html);
+    }
+
+    public void enviarEmailMarketplaceCancelamento(
+            String clienteEmail, String clienteNome, String empresaNome, java.time.Instant fimPeriodo) {
+        String html = emailTemplateService.buildMarketplaceCancelamento(clienteNome, empresaNome, fimPeriodo);
+        enviarEmailHtml(clienteEmail, "Assinatura Cancelada - Mentoria TradeLink", html);
     }
 }

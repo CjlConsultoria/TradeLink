@@ -61,7 +61,18 @@
           </button>
         </form>
 
-        <p class="login-card__hint">Use suas credenciais fornecidas pela sua empresa.</p>
+        <div class="login-card__links">
+          <p class="login-card__forgot">
+            <router-link to="/forgot-password" class="login-card__link login-card__link--subtle">Esqueci minha senha</router-link>
+          </p>
+          <p class="login-card__hint">Use suas credenciais fornecidas pela sua empresa.</p>
+          <p class="login-card__signup">
+            Não tem conta? <router-link to="/cadastro" class="login-card__link">Cadastre-se gratuitamente</router-link>
+          </p>
+          <p class="login-card__faq-link">
+            <router-link to="/faq" class="login-card__link login-card__link--subtle">Dúvidas? Consulte nosso FAQ</router-link>
+          </p>
+        </div>
       </div>
     </div>
   </div>
@@ -88,11 +99,35 @@ async function handleLogin() {
   loading.value = true
   try {
     const data = await authStore.login(email.value, senha.value)
+    // 2FA: redirecionar para verificação OTP
+    if (data.requires2FA === true) {
+      router.push({ path: '/verify-otp', query: { userId: data.userId } })
+      return
+    }
     if (data.bloqueado === true) {
+      const role = data.role || authStore.user?.role
+      // Bloqueio por admin ou empresa inativa: todos vão para tela de bloqueio
+      if (data.bloqueadoPorAdmin === true) {
+        try {
+          sessionStorage.setItem('motivoBloqueio', data.motivoBloqueio || 'Acesso bloqueado. Entre em contato com o responsável pelo sistema.')
+        } catch (_) {}
+        router.push('/acesso-bloqueado')
+        return
+      }
+      // Bloqueio por pagamento: consultor vai para faturas, cliente para tela de bloqueio
+      if (role === 'Admin') {
+        router.push('/consultor/faturas')
+        return
+      }
       try {
-        sessionStorage.setItem('motivoBloqueio', data.motivoBloqueio || 'Acesso bloqueado.')
+        sessionStorage.setItem('motivoBloqueio', data.motivoBloqueio || 'Assinatura vencida. Entre em contato com seu consultor.')
       } catch (_) {}
       router.push('/acesso-bloqueado')
+      return
+    }
+    // Cliente excluído (sem empresa, ativo) → tela pós-exclusão
+    if (data.clienteExcluido && !data.autoGestaoAtiva) {
+      router.push('/cliente/pos-exclusao')
       return
     }
     toast.success(`Bem-vindo(a), ${authStore.user?.nome || 'usuário'}!`)
@@ -303,10 +338,49 @@ async function handleLogin() {
   to { transform: rotate(360deg); }
 }
 
+.login-card__links {
+  margin-top: 1.25rem;
+  text-align: center;
+}
+
+.login-card__forgot {
+  margin: 0 0 0.75rem;
+  font-size: 0.8125rem;
+}
+
 .login-card__hint {
-  margin: 1.25rem 0 0;
+  margin: 0 0 0.75rem;
   font-size: 0.8125rem;
   color: rgb(156 163 175);
-  text-align: center;
+}
+
+.login-card__signup {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+  color: rgb(107 114 128);
+}
+
+.login-card__faq-link {
+  margin: 0;
+  font-size: 0.8125rem;
+}
+
+.login-card__link {
+  color: rgb(99 102 241);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+.login-card__link:hover {
+  color: rgb(79 70 229);
+  text-decoration: underline;
+}
+
+.login-card__link--subtle {
+  font-weight: 500;
+  color: rgb(156 163 175);
+}
+.login-card__link--subtle:hover {
+  color: rgb(99 102 241);
 }
 </style>

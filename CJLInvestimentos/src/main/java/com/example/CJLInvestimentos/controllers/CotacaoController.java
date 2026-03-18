@@ -1,5 +1,6 @@
 package com.example.CJLInvestimentos.controllers;
 
+import com.example.CJLInvestimentos.dtos.response.CotacaoHistoricoResponse;
 import com.example.CJLInvestimentos.dtos.response.CotacaoResponse;
 import com.example.CJLInvestimentos.dtos.response.PageResponse;
 import com.example.CJLInvestimentos.services.CotacaoService;
@@ -10,7 +11,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/cotacoes")
@@ -72,6 +75,28 @@ public class CotacaoController {
             @PathVariable String moeda, @PathVariable String parMoeda,
             @RequestParam(defaultValue = "24") int horas) {
         return ResponseEntity.ok(cotacaoService.historico(moeda, parMoeda, horas));
+    }
+
+    /**
+     * Retorna dados históricos OHLCV (candlestick) para um par.
+     * @param dias Quantidade de dias de histórico (7, 30, 90, 180, 365, 0=max). Default: 90.
+     */
+    @GetMapping("/{moeda}/{parMoeda}/ohlcv")
+    public ResponseEntity<List<CotacaoHistoricoResponse>> historicoOHLCV(
+            @PathVariable String moeda,
+            @PathVariable String parMoeda,
+            @RequestParam(defaultValue = "90") int dias,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime de,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime ate) {
+        return ResponseEntity.ok(cotacaoService.historicoOHLCV(moeda, parMoeda, dias, de, ate));
+    }
+
+    /**
+     * Lista todos os pares monitorados (forex + crypto).
+     */
+    @GetMapping("/pares-disponiveis")
+    public ResponseEntity<List<Map<String, String>>> paresDisponiveis() {
+        return ResponseEntity.ok(cotacaoService.paresDisponiveis());
     }
 
     @PostMapping("/refresh")

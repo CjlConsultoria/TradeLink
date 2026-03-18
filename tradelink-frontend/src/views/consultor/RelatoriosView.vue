@@ -15,14 +15,14 @@
         </div>
         <div>
           <label class="block text-xs text-gray-500 mb-0.5">Carteira</label>
-          <select v-model="filtros.carteiraId" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-48">
+          <select v-model="filtros.carteiraId" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-full sm:w-48">
             <option value="">Todas</option>
             <option v-for="c in carteiras" :key="c.id" :value="c.id">{{ c.nome }}</option>
           </select>
         </div>
         <div>
           <label class="block text-xs text-gray-500 mb-0.5">Cliente</label>
-          <select v-model="filtros.clienteId" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-48">
+          <select v-model="filtros.clienteId" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-full sm:w-48">
             <option value="">Todos</option>
             <option v-for="c in clientes" :key="c.id" :value="c.id">{{ c.nome }}</option>
           </select>
@@ -30,10 +30,14 @@
         <button type="button" @click="carregar" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">Atualizar</button>
         <button type="button" @click="exportarPdfOperacoes" :disabled="exportandoPdf" class="px-4 py-2 bg-gray-700 text-white rounded-lg text-sm hover:bg-gray-800 disabled:opacity-50">Exportar PDF (operações)</button>
         <button type="button" @click="exportarPdfResumo" :disabled="exportandoPdf" class="px-4 py-2 bg-gray-700 text-white rounded-lg text-sm hover:bg-gray-800 disabled:opacity-50">Exportar PDF (resumo)</button>
+        <button type="button" @click="exportarCsv" class="px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700 flex items-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          Exportar CSV
+        </button>
       </div>
     </div>
 
-    <div class="flex flex-wrap gap-2 border-b border-gray-200 mb-4">
+    <div class="flex gap-2 border-b border-gray-200 mb-4 overflow-x-auto pb-px">
       <button v-for="t in tabs" :key="t.id" @click="tabAtiva = t.id"
         :class="tabAtiva === t.id ? 'bg-indigo-100 text-indigo-800 border-indigo-500' : 'bg-white text-gray-600 border-transparent'"
         class="px-4 py-2 rounded-t-lg border-b-2 text-sm font-medium">
@@ -209,6 +213,7 @@ import relatorioApi from '../../api/relatorioApi'
 import carteiraApi from '../../api/carteiraApi'
 import userApi from '../../api/userApi'
 import { formatCurrency, formatDate } from '../../utils/formatters'
+import { exportCsv } from '../../utils/exportCsv'
 import { useToast } from '../../composables/useToast'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 
@@ -290,6 +295,25 @@ async function exportarPdfResumo() {
   } finally {
     exportandoPdf.value = false
   }
+}
+
+function exportarCsv() {
+  if (!operacoes.value.length) {
+    toast.error('Nenhuma operação para exportar.')
+    return
+  }
+  const columns = [
+    { key: 'dataExecucao', label: 'Data' },
+    { key: 'clienteNome', label: 'Cliente' },
+    { key: 'carteiraNome', label: 'Carteira' },
+    { key: 'recomendacaoMoedaPar', label: 'Par' },
+    { key: 'tipo', label: 'Tipo' },
+    { key: 'precoExecutado', label: 'Preço' },
+    { key: 'quantidade', label: 'Quantidade' },
+    { key: 'valorOperacao', label: 'Valor' }
+  ]
+  exportCsv(operacoes.value, columns, 'relatorio-operacoes-consultor')
+  toast.success('CSV exportado.')
 }
 
 const chartOptions = computed(() => ({

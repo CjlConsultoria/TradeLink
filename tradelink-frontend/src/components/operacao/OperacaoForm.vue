@@ -40,7 +40,11 @@
 <script setup>
 import { ref, watch } from 'vue'
 
-const props = defineProps({ show: Boolean })
+const props = defineProps({
+  show: Boolean,
+  operacao: { type: Object, default: null },
+  quantidadeSugerida: { type: Number, default: null }
+})
 const emit = defineEmits(['close', 'saved'])
 
 const form = ref({
@@ -55,11 +59,11 @@ const error = ref('')
 watch(() => props.show, (v) => {
   if (v) {
     form.value = {
-      tipo: 'COMPRA',
-      precoExecutado: null,
-      quantidade: null,
-      dataExecucao: new Date().toISOString().slice(0, 16),
-      observacao: ''
+      tipo: props.operacao?.tipo || 'COMPRA',
+      precoExecutado: props.operacao?.precoExecutado || null,
+      quantidade: props.operacao?.quantidade || props.quantidadeSugerida || null,
+      dataExecucao: props.operacao?.dataExecucao ? props.operacao.dataExecucao.slice(0, 16) : new Date().toISOString().slice(0, 16),
+      observacao: props.operacao?.observacao || ''
     }
     error.value = ''
   }

@@ -21,6 +21,7 @@ public class JwtService {
                     : "chave-secreta-chave-secreta-chave-secreta";
 
     private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 24; // 24h
+    private static final long REFRESH_EXPIRATION_TIME = 1000L * 60 * 60 * 24 * 7; // 7 dias
 
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
@@ -39,6 +40,25 @@ public class JwtService {
         }
 
         return builder.signWith(getSigningKey(), SignatureAlgorithm.HS256).compact();
+    }
+
+    public String generateRefreshToken(User user) {
+        return Jwts.builder()
+                .setSubject(user.getEmail())
+                .claim("type", "refresh")
+                .claim("userId", user.getId())
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + REFRESH_EXPIRATION_TIME))
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public boolean isRefreshToken(String token) {
+        try {
+            return "refresh".equals(extractAllClaims(token).get("type", String.class));
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public String extractEmail(String token) {

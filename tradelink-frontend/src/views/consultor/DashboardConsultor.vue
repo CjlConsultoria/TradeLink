@@ -1,7 +1,9 @@
 <template>
   <div>
     <h2 class="page-title">Dashboard · Consultor</h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <LoadingSpinner v-if="loading" text="Carregando dashboard..." />
+    <template v-else>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" data-onboarding="cards">
       <router-link to="/consultor/carteiras" class="card p-6 block hover:border-indigo-300">
         <p class="text-sm text-gray-500">Carteiras</p>
         <p class="text-3xl font-bold text-indigo-600 mt-1">{{ carteiras.length }}</p>
@@ -15,14 +17,29 @@
         <p class="text-3xl font-bold text-green-600 mt-1">{{ cotacaoStore.cotacoes.length }}</p>
       </router-link>
     </div>
-    <CotacoesDashboardSection titulo="Cotações em tempo real" :show-refresh="true" />
-    <div class="card p-6">
+    <div data-onboarding="cotacoes">
+      <CotacoesDashboardSection titulo="Cotações em tempo real" :show-refresh="true" />
+    </div>
+
+    <!-- Saude dos Portfolios -->
+    <div class="card p-6 mb-8" data-onboarding="saude">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <h3 class="section-title">Saude dos Portfolios</h3>
+        <router-link to="/consultor/rebalanceamento"
+          class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 whitespace-nowrap">
+          Painel de Rebalanceamento
+        </router-link>
+      </div>
+      <SaudeClientesGrid />
+    </div>
+
+    <div class="card p-6" data-onboarding="carteiras">
       <div class="flex items-center justify-between mb-4">
         <h3 class="section-title">Minhas Carteiras</h3>
         <router-link to="/consultor/carteiras" class="text-sm text-indigo-600 hover:underline">Ver todas</router-link>
       </div>
       <div class="flex flex-wrap gap-3 mb-4">
-        <input v-model="filtros.nome" type="text" placeholder="Buscar por nome" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-48" />
+        <input v-model="filtros.nome" type="text" placeholder="Buscar por nome" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-full sm:w-48" />
         <button type="button" @click="paginaAtual = 0" class="px-3 py-2 bg-gray-100 rounded-lg text-sm hover:bg-gray-200">Filtrar</button>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -32,7 +49,7 @@
           <p class="text-sm text-gray-500 mt-1">{{ c.totalClientes }} clientes - {{ c.totalRecomendacoes }} recomendacoes</p>
         </router-link>
       </div>
-      <div v-if="totalPaginas > 1" class="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
+      <div v-if="totalPaginas > 1" class="flex flex-wrap items-center justify-between gap-2 mt-3 pt-3 border-t border-gray-200">
         <p class="text-sm text-gray-500">{{ carteirasFiltradas.length }} resultado(s) · página {{ paginaAtual + 1 }} de {{ totalPaginas }}</p>
         <div class="flex gap-1">
           <button type="button" :disabled="paginaAtual === 0" @click="paginaAtual--" class="px-3 py-1 rounded border text-sm disabled:opacity-50">Anterior</button>
@@ -40,17 +57,89 @@
         </div>
       </div>
     </div>
+
+    </template>
+
+    <!-- Onboarding Overlay -->
+    <OnboardingOverlay
+      :active="onboarding.active.value"
+      :step="onboarding.step.value"
+      :current-step="onboarding.currentStep.value"
+      :total-steps="onboarding.totalSteps.value"
+      :is-first="onboarding.isFirst.value"
+      :is-last="onboarding.isLast.value"
+      @next="onboarding.next()"
+      @prev="onboarding.prev()"
+      @skip="onboarding.skip()"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useCotacaoStore } from '../../stores/cotacao'
+import { useOnboarding } from '../../composables/useOnboarding'
 import carteiraApi from '../../api/carteiraApi'
 import userApi from '../../api/userApi'
 import CotacoesDashboardSection from '../../components/cotacao/CotacoesDashboardSection.vue'
+import SaudeClientesGrid from '../../components/rebalanceamento/SaudeClientesGrid.vue'
+import OnboardingOverlay from '../../components/common/OnboardingOverlay.vue'
+import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 
 const cotacaoStore = useCotacaoStore()
+
+const onboarding = useOnboarding('consultor-dashboard-v2', [
+  {
+    target: '[data-onboarding="cards"]',
+    title: 'Bem-vindo ao TradeLink!',
+    message: 'Este e o seu painel de consultor. Aqui voce ve um resumo rapido: total de carteiras gerenciadas, clientes vinculados e cotacoes disponiveis. Clique em qualquer card para acessar a secao.',
+    position: 'bottom'
+  },
+  {
+    target: '[data-onboarding="saude"]',
+    title: 'Saude dos Portfolios',
+    message: 'Monitore a saude dos portfolios dos seus clientes. Verde indica que esta balanceado, amarelo precisa de atencao e vermelho esta desbalanceado. Use o "Painel de Rebalanceamento" para acoes rapidas.',
+    position: 'top'
+  },
+  {
+    target: '[data-onboarding="carteiras"]',
+    title: 'Suas Carteiras',
+    message: 'Aqui ficam todas as suas carteiras. Clique em uma carteira para ver os detalhes, clientes vinculados e recomendacoes ativas. Use o filtro para encontrar rapidamente.',
+    position: 'top'
+  },
+  {
+    target: '[data-sidebar-link="/consultor/carteiras"]',
+    title: 'Criar Nova Carteira',
+    message: 'Em "Carteiras" voce pode criar novas carteiras clicando no botao "Nova Carteira". Defina um nome e descricao, e depois vincule clientes e crie recomendacoes para cada uma.',
+    position: 'right'
+  },
+  {
+    target: '[data-sidebar-link="/consultor/kanban"]',
+    title: 'Kanban de Recomendacoes',
+    message: 'No "Kanban" voce gerencia todas as recomendacoes de forma visual. Arraste cards entre colunas (Ativas, Executadas, Canceladas) e use o botao de copiar para replicar recomendacoes em outras carteiras.',
+    position: 'right'
+  },
+  {
+    target: '[data-sidebar-link="/consultor/clientes"]',
+    title: 'Gerenciar Clientes',
+    message: 'Em "Clientes" voce convida novos clientes por email ou vincula clientes existentes. Acompanhe o status de cada um (Ativo, Pendente, Inativo) e gerencie seus acessos.',
+    position: 'right'
+  },
+  {
+    target: '[data-sidebar-link="/consultor/cotacoes"]',
+    title: 'Cotacoes e Ferramentas',
+    message: 'Acesse cotacoes em tempo real, Heat Map, Comparador e Simulador para analises aprofundadas. Use essas ferramentas para embasar suas recomendacoes aos clientes.',
+    position: 'right'
+  },
+  {
+    target: '[data-sidebar-link="/consultor/configuracoes"]',
+    title: 'Configuracoes e Suporte',
+    message: 'Em "Configuracoes" voce altera seus dados, personaliza a plataforma e gerencia seu plano. Use o Suporte para tirar duvidas. Bom trabalho!',
+    position: 'right'
+  }
+])
+
+const loading = ref(true)
 const carteiras = ref([])
 const clientes = ref([])
 const filtros = ref({ nome: '' })
@@ -80,6 +169,8 @@ onMounted(async () => {
     carteiras.value = cartRes.data
     clientes.value = cliRes.data
   } catch (e) { console.error(e) }
+  finally { loading.value = false }
+  onboarding.autoStart(1000)
 })
 onUnmounted(() => cotacaoStore.stopPolling())
 </script>

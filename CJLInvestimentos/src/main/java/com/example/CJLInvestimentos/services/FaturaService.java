@@ -3,8 +3,10 @@ package com.example.CJLInvestimentos.services;
 import com.example.CJLInvestimentos.dtos.request.AtualizarFaturaRequest;
 import com.example.CJLInvestimentos.dtos.request.CriarFaturaRequest;
 import com.example.CJLInvestimentos.dtos.request.MarcarPagoRequest;
+import com.example.CJLInvestimentos.dtos.response.FaturaAdminResponse;
 import com.example.CJLInvestimentos.dtos.response.FaturaResponse;
 import com.example.CJLInvestimentos.dtos.response.FaturasComProximaResponse;
+import com.example.CJLInvestimentos.dtos.response.FinanceiroResumoResponse;
 import com.example.CJLInvestimentos.dtos.response.ProximaFaturaResponse;
 import com.example.CJLInvestimentos.entities.Empresa;
 import com.example.CJLInvestimentos.entities.Fatura;
@@ -23,9 +25,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,6 +41,7 @@ public class FaturaService {
     private final FaturaRepository faturaRepository;
     private final EmpresaRepository empresaRepository;
     private final UserRepository userRepository;
+    private final PlanoService planoService;
 
     /**
      * Verifica se a empresa está em dia: não bloqueada por admin, tem período vigente e não passou de 5 dias após o vencimento.
@@ -46,6 +50,7 @@ public class FaturaService {
      */
     public boolean acessoPermitido(Empresa empresa) {
         if (empresa == null) return true;
+        if (!Boolean.TRUE.equals(empresa.getAtivo())) return false; // empresa inativa
         if (Boolean.TRUE.equals(empresa.getAcessoBloqueadoPorAdmin())) return false;
         if (empresa.getCurrentPeriodEnd() == null) return true; // nova empresa ou sem assinatura: libera uso
         Instant limite = empresa.getCurrentPeriodEnd().plus(DIAS_TOLERANCIA_VENCIMENTO, ChronoUnit.DAYS);
@@ -64,7 +69,12 @@ public class FaturaService {
     @Transactional(readOnly = true)
     public boolean acessoPermitidoPorUsuarioId(Long usuarioId) {
         User user = userRepository.findByIdWithEmpresa(usuarioId).orElse(null);
-        if (user == null || user.getEmpresa() == null) return true;
+        if (user == null) return true;
+        // Cliente marketplace: validar pela propria subscription, nao pela empresa
+        if ("MARKETPLACE".equals(user.getOrigemVinculo())) {
+            return !"PAST_DUE".equals(user.getMarketplaceStatus());
+        }
+        if (user.getEmpresa() == null) return true;
         return acessoPermitido(user.getEmpresa());
     }
 
@@ -72,10 +82,23 @@ public class FaturaService {
     @Transactional(readOnly = true)
     public String getMotivoBloqueioPorUsuarioId(Long usuarioId) {
         User user = userRepository.findByIdWithEmpresa(usuarioId).orElse(null);
-        if (user == null || user.getEmpresa() == null) return null;
+        if (user == null) return null;
+        // Cliente marketplace: validar pela propria subscription, nao pela empresa
+        if ("MARKETPLACE".equals(user.getOrigemVinculo())) {
+            if ("PAST_DUE".equals(user.getMarketplaceStatus())) {
+                return "Pagamento da mentoria em atraso. Regularize para continuar.";
+            }
+            return null; // marketplace ACTIVE/CANCELED — sem bloqueio por empresa
+        }
+        if (user.getEmpresa() == null) return null;
         Empresa empresa = user.getEmpresa();
+        if (!Boolean.TRUE.equals(empresa.getAtivo())) {
+            if (user.getRole() == com.example.CJLInvestimentos.entities.enums.Role.Cliente) {
+                return "Empresa inativa. Entre em contato com sua empresa (consultor).";
+            }
+            return "Empresa inativa. Entre em contato com o responsável pelo sistema.";
+        }
         if (Boolean.TRUE.equals(empresa.getAcessoBloqueadoPorAdmin())) {
-            // Consultor: contato com responsável do sistema. Cliente: contato com a empresa (consultor).
             if (user.getRole() == com.example.CJLInvestimentos.entities.enums.Role.Cliente) {
                 return "Acesso bloqueado. Entre em contato com sua empresa (consultor).";
             }
@@ -94,7 +117,10 @@ public class FaturaService {
     public boolean isBloqueadoPorAdmin(Long usuarioId) {
         User user = userRepository.findByIdWithEmpresa(usuarioId).orElse(null);
         if (user == null || user.getEmpresa() == null) return false;
-        return Boolean.TRUE.equals(user.getEmpresa().getAcessoBloqueadoPorAdmin());
+        // Cliente marketplace nao e bloqueado por admin da empresa
+        if ("MARKETPLACE".equals(user.getOrigemVinculo())) return false;
+        Empresa e = user.getEmpresa();
+        return Boolean.TRUE.equals(e.getAcessoBloqueadoPorAdmin()) || !Boolean.TRUE.equals(e.getAtivo());
     }
 
     /**
@@ -277,10 +303,123 @@ public class FaturaService {
         empresaRepository.save(empresa);
     }
 
+    // ─── Billing individual (auto-gestão) ───────────────────────────
+
+    /** Verifica se a subscription de auto-gestão do cliente está ativa. */
+    public boolean autoGestaoAcessoPermitido(User user) {
+        if (user.getCurrentPeriodEnd() == null) return false;
+        Instant limite = user.getCurrentPeriodEnd().plus(DIAS_TOLERANCIA_VENCIMENTO, ChronoUnit.DAYS);
+        return Instant.now().isBefore(limite) || Instant.now().equals(limite);
+    }
+
+    /** Registra pagamento de auto-gestão para um cliente individual (não empresa). */
+    @Transactional
+    public void registrarPagamentoExternoCliente(Long userId, BigDecimal valor, FormaPagamento forma,
+                                                  String referenciaExterna, String descricao) {
+        if (faturaRepository.existsByUserIdAndReferenciaExterna(userId, referenciaExterna)) return;
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
+
+        Instant dataVencimento;
+        if (user.getCurrentPeriodEnd() == null) {
+            dataVencimento = Instant.now().plus(DIAS_PERIODO, ChronoUnit.DAYS);
+        } else {
+            dataVencimento = user.getCurrentPeriodEnd();
+        }
+        Instant novoFimPeriodo = dataVencimento.plus(DIAS_PERIODO, ChronoUnit.DAYS);
+
+        faturaRepository.save(Fatura.builder()
+                .user(user)
+                .dataVencimento(dataVencimento)
+                .dataPagamento(Instant.now())
+                .valor(valor)
+                .status(StatusFatura.PAGA)
+                .formaPagamento(forma)
+                .referenciaExterna(referenciaExterna)
+                .descricaoServico(descricao != null ? descricao : "Auto-Gestão Mensal")
+                .build());
+
+        user.setCurrentPeriodEnd(novoFimPeriodo);
+        user.setSubscriptionStatus("ACTIVE");
+        user.setAutoGestao(true);
+        userRepository.save(user);
+    }
+
+    /** Registra pagamento avulso de relatório para um cliente individual. */
+    @Transactional
+    public void registrarPagamentoRelatorioCliente(Long userId, BigDecimal valor, FormaPagamento forma,
+                                                    String referenciaExterna) {
+        if (faturaRepository.existsByUserIdAndReferenciaExterna(userId, referenciaExterna)) return;
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
+
+        faturaRepository.save(Fatura.builder()
+                .user(user)
+                .dataVencimento(Instant.now())
+                .dataPagamento(Instant.now())
+                .valor(valor)
+                .status(StatusFatura.PAGA)
+                .formaPagamento(forma)
+                .referenciaExterna(referenciaExterna)
+                .descricaoServico("Relatório Completo - Download Avulso")
+                .build());
+
+        // Libera novo download
+        user.setRelatorioComplBaixado(false);
+        userRepository.save(user);
+    }
+
+    /** Registra fatura de pagamento marketplace (mentoria). */
+    @Transactional
+    public void registrarFaturaMarketplace(User cliente, Empresa empresa, BigDecimal valor, String referenciaExterna) {
+        faturaRepository.save(Fatura.builder()
+                .user(cliente)
+                .empresa(empresa)
+                .dataVencimento(Instant.now().plus(DIAS_PERIODO, ChronoUnit.DAYS))
+                .dataPagamento(Instant.now())
+                .valor(valor)
+                .status(StatusFatura.PAGA)
+                .formaPagamento(FormaPagamento.CARTAO)
+                .referenciaExterna(referenciaExterna)
+                .descricaoServico("Mentoria Marketplace - " + empresa.getNome())
+                .build());
+    }
+
+    /** Retorna lista de faturas de um usuário (para marketplace ou auto-gestão). */
+    @Transactional(readOnly = true)
+    public List<FaturaResponse> listarFaturasPorUsuario(Long userId) {
+        return faturaRepository.findByUserIdOrderByDataVencimentoDesc(userId)
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    /** Retorna faturas do cliente individual (auto-gestão). */
+    @Transactional(readOnly = true)
+    public FaturasComProximaResponse getFaturasParaClienteIndividual(Long userId) {
+        List<FaturaResponse> faturas = faturaRepository.findByUserIdOrderByDataVencimentoDesc(userId)
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+        User user = userRepository.findById(userId).orElse(null);
+        boolean acesso = user != null && autoGestaoAcessoPermitido(user);
+        return FaturasComProximaResponse.builder()
+                .faturas(faturas)
+                .proxima(ProximaFaturaResponse.builder()
+                        .temAssinatura(user != null && user.getCurrentPeriodEnd() != null)
+                        .dataVencimento(user != null ? user.getCurrentPeriodEnd() : null)
+                        .valor(planoService.getPrecoAutoGestao())
+                        .planoNome(planoService.getNomeAutoGestao())
+                        .build())
+                .acessoPermitido(acesso)
+                .build();
+    }
+
     private FaturaResponse toResponse(Fatura f) {
         return FaturaResponse.builder()
                 .id(f.getId())
-                .empresaId(f.getEmpresa().getId())
+                .empresaId(f.getEmpresa() != null ? f.getEmpresa().getId() : null)
+                .userId(f.getUser() != null ? f.getUser().getId() : null)
                 .dataVencimento(f.getDataVencimento())
                 .dataPagamento(f.getDataPagamento())
                 .valor(f.getValor())
@@ -289,5 +428,120 @@ public class FaturaService {
                 .descricaoServico(f.getDescricaoServico())
                 .observacao(f.getObservacao())
                 .build();
+    }
+
+    private FaturaAdminResponse toAdminResponse(Fatura f) {
+        return FaturaAdminResponse.builder()
+                .id(f.getId())
+                .empresaId(f.getEmpresa() != null ? f.getEmpresa().getId() : null)
+                .empresaNome(f.getEmpresa() != null ? f.getEmpresa().getNome() : null)
+                .dataVencimento(f.getDataVencimento())
+                .dataPagamento(f.getDataPagamento())
+                .valor(f.getValor())
+                .status(f.getStatus().name())
+                .formaPagamento(f.getFormaPagamento() != null ? f.getFormaPagamento().name() : null)
+                .descricaoServico(f.getDescricaoServico())
+                .observacao(f.getObservacao())
+                .build();
+    }
+
+    // === PAINEL FINANCEIRO (AdminMax global) ===
+
+    /** Lista todas as faturas de todas as empresas (visão global para AdminMax). */
+    @Transactional(readOnly = true)
+    public List<FaturaAdminResponse> listarTodasFaturas() {
+        return faturaRepository.findAllWithEmpresa().stream()
+                .map(this::toAdminResponse)
+                .collect(Collectors.toList());
+    }
+
+    /** Resumo financeiro global para o painel AdminMax. */
+    @Transactional(readOnly = true)
+    public FinanceiroResumoResponse getFinanceiroResumo() {
+        List<Fatura> todasFaturas = faturaRepository.findAllWithEmpresa();
+
+        BigDecimal receitaTotal = todasFaturas.stream()
+                .filter(f -> f.getStatus() == StatusFatura.PAGA)
+                .map(Fatura::getValor)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        YearMonth mesAtual = YearMonth.now();
+        Instant inicioMes = mesAtual.atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
+        Instant fimMes = mesAtual.plusMonths(1).atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
+
+        BigDecimal receitaMesAtual = todasFaturas.stream()
+                .filter(f -> f.getStatus() == StatusFatura.PAGA)
+                .filter(f -> f.getDataPagamento() != null
+                        && !f.getDataPagamento().isBefore(inicioMes)
+                        && f.getDataPagamento().isBefore(fimMes))
+                .map(Fatura::getValor)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        long faturasPendentesCount = todasFaturas.stream()
+                .filter(f -> f.getStatus() == StatusFatura.PENDENTE).count();
+        BigDecimal faturasPendentesValor = todasFaturas.stream()
+                .filter(f -> f.getStatus() == StatusFatura.PENDENTE)
+                .map(Fatura::getValor)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        long faturasVencidasCount = todasFaturas.stream()
+                .filter(f -> f.getStatus() == StatusFatura.VENCIDA).count();
+        BigDecimal faturasVencidasValor = todasFaturas.stream()
+                .filter(f -> f.getStatus() == StatusFatura.VENCIDA)
+                .map(Fatura::getValor)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // MRR: soma dos preços dos planos de empresas com assinatura ativa
+        BigDecimal mrr = empresaRepository.findAll().stream()
+                .filter(e -> e.getSubscriptionStatus() == com.example.CJLInvestimentos.entities.enums.SubscriptionStatus.ACTIVE)
+                .filter(e -> e.getPlano() != null && e.getPlano().getPreco() != null)
+                .map(e -> e.getPlano().getPreco())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Receita mensal dos últimos 12 meses
+        List<FinanceiroResumoResponse.ReceitaMensal> receitaMensal = calcularReceitaMensal(todasFaturas);
+
+        return FinanceiroResumoResponse.builder()
+                .receitaTotal(receitaTotal)
+                .receitaMesAtual(receitaMesAtual)
+                .faturasPendentesCount(faturasPendentesCount)
+                .faturasPendentesValor(faturasPendentesValor)
+                .faturasVencidasCount(faturasVencidasCount)
+                .faturasVencidasValor(faturasVencidasValor)
+                .mrr(mrr)
+                .receitaMensal(receitaMensal)
+                .build();
+    }
+
+    private List<FinanceiroResumoResponse.ReceitaMensal> calcularReceitaMensal(List<Fatura> faturas) {
+        YearMonth mesAtual = YearMonth.now();
+        ZoneId zone = ZoneId.systemDefault();
+        List<FinanceiroResumoResponse.ReceitaMensal> resultado = new ArrayList<>();
+
+        for (int i = 11; i >= 0; i--) {
+            YearMonth mes = mesAtual.minusMonths(i);
+            String mesStr = mes.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+            Instant inicio = mes.atDay(1).atStartOfDay(zone).toInstant();
+            Instant fim = mes.plusMonths(1).atDay(1).atStartOfDay(zone).toInstant();
+
+            List<Fatura> pagas = faturas.stream()
+                    .filter(f -> f.getStatus() == StatusFatura.PAGA)
+                    .filter(f -> f.getDataPagamento() != null
+                            && !f.getDataPagamento().isBefore(inicio)
+                            && f.getDataPagamento().isBefore(fim))
+                    .collect(Collectors.toList());
+
+            BigDecimal valor = pagas.stream()
+                    .map(Fatura::getValor)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            resultado.add(FinanceiroResumoResponse.ReceitaMensal.builder()
+                    .mes(mesStr)
+                    .valor(valor)
+                    .count(pagas.size())
+                    .build());
+        }
+
+        return resultado;
     }
 }

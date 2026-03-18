@@ -1,8 +1,8 @@
 <template>
   <div>
-    <div class="flex items-center justify-between mb-6">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
       <h2 class="text-2xl font-bold text-gray-900">Carteiras</h2>
-      <button @click="showForm = true" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700">Nova Carteira</button>
+      <button @click="showForm = true" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 whitespace-nowrap">Nova Carteira</button>
     </div>
     <div v-if="showForm" class="fixed inset-0 z-50 flex items-center justify-center">
       <div class="fixed inset-0 bg-black/50" @click="closeForm"></div>
@@ -45,7 +45,11 @@ import { useCarteiraStore } from '../../stores/carteira'
 import carteiraApi from '../../api/carteiraApi'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import EmptyState from '../../components/common/EmptyState.vue'
+import { useToast } from '../../composables/useToast'
+import { useConfirm } from '../../composables/useConfirm'
 
+const toast = useToast()
+const { confirm } = useConfirm()
 const carteiraStore = useCarteiraStore()
 const carteiras = computed(() => carteiraStore.carteiras)
 const loading = computed(() => carteiraStore.loading)
@@ -67,12 +71,18 @@ async function salvar() {
 }
 
 async function excluirCarteira(c) {
-  if (!confirm(`Excluir a carteira "${c.nome}"? Esta ação não pode ser desfeita.`)) return
+  let msg = `Excluir a carteira "${c.nome}"? Esta acao nao pode ser desfeita.`
+  if (c.totalRecomendacoes > 0) {
+    msg += `\n\nAtencao: ${c.totalRecomendacoes} recomendacao(oes) serao perdidas permanentemente.`
+  }
+  const ok = await confirm({ title: 'Excluir carteira', message: msg, confirmText: 'Excluir', variant: c.totalRecomendacoes > 0 ? 'warning' : 'danger' })
+  if (!ok) return
   try {
     await carteiraApi.excluir(c.id)
+    toast.success('Carteira excluida com sucesso.')
     carteiraStore.listar()
   } catch (e) {
-    alert(e.response?.data?.erro || e.response?.data?.mensagem || 'Erro ao excluir.')
+    toast.error(e.response?.data?.erro || e.response?.data?.mensagem || 'Erro ao excluir.')
   }
 }
 onMounted(() => carteiraStore.listar())

@@ -31,10 +31,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             "/api/consultor/checkout-pix",
             "/api/consultor/checkout-cartao-boleto",
             "/api/consultor/checkout-embedded",
+            "/api/consultor/chat",
             "/api/cliente/faturas",
             "/api/cliente/checkout-pix",
             "/api/cliente/checkout-cartao-boleto",
-            "/api/cliente/checkout-embedded"
+            "/api/cliente/checkout-embedded",
+            "/api/cliente/exclusao",
+            "/api/cliente/chat",
+            "/api/cliente/marketplace/subscription",
+            "/api/cliente/marketplace/cancelar-subscription",
+            "/api/cliente/marketplace/portal-pagamento"
     };
 
     private final JwtService jwtService;
@@ -52,7 +58,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String path = request.getServletPath();
 
         // 🔓 ignora rotas públicas e error
-        if (path.startsWith("/api/auth") || path.startsWith("/api/webhooks/") || path.equals("/error")) {
+        if (path.startsWith("/api/auth") || path.startsWith("/api/public") || path.startsWith("/api/webhooks/") || path.equals("/error")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -112,8 +118,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     if (!faturaService.acessoPermitidoPorUsuarioId(user.getId())) {
                         boolean allowedPath;
                         if (faturaService.isBloqueadoPorAdmin(user.getId())) {
-                            // Bloqueio por admin: só pode acessar /api/me para carregar dados e exibir a mensagem
-                            allowedPath = path.startsWith("/api/me");
+                            // Bloqueio por admin/inativação: permite /api/me e chat de suporte
+                            allowedPath = path.startsWith("/api/me")
+                                    || path.startsWith("/api/consultor/chat")
+                                    || path.startsWith("/api/cliente/chat");
                         } else {
                             // Bloqueio por pagamento: permite faturas e checkout para regularizar
                             allowedPath = false;

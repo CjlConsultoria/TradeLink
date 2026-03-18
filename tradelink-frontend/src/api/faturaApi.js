@@ -76,5 +76,13 @@ export default {
   /** AdminMax: marcar como pago (outra forma) */
   marcarPago(empresaId, data) {
     return api.post(`/admin-max/empresas/${empresaId}/faturas/marcar-pago`, data || {})
+  },
+  /** AdminMax: lista TODAS as faturas de todas as empresas (painel financeiro global) */
+  listarTodas() {
+    return api.get('/admin-max/faturas')
+  },
+  /** AdminMax: resumo financeiro global (receita, MRR, pendentes, vencidas, receita mensal) */
+  financeiroResumo() {
+    return api.get('/admin-max/financeiro/resumo')
   }
 }

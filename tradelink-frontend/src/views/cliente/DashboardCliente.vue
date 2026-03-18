@@ -3,7 +3,7 @@
     <h2 class="page-title">Dashboard</h2>
     <LoadingSpinner v-if="loading" />
     <template v-else>
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-8" data-onboarding="cards">
         <router-link to="/cliente/carteiras" class="card p-6 block hover:border-indigo-300">
           <p class="text-sm text-gray-500">Carteiras</p>
           <p class="text-3xl font-bold text-indigo-600 mt-1">{{ dashboard?.totalCarteiras || 0 }}</p>
@@ -36,8 +36,61 @@
         </button>
       </div>
 
-      <!-- Recomendações primeiro -->
-      <div ref="secaoRecomendacoesRef" class="card p-6 mb-8">
+      <!-- Resumo do Portfolio -->
+      <div v-if="portfolioResumo && portfolioResumo.ativos?.length" class="card p-6 mb-8" data-onboarding="portfolio">
+        <div class="flex items-baseline justify-between mb-3">
+          <h3 class="section-title mb-0">Meu Portfolio</h3>
+          <router-link to="/cliente/portfolio" class="text-sm text-indigo-600 hover:underline">Ver detalhes</router-link>
+        </div>
+        <p class="text-2xl font-bold text-gray-900 mb-3">{{ formatCurrency(portfolioResumo.valorTotalPortfolio) }}</p>
+        <div class="flex rounded-full h-3 overflow-hidden mb-3">
+          <div v-for="a in portfolioResumo.ativos.filter(x => x.percentualAlocacao > 0)" :key="a.id"
+            :style="{ width: a.percentualAlocacao + '%', backgroundColor: getColor(a.simbolo) }"
+            :title="a.simbolo + ' ' + a.percentualAlocacao + '%'"
+            class="transition-all"></div>
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <span v-for="a in portfolioResumo.ativos.filter(x => x.percentualAlocacao > 0)" :key="a.id" class="text-xs text-gray-600 flex items-center gap-1">
+            <span class="w-2.5 h-2.5 rounded-full inline-block" :style="{ backgroundColor: getColor(a.simbolo) }"></span>
+            {{ a.simbolo }} {{ a.percentualAlocacao }}%
+          </span>
+        </div>
+      </div>
+
+      <!-- Saude das Carteiras -->
+      <div v-if="saudeCarteiras.length" class="card p-6 mb-8">
+        <h3 class="section-title">Saude das Carteiras</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <router-link v-for="s in saudeCarteiras" :key="s.carteiraId" :to="'/cliente/carteiras/' + s.carteiraId"
+            class="flex items-center justify-between p-3 border rounded-lg hover:border-indigo-300 transition-colors"
+            :class="{
+              'border-emerald-200 bg-emerald-50': s.status === 'OK',
+              'border-amber-200 bg-amber-50': s.status === 'ATENCAO',
+              'border-red-200 bg-red-50': s.status === 'CRITICO'
+            }">
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full"
+                :class="{
+                  'bg-emerald-500': s.status === 'OK',
+                  'bg-amber-500': s.status === 'ATENCAO',
+                  'bg-red-500': s.status === 'CRITICO'
+                }"></span>
+              <span class="font-medium text-sm text-gray-900">{{ s.carteiraNome }}</span>
+            </div>
+            <span class="text-xs px-2 py-0.5 rounded-full font-medium"
+              :class="{
+                'bg-emerald-100 text-emerald-700': s.status === 'OK',
+                'bg-amber-100 text-amber-700': s.status === 'ATENCAO',
+                'bg-red-100 text-red-700': s.status === 'CRITICO'
+              }">
+              {{ s.status === 'OK' ? 'Balanceado' : s.status === 'ATENCAO' ? 'Atencao' : 'Desbalanceado' }}
+            </span>
+          </router-link>
+        </div>
+      </div>
+
+      <!-- Recomendacoes primeiro -->
+      <div ref="secaoRecomendacoesRef" class="card p-6 mb-8" data-onboarding="recomendacoes">
         <h3 class="section-title">Recomendações</h3>
         <div class="flex flex-wrap gap-2 border-b border-gray-200 mb-4">
           <button v-for="t in abasRec" :key="t.id" type="button" @click="abaRec = t.id; carregar(0)"
@@ -47,16 +100,16 @@
           </button>
         </div>
         <div class="flex flex-wrap gap-3 mb-4">
-          <select v-model="filtros.carteiraId" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-40">
+          <select v-model="filtros.carteiraId" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-full sm:w-40">
             <option value="">Todas as carteiras</option>
             <option v-for="c in carteiras" :key="c.id" :value="c.id">{{ c.nome }}</option>
           </select>
-          <select v-model="filtros.categoria" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-40">
+          <select v-model="filtros.categoria" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-full sm:w-40">
             <option value="">Todas (tipo)</option>
             <option value="COMPRA">Compra</option>
             <option value="VENDA">Venda</option>
           </select>
-          <input v-model="filtros.nome" type="text" placeholder="Buscar por nome (moeda/par)" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-48" />
+          <input v-model="filtros.nome" type="text" placeholder="Buscar por nome (moeda/par)" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-full sm:w-48" />
           <button type="button" @click="carregar(0)" class="px-3 py-2 bg-gray-100 rounded-lg text-sm hover:bg-gray-200">Filtrar</button>
         </div>
         <div class="space-y-3">
@@ -77,7 +130,13 @@
               <div><span class="text-gray-500">Entrada:</span> {{ formatCurrency(r.precoEntrada) }}</div>
               <div><span class="text-gray-500">Alvo:</span> {{ formatCurrency(r.precoAlvo) }}</div>
               <div><span class="text-gray-500">Atual:</span> <span class="font-medium text-indigo-600">{{ r.cotacaoAtual ? formatCurrency(r.cotacaoAtual) : '-' }}</span></div>
-              <div><span class="text-gray-500">Qtd:</span> {{ r.quantidade || '-' }}</div>
+              <div v-if="!r.modoPercentual"><span class="text-gray-500">Qtd:</span> {{ r.quantidade || '-' }}</div>
+              <div v-if="r.modoPercentual"><span class="text-gray-500">%:</span> {{ r.percentual }}%</div>
+            </div>
+            <div v-if="r.modoPercentual && r.quantidadeCalculadaCliente != null" class="mt-2 bg-indigo-50 rounded-lg px-3 py-2 text-sm">
+              <span class="text-indigo-700 font-medium">{{ r.percentual }}% de {{ r.moeda }}</span>
+              <span class="text-gray-600"> = {{ formatQtd(r.quantidadeCalculadaCliente) }} {{ r.moeda }}</span>
+              <span v-if="r.valorEstimadoCliente != null" class="text-gray-500"> (~{{ formatCurrency(r.valorEstimadoCliente) }})</span>
             </div>
             <div class="mt-3 flex gap-2">
               <button type="button" @click="abrirModalOperacao(r)" class="text-sm px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200">
@@ -97,7 +156,9 @@
       </div>
 
       <!-- Cotações depois -->
-      <CotacoesDashboardSection titulo="Cotações" />
+      <div data-onboarding="cotacoes">
+        <CotacoesDashboardSection titulo="Cotações" />
+      </div>
 
       <!-- Modal Registrar operação -->
       <Teleport to="body">
@@ -140,6 +201,19 @@
         </div>
       </Teleport>
     </template>
+
+    <!-- Onboarding Overlay -->
+    <OnboardingOverlay
+      :active="onboarding.active.value"
+      :step="onboarding.step.value"
+      :current-step="onboarding.currentStep.value"
+      :total-steps="onboarding.totalSteps.value"
+      :is-first="onboarding.isFirst.value"
+      :is-last="onboarding.isLast.value"
+      @next="onboarding.next()"
+      @prev="onboarding.prev()"
+      @skip="onboarding.skip()"
+    />
   </div>
 </template>
 
@@ -148,16 +222,85 @@ import { ref, onMounted, nextTick } from 'vue'
 import userApi from '../../api/userApi'
 import carteiraApi from '../../api/carteiraApi'
 import recomendacaoApi from '../../api/recomendacaoApi'
+import portfolioApi from '../../api/portfolioApi'
+import alocacaoApi from '../../api/alocacaoApi'
 import { formatCurrency, formatDate } from '../../utils/formatters'
 import { useToast } from '../../composables/useToast'
+import { useOnboarding } from '../../composables/useOnboarding'
 import CotacoesDashboardSection from '../../components/cotacao/CotacoesDashboardSection.vue'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import EmptyState from '../../components/common/EmptyState.vue'
 import StatusBadge from '../../components/common/StatusBadge.vue'
 import TipoBadge from '../../components/common/TipoBadge.vue'
+import OnboardingOverlay from '../../components/common/OnboardingOverlay.vue'
 import operacaoApi from '../../api/operacaoApi'
 
 const toast = useToast()
+
+const onboarding = useOnboarding('cliente-dashboard-v2', [
+  {
+    target: '[data-onboarding="cards"]',
+    title: 'Bem-vindo ao TradeLink!',
+    message: 'Este e o seu painel principal. Aqui voce acompanha de forma rapida o total de carteiras, recomendacoes pendentes, resolvidas e cotacoes recentes. Clique em qualquer card para ir direto a secao.',
+    position: 'bottom'
+  },
+  {
+    target: '[data-onboarding="portfolio"]',
+    title: 'Seu Portfolio',
+    message: 'Acompanhe a composicao do seu portfolio com a barra de alocacao colorida. Cada cor representa um ativo e seu percentual. Clique em "Ver detalhes" para gerenciar seus ativos.',
+    position: 'bottom'
+  },
+  {
+    target: '[data-sidebar-link="/cliente/portfolio"]',
+    title: 'Adicionar Ativos ao Portfolio',
+    message: 'No menu "Meu Portfolio" voce pode adicionar, editar e remover ativos do seu portfolio. Registre suas posicoes para acompanhar a evolucao e ver a alocacao atualizada.',
+    position: 'right'
+  },
+  {
+    target: '[data-onboarding="recomendacoes"]',
+    title: 'Recomendacoes do Consultor',
+    message: 'Aqui ficam as recomendacoes do seu consultor. Use as abas para filtrar por pendentes ou resolvidas. Voce pode registrar operacoes clicando no botao "Registrar operacao" ou marcar como resolvida.',
+    position: 'top'
+  },
+  {
+    target: '[data-onboarding="cotacoes"]',
+    title: 'Cotacoes em Tempo Real',
+    message: 'Acompanhe as cotacoes das principais moedas e criptomoedas atualizadas automaticamente. Os valores sao atualizados periodicamente para voce tomar decisoes informadas.',
+    position: 'top'
+  },
+  {
+    target: '[data-sidebar-link="/cliente/cotacoes"]',
+    title: 'Pagina de Cotacoes',
+    message: 'No menu "Cotacoes" voce acessa a lista completa de cotacoes com mais detalhes, historico e graficos. Use tambem o Comparador e o Simulador para analises avancadas.',
+    position: 'right'
+  },
+  {
+    target: '[data-sidebar-link="/cliente/carteiras"]',
+    title: 'Suas Carteiras',
+    message: 'Em "Carteiras" voce visualiza todas as carteiras atribuidas pelo seu consultor, com recomendacoes e alocacoes especificas para cada uma.',
+    position: 'right'
+  },
+  {
+    target: '[data-sidebar-link="/cliente/configuracoes"]',
+    title: 'Configuracoes e Suporte',
+    message: 'Em "Configuracoes" voce altera seus dados pessoais e preferencias. Se precisar de ajuda, use o botao de Suporte no menu ou o chat flutuante no canto da tela. Bons investimentos!',
+    position: 'right'
+  }
+])
+
+const portfolioResumo = ref(null)
+const saudeCarteiras = ref([])
+const cores = ['#6366f1','#f59e0b','#10b981','#ef4444','#3b82f6','#8b5cf6','#ec4899','#14b8a6','#f97316','#84cc16','#06b6d4','#e11d48']
+function getColor(simbolo) {
+  let hash = 0
+  for (let i = 0; i < simbolo.length; i++) hash = simbolo.charCodeAt(i) + ((hash << 5) - hash)
+  return cores[Math.abs(hash) % cores.length]
+}
+
+function formatQtd(v) {
+  if (v == null) return '-'
+  return Number(v) < 1 ? Number(v).toFixed(8).replace(/0+$/, '').replace(/\.$/, '') : Number(v).toLocaleString('pt-BR', { maximumFractionDigits: 4 })
+}
 
 const dashboard = ref(null)
 const carteiras = ref([])
@@ -293,11 +436,23 @@ onMounted(async () => {
   try {
     const [dashboardRes, cartRes] = await Promise.all([
       userApi.dashboard(),
-      carteiraApi.listarComoCliente()
+      carteiraApi.listarComoCliente(),
+      portfolioApi.resumo().then(r => { portfolioResumo.value = r.data }).catch(() => {})
     ])
     dashboard.value = dashboardRes.data
     carteiras.value = cartRes.data || []
     await carregar(0)
-  } catch (e) { console.error(e) } finally { loading.value = false }
+    // Carregar saude de cada carteira
+    for (const c of carteiras.value) {
+      alocacaoApi.minhaAlocacao(c.id).then(r => {
+        if (r.data?.statusSaude) {
+          saudeCarteiras.value = [...saudeCarteiras.value, { carteiraId: c.id, carteiraNome: c.nome, status: r.data.statusSaude }]
+        }
+      }).catch(() => {})
+    }
+  } catch (e) { console.error(e) } finally {
+    loading.value = false
+    onboarding.autoStart(1000)
+  }
 })
 </script>

@@ -16,6 +16,12 @@ export default {
   executar(id) {
     return api.patch(`/consultor/recomendacoes/${id}/executar`)
   },
+  impactoClientes(recomendacaoId) {
+    return api.get(`/consultor/recomendacoes/${recomendacaoId}/impacto`)
+  },
+  previewPercentual(data) {
+    return api.post('/consultor/recomendacoes/preview-percentual', data)
+  },
   listarComoCliente(carteiraId) {
     return api.get(`/cliente/carteiras/${carteiraId}/recomendacoes`)
   },

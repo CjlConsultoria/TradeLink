@@ -4,6 +4,7 @@ import com.example.CJLInvestimentos.entities.enums.SubscriptionStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 
@@ -101,6 +102,39 @@ public class Empresa {
     @Column(name = "acesso_bloqueado_por_admin", nullable = false, columnDefinition = "boolean not null default false")
     @Builder.Default
     private Boolean acessoBloqueadoPorAdmin = false;
+
+    // --- Campos de auto-cadastro / trial ---
+
+    @Column(name = "trial_inicio")
+    private LocalDateTime trialInicio;
+
+    @Column(name = "trial_fim")
+    private LocalDateTime trialFim;
+
+    @Column(name = "auto_cadastro", nullable = false)
+    @Builder.Default
+    private Boolean autoCadastro = false;
+
+    // --- Campos do Marketplace ---
+
+    @Column(name = "marketplace_visivel")
+    @Builder.Default
+    private Boolean marketplaceVisivel = false;
+
+    @Column(name = "marketplace_descricao", columnDefinition = "text")
+    private String marketplaceDescricao;
+
+    @Column(name = "marketplace_especializacao", length = 200)
+    private String marketplaceEspecializacao;
+
+    @Column(name = "marketplace_experiencia", length = 200)
+    private String marketplaceExperiencia;
+
+    @Column(name = "marketplace_rede_social", length = 500)
+    private String marketplaceRedeSocial;
+
+    @Column(name = "marketplace_preco_base", precision = 10, scale = 2)
+    private BigDecimal marketplacePrecoBase;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

@@ -1,20 +1,24 @@
 <template>
   <div>
-    <div class="flex items-center justify-between mb-4">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
       <h2 class="text-2xl font-bold text-gray-900">Cotações</h2>
-      <div class="flex gap-2">
-        <button type="button" @click="mostrarFiltros = !mostrarFiltros" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">
+      <div class="flex flex-wrap gap-2">
+        <button type="button" @click="mostrarFiltros = !mostrarFiltros" class="px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">
           {{ mostrarFiltros ? 'Ocultar filtros' : 'Mostrar filtros' }}
         </button>
-        <button type="button" @click="cotacaoStore.forceRefresh(); carregar()" :disabled="loading" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-50">
-          Atualizar todas
+        <button type="button" @click="exportarCsv" class="px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700 flex items-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          <span class="hidden sm:inline">Exportar CSV</span><span class="sm:hidden">CSV</span>
+        </button>
+        <button type="button" @click="cotacaoStore.forceRefresh(); carregar()" :disabled="loading" class="px-3 sm:px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-50">
+          <span class="hidden sm:inline">Atualizar todas</span><span class="sm:hidden">Atualizar</span>
         </button>
       </div>
     </div>
 
     <div v-if="mostrarFiltros" class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
       <p class="text-sm font-semibold text-gray-700 mb-3">Filtros de pesquisa</p>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div>
           <label class="block text-xs text-gray-500 mb-0.5">Moeda</label>
           <input v-model="filtros.moeda" type="text" placeholder="ex: USD, BTC" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
@@ -160,7 +164,7 @@
         </div>
         <p v-if="page.content.length === 0" class="p-6 text-gray-500 text-center">Nenhuma cotação encontrada.</p>
 
-        <div v-if="page.totalPages > 0" class="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50">
+        <div v-if="page.totalPages > 0" class="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-t border-gray-200 bg-gray-50">
           <p class="text-sm text-gray-600">
             {{ page.totalElements }} registro(s) · página {{ page.number + 1 }} de {{ page.totalPages }}
           </p>
@@ -190,6 +194,7 @@ import { useRoute, useRouter } from 'vue-router'
 import cotacaoApi from '../../api/cotacaoApi'
 import { useCotacaoStore } from '../../stores/cotacao'
 import { formatCurrency, formatPercent, formatDate } from '../../utils/formatters'
+import { exportCsv } from '../../utils/exportCsv'
 import LoadingSpinner from '../common/LoadingSpinner.vue'
 
 const route = useRoute()
@@ -309,6 +314,22 @@ async function refreshUma(cotacao) {
     carregar(page.value.number)
   } catch (_) {}
 }
+function exportarCsv() {
+  if (!page.value.content.length) return
+  const columns = [
+    { key: 'moeda', label: 'Moeda' },
+    { key: 'parMoeda', label: 'Par' },
+    { key: 'precoCompra', label: 'Preço Compra' },
+    { key: 'precoVenda', label: 'Preço Venda' },
+    { key: 'variacao', label: 'Variação (%)' },
+    { key: 'maximo', label: 'Máximo' },
+    { key: 'minimo', label: 'Mínimo' },
+    { key: 'dataHora', label: 'Data/Hora' },
+    { key: 'fonte', label: 'Fonte' }
+  ]
+  exportCsv(page.value.content, columns, 'cotacoes')
+}
+
 const INTERVALO_ATUALIZACAO_MS = 3 * 60 * 1000
 let intervalId = null
 onMounted(() => {

@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -23,4 +24,8 @@ public class CarteiraResponse {
     private LocalDateTime createdAt;
     private Integer totalClientes;
     private Integer totalRecomendacoes;
+    private BigDecimal margemErro;
+    private String moedaReferenciaRebalance;
+    private Boolean rebalanceAtivo;
+    private Boolean temAlocacoes;
 }

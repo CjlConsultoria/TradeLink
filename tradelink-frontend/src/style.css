@@ -21,6 +21,41 @@
   --tl-transition: 0.2s ease;
 }
 
+/* Dark mode overrides */
+.dark {
+  --tl-primary: 129 140 248;
+  --tl-primary-hover: 99 102 241;
+  --tl-primary-light: 30 27 75;
+  --tl-surface: 15 23 42;
+  --tl-surface-alt: 30 41 59;
+  --tl-border: 51 65 85;
+  --tl-text: 226 232 240;
+  --tl-text-muted: 148 163 184;
+  --tl-success: 34 197 94;
+  --tl-warning: 234 179 8;
+  --tl-error: 239 68 68;
+  --tl-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --tl-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --tl-shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.4);
+  color-scheme: dark;
+}
+
+.dark body {
+  background: rgb(var(--tl-surface));
+}
+
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark select,
+.dark textarea {
+  background: rgb(var(--tl-surface-alt));
+  color: rgb(var(--tl-text));
+  border-color: rgb(var(--tl-border));
+}
+
+.dark .app-header__logout:hover {
+  background: #451a1a;
+}
+
 /* Base */
 html {
   scroll-behavior: smooth;
