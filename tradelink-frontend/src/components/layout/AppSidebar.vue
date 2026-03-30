@@ -132,7 +132,8 @@ const menuItems = computed(() => {
             { to: '/admin-max/chat', label: 'Chat Suporte', icon: '💬' },
             { to: '/admin-max/chamados', label: 'Chamados', icon: '🎫' },
             { to: '/admin-max/faq', label: 'FAQ', icon: '❓' },
-            { to: '/admin-max/emails-apresentacao', label: 'Emails', icon: '📧' }
+            { to: '/admin-max/emails-apresentacao', label: 'Emails', icon: '📧' },
+            { to: '/admin-max/email-marketing', label: 'Email Marketing', icon: '📣' }
           ]
         },
         { to: '/admin-max/configuracoes', label: 'Configuracoes', icon: '⚙️' }

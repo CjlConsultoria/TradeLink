@@ -58,6 +58,7 @@ const routes = [
       { path: 'chamados', name: 'ChamadosAdmin', component: () => import('../views/admin-max/ChamadosAdminView.vue') },
       { path: 'marketplace', name: 'MarketplaceAdmin', component: () => import('../views/admin-max/MarketplaceAdminView.vue') },
       { path: 'emails-apresentacao', name: 'EmailsApresentacao', component: () => import('../views/admin-max/EmailsApresentacaoView.vue') },
+      { path: 'email-marketing', name: 'EmailMarketing', component: () => import('../views/admin-max/EmailMarketingView.vue') },
       { path: 'configuracoes', name: 'ConfiguracoesAdminMax', component: ConfiguracoesNotificacaoView }
     ]
   },

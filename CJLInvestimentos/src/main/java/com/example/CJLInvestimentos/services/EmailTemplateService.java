@@ -1329,6 +1329,81 @@ public class EmailTemplateService {
                 "Sua mentoria sera encerrada em " + dataFim + ".", body);
     }
 
+    // ─── Email Marketing (leads externos) ─────────────────────
+
+    /** Template de email marketing / apresentacao para leads externos (B2B). */
+    public String buildEmailMarketing(String nomeDestinatario) {
+        String nome = (nomeDestinatario != null && !nomeDestinatario.isBlank()) ? escape(nomeDestinatario) : "Prezado(a)";
+
+        String body = """
+            <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="margin:0 0 20px;">
+              <tr>
+                <td style="background:linear-gradient(135deg,#6366f1,#8b5cf6); border-radius:12px; padding:20px 24px; text-align:center;">
+                  <span style="font-size:28px;">&#128640;</span><br>
+                  <span style="color:#ffffff; font-size:20px; font-weight:700;">Conheca o TradeLink</span><br>
+                  <span style="color:#e0e7ff; font-size:14px;">A plataforma que esta transformando a gestao de investimentos no Brasil</span>
+                </td>
+              </tr>
+            </table>
+            """;
+
+        body += "<p style='margin:0 0 16px; color:#334155; font-size:15px; line-height:1.6;'>"
+                + "Ola, <strong style='color:#1e293b;'>" + nome + "</strong>!</p>";
+
+        body += "<p style='margin:0 0 16px; color:#334155; font-size:15px; line-height:1.6;'>"
+                + "Somos o <strong>TradeLink</strong>, uma plataforma completa para <strong>consultores, assessores e gestores de investimentos</strong> "
+                + "que desejam profissionalizar o atendimento aos seus clientes e escalar suas operacoes.</p>";
+
+        body += buildAlertBox("&#128161;",
+                "O TradeLink substitui planilhas, grupos de WhatsApp e processos manuais por uma plataforma integrada, "
+                + "segura e colaborativa — tudo em um so lugar.",
+                "rgba(99,102,241,0.06)", "rgba(99,102,241,0.15)");
+
+        body += buildSectionHeader("&#9889; Por que o TradeLink?");
+
+        body += buildFeatureItem("&#128203;", "Kanban de Recomendacoes",
+                "Gerencie sugestoes de compra e venda com drag-and-drop visual. Seus clientes acompanham em tempo real.");
+
+        body += buildFeatureItem("&#128200;", "Dashboard em Tempo Real",
+                "Cotacoes, performance de carteiras, saldos e graficos atualizados automaticamente.");
+
+        body += buildFeatureItem("&#128188;", "Gestao de Clientes",
+                "Convide clientes por email, gerencie carteiras e controle acessos com diferentes perfis.");
+
+        body += buildFeatureItem("&#9878;&#65039;", "Rebalanceamento Inteligente",
+                "Monitore desvios de alocacao com badges visuais (OK, ATENCAO, CRITICO) e ajuste rapidamente.");
+
+        body += buildFeatureItem("&#128276;", "Alertas e Notificacoes",
+                "Alertas de preco, email, Telegram, WhatsApp e push — tudo configuravel por empresa.");
+
+        body += buildFeatureItem("&#127777;&#65039;", "Heat Map e Ferramentas",
+                "Comparador de moedas, simulador de cenarios, watchlist e mais.");
+
+        body += buildSectionHeader("&#128176; Planos e Acesso");
+        body += "<p style='margin:0 0 16px; color:#334155; font-size:15px; line-height:1.6;'>"
+                + "Oferecemos <strong>trial gratuito de 14 dias</strong> para voce testar todas as funcionalidades. "
+                + "Sem compromisso, sem cartao de credito.</p>";
+
+        body += buildButton("Conhecer o TradeLink", APP_URL);
+
+        body += "<p style='margin:16px 0 0; color:#334155; font-size:15px; line-height:1.6;'>"
+                + "Tem duvidas ou quer agendar uma demonstracao? Responda este email ou acesse nosso site.</p>";
+
+        body += """
+            <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="margin:20px 0 0;">
+              <tr>
+                <td style="background:#f8fafc; border-radius:8px; padding:14px 18px; border:1px solid #e2e8f0;">
+                  <span style="font-size:12px; color:#94a3b8;">&#128231; Voce recebeu este email porque identificamos que sua empresa atua no mercado de investimentos. "
+                  + "Se nao deseja receber nossas comunicacoes, basta responder com REMOVER.</span>
+                </td>
+              </tr>
+            </table>
+            """;
+
+        return wrapInLayout("Conheca o TradeLink - Plataforma de Gestao de Investimentos",
+                "Descubra como o TradeLink pode transformar sua consultoria de investimentos", body);
+    }
+
     private static String escape(String s) {
         if (s == null) return "";
         return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");

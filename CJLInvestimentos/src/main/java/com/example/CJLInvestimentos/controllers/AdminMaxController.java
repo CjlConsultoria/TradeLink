@@ -19,9 +19,11 @@ import com.example.CJLInvestimentos.dtos.response.ProximaFaturaResponse;
 import com.example.CJLInvestimentos.dtos.response.UserResponse;
 import com.example.CJLInvestimentos.dtos.request.FaqRequest;
 import com.example.CJLInvestimentos.dtos.request.EnviarEmailApresentacaoRequest;
+import com.example.CJLInvestimentos.dtos.request.EnviarEmailMarketingRequest;
 import com.example.CJLInvestimentos.dtos.response.ChatConversaResponse;
 import com.example.CJLInvestimentos.dtos.response.ChatMensagemResponse;
 import com.example.CJLInvestimentos.dtos.response.EmailApresentacaoResponse;
+import com.example.CJLInvestimentos.dtos.response.EmailMarketingResponse;
 import com.example.CJLInvestimentos.dtos.response.FaqResponse;
 import com.example.CJLInvestimentos.entities.User;
 import com.example.CJLInvestimentos.repositories.UserRepository;
@@ -31,6 +33,7 @@ import com.example.CJLInvestimentos.services.ConfiguracaoSistemaService;
 import com.example.CJLInvestimentos.services.CarteiraService;
 import com.example.CJLInvestimentos.services.CotacaoService;
 import com.example.CJLInvestimentos.services.EmailApresentacaoService;
+import com.example.CJLInvestimentos.services.EmailMarketingService;
 import com.example.CJLInvestimentos.services.EmpresaService;
 import com.example.CJLInvestimentos.services.FaqService;
 import com.example.CJLInvestimentos.services.FaturaPdfService;
@@ -68,6 +71,7 @@ public class AdminMaxController {
     private final AdminMaxDashboardService adminMaxDashboardService;
     private final ConfiguracaoSistemaService configuracaoSistemaService;
     private final EmailApresentacaoService emailApresentacaoService;
+    private final EmailMarketingService emailMarketingService;
 
     // === CONFIGURACAO DO SISTEMA ===
 
@@ -381,6 +385,33 @@ public class AdminMaxController {
     @GetMapping("/emails-apresentacao/preview/{userId}")
     public ResponseEntity<Map<String, String>> previewEmailApresentacao(@PathVariable Long userId) {
         String html = emailApresentacaoService.preview(userId);
+        return ResponseEntity.ok(Map.of("html", html));
+    }
+
+    // === EMAIL MARKETING (leads externos) ===
+
+    @PostMapping("/email-marketing/enviar")
+    public ResponseEntity<List<EmailMarketingResponse>> enviarEmailMarketing(
+            @Valid @RequestBody EnviarEmailMarketingRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User admin = userRepository.findByEmail(userDetails.getUsername()).orElseThrow();
+        return ResponseEntity.ok(emailMarketingService.enviar(request, admin));
+    }
+
+    @GetMapping("/email-marketing/historico")
+    public ResponseEntity<List<EmailMarketingResponse>> historicoEmailMarketing() {
+        return ResponseEntity.ok(emailMarketingService.historico());
+    }
+
+    @GetMapping("/email-marketing/historico/{campanha}")
+    public ResponseEntity<List<EmailMarketingResponse>> historicoEmailMarketingPorCampanha(
+            @PathVariable String campanha) {
+        return ResponseEntity.ok(emailMarketingService.historicoPorCampanha(campanha));
+    }
+
+    @GetMapping("/email-marketing/preview")
+    public ResponseEntity<Map<String, String>> previewEmailMarketing() {
+        String html = emailMarketingService.preview();
         return ResponseEntity.ok(Map.of("html", html));
     }
 }
