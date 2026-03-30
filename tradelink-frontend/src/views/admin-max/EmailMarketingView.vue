@@ -4,16 +4,19 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
       <div>
         <h2 class="page-title mb-1">Email Marketing</h2>
-        <p class="text-sm text-gray-500 dark:text-gray-400">Envie emails de apresentação para leads externos</p>
+        <p class="text-sm" style="color: rgb(var(--tl-text-muted));">Envie emails de apresentacao para leads externos via Resend</p>
       </div>
       <div class="flex gap-2">
         <button
           v-for="tab in tabs" :key="tab.key"
           @click="abaAtiva = tab.key"
-          class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          class="px-4 py-2.5 rounded-lg text-sm font-semibold transition-all"
           :class="abaAtiva === tab.key
-            ? 'bg-indigo-600 text-white shadow-sm'
-            : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-600'"
+            ? 'text-white shadow-md'
+            : 'border hover:opacity-80'"
+          :style="abaAtiva === tab.key
+            ? 'background: rgb(var(--tl-primary));'
+            : 'background: rgb(var(--tl-surface)); border-color: rgb(var(--tl-border)); color: rgb(var(--tl-text));'"
         >
           {{ tab.label }}
         </button>
@@ -22,107 +25,127 @@
 
     <!-- Stats Cards -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-      <div class="card p-3 sm:p-4">
-        <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total Contatos</p>
-        <p class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-1">{{ contatos.length }}</p>
+      <div class="card p-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg" style="background: rgba(var(--tl-primary), 0.1);">📋</div>
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wide" style="color: rgb(var(--tl-text-muted));">Total</p>
+            <p class="text-2xl font-bold" style="color: rgb(var(--tl-text));">{{ contatos.length }}</p>
+          </div>
+        </div>
       </div>
-      <div class="card p-3 sm:p-4">
-        <p class="text-xs font-medium text-emerald-600 uppercase tracking-wide">Com Email</p>
-        <p class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-1">{{ contatos.filter(c => c.email).length }}</p>
+      <div class="card p-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg bg-emerald-100 dark:bg-emerald-900/30">✅</div>
+          <div>
+            <p class="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Com Email</p>
+            <p class="text-2xl font-bold" style="color: rgb(var(--tl-text));">{{ contatos.filter(c => c.email).length }}</p>
+          </div>
+        </div>
       </div>
-      <div class="card p-3 sm:p-4">
-        <p class="text-xs font-medium text-blue-600 uppercase tracking-wide">Selecionados</p>
-        <p class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-1">{{ selecionados.length }}</p>
+      <div class="card p-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg bg-blue-100 dark:bg-blue-900/30">☑️</div>
+          <div>
+            <p class="text-xs font-semibold text-blue-600 uppercase tracking-wide">Selecionados</p>
+            <p class="text-2xl font-bold" style="color: rgb(var(--tl-text));">{{ selecionados.length }}</p>
+          </div>
+        </div>
       </div>
-      <div class="card p-3 sm:p-4">
-        <p class="text-xs font-medium text-amber-600 uppercase tracking-wide">Limite Diário</p>
-        <p class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-1">100</p>
+      <div class="card p-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg bg-amber-100 dark:bg-amber-900/30">⚡</div>
+          <div>
+            <p class="text-xs font-semibold text-amber-600 uppercase tracking-wide">Limite/Dia</p>
+            <p class="text-2xl font-bold" style="color: rgb(var(--tl-text));">100</p>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- TAB: CONTATOS / ENVIAR -->
+    <!-- TAB: CONTATOS -->
     <div v-if="abaAtiva === 'contatos'">
       <!-- Importar / Adicionar -->
-      <div class="card p-4 sm:p-5 mb-4">
-        <div class="flex flex-col gap-4">
+      <div class="card p-5 mb-4">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <!-- Importar CSV -->
-          <div>
-            <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">📥 Importar CSV/Excel</h3>
-            <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
-              <div class="flex-1 w-full">
-                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Arquivo CSV (colunas: nome, email)</label>
-                <input
-                  ref="fileInput"
-                  type="file"
-                  accept=".csv,.txt"
-                  @change="importarCSV"
-                  class="block w-full text-sm text-gray-500 dark:text-gray-400
-                    file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0
-                    file:text-sm file:font-medium file:bg-indigo-50 dark:file:bg-indigo-900/30
-                    file:text-indigo-700 dark:file:text-indigo-300 hover:file:bg-indigo-100
-                    dark:hover:file:bg-indigo-900/50 cursor-pointer"
-                />
-              </div>
-              <p class="text-xs text-gray-400">Separador: <code class="bg-gray-100 dark:bg-slate-700 px-1 rounded">;</code> ou <code class="bg-gray-100 dark:bg-slate-700 px-1 rounded">,</code></p>
-            </div>
+          <div class="p-4 rounded-xl" style="background: rgba(var(--tl-primary), 0.04); border: 1px dashed rgba(var(--tl-primary), 0.3);">
+            <h3 class="text-sm font-bold mb-3 flex items-center gap-2" style="color: rgb(var(--tl-text));">
+              <span class="w-7 h-7 rounded-lg flex items-center justify-center text-xs text-white" style="background: rgb(var(--tl-primary));">📥</span>
+              Importar CSV
+            </h3>
+            <label class="block text-xs font-medium mb-2" style="color: rgb(var(--tl-text-muted));">Arquivo com colunas: nome, email (separador ; ou ,)</label>
+            <input
+              ref="fileInput"
+              type="file"
+              accept=".csv,.txt"
+              @change="importarCSV"
+              class="block w-full text-sm cursor-pointer file:mr-3 file:py-2.5 file:px-5 file:rounded-lg file:border-0 file:text-sm file:font-bold file:cursor-pointer"
+              style="color: rgb(var(--tl-text-muted));"
+              :style="{ '--file-bg': 'rgb(var(--tl-primary))', '--file-color': 'white' }"
+            />
           </div>
 
-          <div class="border-t border-gray-200 dark:border-slate-600"></div>
-
           <!-- Adicionar manualmente -->
-          <div>
-            <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">➕ Adicionar manualmente</h3>
+          <div class="p-4 rounded-xl" style="background: rgba(16, 185, 129, 0.04); border: 1px dashed rgba(16, 185, 129, 0.3);">
+            <h3 class="text-sm font-bold mb-3 flex items-center gap-2" style="color: rgb(var(--tl-text));">
+              <span class="w-7 h-7 rounded-lg bg-emerald-500 flex items-center justify-center text-xs text-white">➕</span>
+              Adicionar Manualmente
+            </h3>
             <form @submit.prevent="adicionarContato" class="flex flex-col sm:flex-row gap-2">
-              <input v-model="novoContato.nome" type="text" placeholder="Nome (opcional)" class="input flex-1" />
-              <input v-model="novoContato.email" type="email" placeholder="Email *" class="input flex-1" required />
-              <button type="submit" class="btn btn-primary whitespace-nowrap px-4 py-2 text-sm">
-                Adicionar
+              <input v-model="novoContato.nome" type="text" placeholder="Nome (opcional)" class="input-base flex-1" />
+              <input v-model="novoContato.email" type="email" placeholder="Email *" class="input-base flex-1" required />
+              <button type="submit" class="btn-primary px-5 py-2.5 rounded-lg text-sm font-bold whitespace-nowrap">
+                + Adicionar
               </button>
             </form>
           </div>
         </div>
       </div>
 
-      <!-- Configuração do envio -->
-      <div class="card p-4 sm:p-5 mb-4">
-        <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">⚙️ Configuração do Envio</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <!-- Configuracao do envio -->
+      <div class="card p-5 mb-4">
+        <h3 class="text-sm font-bold mb-3 flex items-center gap-2" style="color: rgb(var(--tl-text));">
+          <span class="w-7 h-7 rounded-lg flex items-center justify-center text-xs text-white" style="background: rgb(var(--tl-primary));">⚙️</span>
+          Configuracao do Envio
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Assunto do Email</label>
-            <input v-model="configEnvio.assunto" type="text" class="input w-full" placeholder="Conheça o TradeLink" />
+            <label class="block text-xs font-bold uppercase tracking-wide mb-1.5" style="color: rgb(var(--tl-text-muted));">Assunto do Email</label>
+            <input v-model="configEnvio.assunto" type="text" class="input-base w-full" placeholder="Conheca o TradeLink" />
           </div>
           <div>
-            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Campanha (tag)</label>
-            <input v-model="configEnvio.campanha" type="text" class="input w-full" placeholder="leads-consultores-mar2026" />
+            <label class="block text-xs font-bold uppercase tracking-wide mb-1.5" style="color: rgb(var(--tl-text-muted));">Campanha (tag)</label>
+            <input v-model="configEnvio.campanha" type="text" class="input-base w-full" placeholder="leads-consultores-mar2026" />
           </div>
         </div>
       </div>
 
-      <!-- Ações em lote -->
+      <!-- Toolbar -->
       <div class="card p-3 sm:p-4 mb-4">
         <div class="flex flex-col sm:flex-row gap-3 sm:items-center">
           <div class="relative flex-1 min-w-0">
-            <input v-model="busca" type="text" placeholder="Buscar por nome ou email..." class="input w-full pl-9" />
-            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <input v-model="busca" type="text" placeholder="Buscar por nome ou email..." class="input-base w-full pl-10" />
+            <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style="color: rgb(var(--tl-text-muted));" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
           </div>
-          <div class="flex items-center gap-2 sm:gap-3 justify-between sm:justify-end">
-            <span class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ selecionados.length }} selecionado(s)</span>
-            <button @click="selecionarTodos" class="btn btn-secondary whitespace-nowrap text-xs sm:text-sm px-2.5 sm:px-3 py-1.5">
-              {{ todosVisiveisSelecionados ? 'Desmarcar' : 'Selecionar' }} todos
+          <div class="flex items-center gap-2 flex-wrap justify-between sm:justify-end">
+            <span class="text-xs font-bold px-2.5 py-1 rounded-full" style="background: rgba(var(--tl-primary), 0.1); color: rgb(var(--tl-primary));">{{ selecionados.length }} selecionado(s)</span>
+            <button @click="selecionarTodos" class="px-3 py-2 rounded-lg text-xs font-bold border transition-colors" style="border-color: rgb(var(--tl-border)); color: rgb(var(--tl-text)); background: rgb(var(--tl-surface));">
+              {{ todosVisiveisSelecionados ? '✕ Desmarcar' : '☑ Selecionar' }} todos
             </button>
-            <button @click="removerSelecionados" v-if="selecionados.length > 0" class="btn whitespace-nowrap text-xs sm:text-sm px-2.5 sm:px-3 py-1.5 bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400">
-              Remover
+            <button v-if="selecionados.length > 0" @click="removerSelecionados" class="px-3 py-2 rounded-lg text-xs font-bold bg-red-500 text-white hover:bg-red-600 transition-colors">
+              🗑 Remover
             </button>
-            <button @click="abrirPreview(null)" class="btn btn-secondary whitespace-nowrap text-xs sm:text-sm px-2.5 sm:px-3 py-1.5">
-              Preview
+            <button @click="abrirPreview(null)" class="px-3 py-2 rounded-lg text-xs font-bold border transition-colors" style="border-color: rgb(var(--tl-border)); color: rgb(var(--tl-text)); background: rgb(var(--tl-surface));">
+              👁 Preview
             </button>
             <button
               @click="enviarEmLote"
               :disabled="selecionados.length === 0 || enviando"
-              class="btn btn-primary whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2"
+              class="btn-primary px-4 py-2.5 rounded-lg text-sm font-bold whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <template v-if="enviando">
-                <svg class="animate-spin -ml-1 mr-1.5 h-3.5 w-3.5 text-white inline" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                <svg class="animate-spin -ml-1 mr-1.5 h-4 w-4 text-white inline" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
                 Enviando...
               </template>
               <template v-else>🚀 Enviar {{ selecionados.length > 0 ? `(${selecionados.length})` : '' }}</template>
@@ -133,97 +156,94 @@
 
       <!-- Lista de contatos -->
       <div class="card overflow-hidden">
-        <div v-if="contatos.length === 0" class="text-center py-12 text-gray-500 dark:text-gray-400">
-          <svg class="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-          <p class="font-medium">Nenhum contato adicionado</p>
-          <p class="text-sm mt-1">Importe um CSV ou adicione contatos manualmente</p>
+        <div v-if="contatos.length === 0" class="text-center py-16">
+          <div class="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center text-3xl" style="background: rgba(var(--tl-primary), 0.08);">📧</div>
+          <p class="text-base font-bold mb-1" style="color: rgb(var(--tl-text));">Nenhum contato adicionado</p>
+          <p class="text-sm" style="color: rgb(var(--tl-text-muted));">Importe um CSV ou adicione contatos manualmente acima</p>
         </div>
         <template v-else>
-          <!-- Desktop Table Header -->
-          <div class="hidden md:grid grid-cols-[40px_1fr_1fr_80px] gap-4 px-5 py-3 bg-gray-50 dark:bg-slate-800 border-b border-gray-200 dark:border-slate-600 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+          <!-- Desktop Table -->
+          <div class="hidden md:grid grid-cols-[40px_2fr_2fr_100px] gap-3 px-5 py-3 text-xs font-bold uppercase tracking-wider" style="background: rgba(var(--tl-primary), 0.05); border-bottom: 2px solid rgba(var(--tl-primary), 0.15); color: rgb(var(--tl-text-muted));">
             <div></div>
-            <div>Nome</div>
+            <div>Nome / Empresa</div>
             <div>Email</div>
-            <div class="text-right">Ações</div>
+            <div class="text-right">Acoes</div>
           </div>
-
-          <!-- Desktop Rows -->
           <div
             v-for="(c, idx) in contatosPaginados" :key="idx"
-            class="hidden md:grid grid-cols-[40px_1fr_1fr_80px] gap-4 px-5 py-3 items-center border-b border-gray-100 dark:border-slate-700 transition-colors cursor-pointer"
-            :class="selecionados.includes(idx + paginaInicio) ? 'bg-indigo-50/60 dark:bg-indigo-900/20' : 'hover:bg-gray-50 dark:hover:bg-slate-800'"
-            @click="toggleSelecionado(idx + paginaInicio)"
+            class="hidden md:grid grid-cols-[40px_2fr_2fr_100px] gap-3 px-5 py-3.5 items-center transition-all cursor-pointer"
+            :class="isSelected(idx) ? 'border-l-4' : 'border-l-4 border-l-transparent hover:border-l-gray-200'"
+            :style="isSelected(idx)
+              ? 'background: rgba(var(--tl-primary), 0.06); border-left-color: rgb(var(--tl-primary)); border-bottom: 1px solid rgba(var(--tl-primary), 0.1);'
+              : 'border-bottom: 1px solid rgb(var(--tl-border));'"
+            @click="toggleSelecionado(getRealIdx(idx))"
           >
             <div>
-              <input type="checkbox" :checked="selecionados.includes(idx + paginaInicio)" @click.stop @change="toggleSelecionado(idx + paginaInicio)" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+              <input type="checkbox" :checked="isSelected(idx)" @click.stop @change="toggleSelecionado(getRealIdx(idx))" class="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
             </div>
             <div class="min-w-0">
-              <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ c.nome || '(sem nome)' }}</p>
+              <p class="text-sm font-semibold truncate" style="color: rgb(var(--tl-text));">{{ c.nome || '—' }}</p>
             </div>
             <div class="min-w-0">
-              <p class="text-sm text-gray-600 dark:text-gray-300 truncate">{{ c.email }}</p>
+              <p class="text-sm truncate" style="color: rgb(var(--tl-text-muted));">{{ c.email }}</p>
             </div>
-            <div class="text-right flex items-center justify-end gap-2">
-              <button @click.stop="abrirPreview(c)" class="text-xs text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 font-semibold">Preview</button>
-              <button @click.stop="removerContato(idx + paginaInicio)" class="text-xs text-red-500 hover:text-red-700 dark:text-red-400 font-semibold">✕</button>
+            <div class="flex items-center justify-end gap-3">
+              <button @click.stop="abrirPreview(c)" class="text-xs font-bold px-2 py-1 rounded-md transition-colors hover:underline" style="color: rgb(var(--tl-primary));">👁</button>
+              <button @click.stop="removerContato(getRealIdx(idx))" class="text-xs font-bold px-2 py-1 rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">✕</button>
             </div>
           </div>
 
           <!-- Mobile Cards -->
-          <div class="md:hidden divide-y divide-gray-100 dark:divide-slate-700">
+          <div class="md:hidden">
             <div
               v-for="(c, idx) in contatosPaginados" :key="'m-' + idx"
-              class="flex items-start gap-3 p-3 transition-colors cursor-pointer"
-              :class="selecionados.includes(idx + paginaInicio) ? 'bg-indigo-50/60 dark:bg-indigo-900/20' : 'hover:bg-gray-50 dark:hover:bg-slate-800'"
-              @click="toggleSelecionado(idx + paginaInicio)"
+              class="flex items-center gap-3 px-4 py-3.5 transition-all cursor-pointer"
+              :style="isSelected(idx)
+                ? 'background: rgba(var(--tl-primary), 0.06); border-bottom: 1px solid rgba(var(--tl-primary), 0.1);'
+                : 'border-bottom: 1px solid rgb(var(--tl-border));'"
+              @click="toggleSelecionado(getRealIdx(idx))"
             >
-              <input type="checkbox" :checked="selecionados.includes(idx + paginaInicio)" @click.stop @change="toggleSelecionado(idx + paginaInicio)" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 mt-1 flex-shrink-0" />
+              <input type="checkbox" :checked="isSelected(idx)" @click.stop @change="toggleSelecionado(getRealIdx(idx))" class="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 flex-shrink-0" />
               <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ c.nome || '(sem nome)' }}</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ c.email }}</p>
+                <p class="text-sm font-semibold truncate" style="color: rgb(var(--tl-text));">{{ c.nome || '—' }}</p>
+                <p class="text-xs truncate" style="color: rgb(var(--tl-text-muted));">{{ c.email }}</p>
               </div>
-              <div class="flex gap-2 flex-shrink-0">
-                <button @click.stop="abrirPreview(c)" class="text-xs text-indigo-600 dark:text-indigo-400 font-semibold">Preview</button>
-                <button @click.stop="removerContato(idx + paginaInicio)" class="text-xs text-red-500 dark:text-red-400">✕</button>
+              <div class="flex gap-1 flex-shrink-0">
+                <button @click.stop="abrirPreview(c)" class="text-xs p-1.5 rounded-md" style="color: rgb(var(--tl-primary));">👁</button>
+                <button @click.stop="removerContato(getRealIdx(idx))" class="text-xs p-1.5 rounded-md text-red-500">✕</button>
               </div>
             </div>
           </div>
 
-          <!-- Paginação -->
-          <div class="flex flex-col sm:flex-row items-center justify-between gap-2 px-4 sm:px-5 py-3 bg-gray-50 dark:bg-slate-800 border-t border-gray-200 dark:border-slate-600">
-            <p class="text-xs text-gray-500 dark:text-gray-400">
+          <!-- Paginacao -->
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-2 px-5 py-3" style="background: rgba(var(--tl-primary), 0.03); border-top: 1px solid rgb(var(--tl-border));">
+            <p class="text-xs font-medium" style="color: rgb(var(--tl-text-muted));">
               {{ paginaInicio + 1 }}–{{ Math.min(paginaFim, contatosFiltrados.length) }} de {{ contatosFiltrados.length }}
             </p>
             <div class="flex items-center gap-1">
-              <button @click="pagina = pagina - 1" :disabled="pagina <= 1" class="px-2.5 sm:px-3 py-1.5 text-xs font-medium rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed">
-                Anterior
-              </button>
+              <button @click="pagina = pagina - 1" :disabled="pagina <= 1" class="px-3 py-1.5 text-xs font-bold rounded-md border disabled:opacity-30 disabled:cursor-not-allowed" style="border-color: rgb(var(--tl-border)); color: rgb(var(--tl-text)); background: rgb(var(--tl-surface));">Anterior</button>
               <template v-for="p in paginasVisiveis" :key="p">
-                <button v-if="p === '...'" disabled class="px-2 py-1.5 text-xs text-gray-400">...</button>
-                <button v-else @click="pagina = p" class="px-2.5 sm:px-3 py-1.5 text-xs font-medium rounded-md border transition-colors" :class="pagina === p ? 'bg-indigo-600 text-white border-indigo-600' : 'border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-600'">
-                  {{ p }}
-                </button>
+                <button v-if="p === '...'" disabled class="px-2 py-1.5 text-xs" style="color: rgb(var(--tl-text-muted));">...</button>
+                <button v-else @click="pagina = p" class="px-3 py-1.5 text-xs font-bold rounded-md border transition-colors" :style="pagina === p ? 'background: rgb(var(--tl-primary)); color: white; border-color: rgb(var(--tl-primary));' : 'border-color: rgb(var(--tl-border)); color: rgb(var(--tl-text)); background: rgb(var(--tl-surface));'">{{ p }}</button>
               </template>
-              <button @click="pagina = pagina + 1" :disabled="pagina >= totalPaginas" class="px-2.5 sm:px-3 py-1.5 text-xs font-medium rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed">
-                Próxima
-              </button>
+              <button @click="pagina = pagina + 1" :disabled="pagina >= totalPaginas" class="px-3 py-1.5 text-xs font-bold rounded-md border disabled:opacity-30 disabled:cursor-not-allowed" style="border-color: rgb(var(--tl-border)); color: rgb(var(--tl-text)); background: rgb(var(--tl-surface));">Proxima</button>
             </div>
           </div>
         </template>
       </div>
     </div>
 
-    <!-- TAB: HISTÓRICO -->
+    <!-- TAB: HISTORICO -->
     <div v-if="abaAtiva === 'historico'">
       <div class="card overflow-hidden">
         <LoadingSpinner v-if="loadingHistorico" size="sm" class="py-12" />
-        <div v-else-if="historico.length === 0" class="text-center py-12 text-gray-500 dark:text-gray-400">
-          <svg class="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-          <p class="font-medium">Nenhum email marketing enviado ainda</p>
+        <div v-else-if="historico.length === 0" class="text-center py-16">
+          <div class="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center text-3xl" style="background: rgba(var(--tl-primary), 0.08);">📊</div>
+          <p class="text-base font-bold mb-1" style="color: rgb(var(--tl-text));">Nenhum email marketing enviado</p>
+          <p class="text-sm" style="color: rgb(var(--tl-text-muted));">Envie emails na aba Contatos</p>
         </div>
         <template v-else>
-          <!-- Desktop -->
-          <div class="hidden md:grid grid-cols-[1fr_1fr_120px_140px_90px] gap-4 px-5 py-3 bg-gray-50 dark:bg-slate-800 border-b border-gray-200 dark:border-slate-600 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+          <div class="hidden md:grid grid-cols-[1.5fr_2fr_120px_140px_90px] gap-3 px-5 py-3 text-xs font-bold uppercase tracking-wider" style="background: rgba(var(--tl-primary), 0.05); border-bottom: 2px solid rgba(var(--tl-primary), 0.15); color: rgb(var(--tl-text-muted));">
             <div>Nome</div>
             <div>Email</div>
             <div>Campanha</div>
@@ -232,62 +252,60 @@
           </div>
           <div
             v-for="h in historicoPaginado" :key="h.id"
-            class="hidden md:grid grid-cols-[1fr_1fr_120px_140px_90px] gap-4 px-5 py-3 items-center border-b border-gray-100 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+            class="hidden md:grid grid-cols-[1.5fr_2fr_120px_140px_90px] gap-3 px-5 py-3.5 items-center transition-colors"
+            style="border-bottom: 1px solid rgb(var(--tl-border));"
           >
             <div class="min-w-0">
-              <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ h.nome || '(sem nome)' }}</p>
+              <p class="text-sm font-semibold truncate" style="color: rgb(var(--tl-text));">{{ h.nome || '—' }}</p>
             </div>
             <div class="min-w-0">
-              <p class="text-sm text-gray-600 dark:text-gray-300 truncate">{{ h.email }}</p>
+              <p class="text-sm truncate" style="color: rgb(var(--tl-text-muted));">{{ h.email }}</p>
             </div>
             <div>
-              <span v-if="h.campanha" class="text-xs px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium">{{ h.campanha }}</span>
+              <span v-if="h.campanha" class="text-[11px] px-2.5 py-1 rounded-full font-bold" style="background: rgba(var(--tl-primary), 0.1); color: rgb(var(--tl-primary));">{{ h.campanha }}</span>
             </div>
             <div>
-              <p class="text-xs text-gray-700 dark:text-gray-300">{{ formatData(h.enviadoEm) }}</p>
-              <p class="text-xs text-gray-400">por {{ h.enviadoPor }}</p>
+              <p class="text-xs font-medium" style="color: rgb(var(--tl-text));">{{ formatData(h.enviadoEm) }}</p>
+              <p class="text-[11px]" style="color: rgb(var(--tl-text-muted));">por {{ h.enviadoPor }}</p>
             </div>
             <div class="text-right">
-              <span class="text-xs px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1" :class="h.status === 'ENVIADO' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'">
-                <span class="w-1.5 h-1.5 rounded-full" :class="h.status === 'ENVIADO' ? 'bg-green-500' : 'bg-red-500'"></span>
+              <span class="text-[11px] px-2.5 py-1 rounded-full font-bold inline-flex items-center gap-1.5" :class="h.status === 'ENVIADO' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'">
+                <span class="w-2 h-2 rounded-full" :class="h.status === 'ENVIADO' ? 'bg-emerald-500' : 'bg-red-500'"></span>
                 {{ h.status === 'ENVIADO' ? 'Enviado' : 'Falha' }}
               </span>
-              <p v-if="h.erro" class="text-xs text-red-400 mt-0.5 truncate max-w-[120px]" :title="h.erro">{{ h.erro }}</p>
             </div>
           </div>
 
           <!-- Mobile -->
-          <div class="md:hidden divide-y divide-gray-100 dark:divide-slate-700">
-            <div v-for="h in historicoPaginado" :key="'mh-' + h.id" class="p-3">
+          <div class="md:hidden">
+            <div v-for="h in historicoPaginado" :key="'mh-' + h.id" class="px-4 py-3.5" style="border-bottom: 1px solid rgb(var(--tl-border));">
               <div class="flex items-start justify-between gap-2 mb-1.5">
                 <div class="min-w-0 flex-1">
-                  <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ h.nome || '(sem nome)' }}</p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ h.email }}</p>
+                  <p class="text-sm font-semibold truncate" style="color: rgb(var(--tl-text));">{{ h.nome || '—' }}</p>
+                  <p class="text-xs truncate" style="color: rgb(var(--tl-text-muted));">{{ h.email }}</p>
                 </div>
-                <span class="text-[11px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1 flex-shrink-0" :class="h.status === 'ENVIADO' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'">
-                  <span class="w-1.5 h-1.5 rounded-full" :class="h.status === 'ENVIADO' ? 'bg-green-500' : 'bg-red-500'"></span>
+                <span class="text-[11px] px-2 py-0.5 rounded-full font-bold inline-flex items-center gap-1 flex-shrink-0" :class="h.status === 'ENVIADO' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'">
+                  <span class="w-1.5 h-1.5 rounded-full" :class="h.status === 'ENVIADO' ? 'bg-emerald-500' : 'bg-red-500'"></span>
                   {{ h.status === 'ENVIADO' ? 'Enviado' : 'Falha' }}
                 </span>
               </div>
               <div class="flex items-center gap-2 flex-wrap">
-                <span v-if="h.campanha" class="text-[11px] px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium">{{ h.campanha }}</span>
-                <span class="text-[11px] text-gray-400">{{ formatData(h.enviadoEm) }} por {{ h.enviadoPor }}</span>
+                <span v-if="h.campanha" class="text-[11px] px-2 py-0.5 rounded-full font-bold" style="background: rgba(var(--tl-primary), 0.1); color: rgb(var(--tl-primary));">{{ h.campanha }}</span>
+                <span class="text-[11px]" style="color: rgb(var(--tl-text-muted));">{{ formatData(h.enviadoEm) }} · {{ h.enviadoPor }}</span>
               </div>
             </div>
           </div>
 
-          <!-- Paginação -->
-          <div class="flex flex-col sm:flex-row items-center justify-between gap-2 px-4 sm:px-5 py-3 bg-gray-50 dark:bg-slate-800 border-t border-gray-200 dark:border-slate-600">
-            <p class="text-xs text-gray-500 dark:text-gray-400">
-              {{ histPaginaInicio + 1 }}–{{ Math.min(histPaginaFim, historico.length) }} de {{ historico.length }}
-            </p>
+          <!-- Paginacao -->
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-2 px-5 py-3" style="background: rgba(var(--tl-primary), 0.03); border-top: 1px solid rgb(var(--tl-border));">
+            <p class="text-xs font-medium" style="color: rgb(var(--tl-text-muted));">{{ histPaginaInicio + 1 }}–{{ Math.min(histPaginaFim, historico.length) }} de {{ historico.length }}</p>
             <div class="flex items-center gap-1">
-              <button @click="histPagina = histPagina - 1" :disabled="histPagina <= 1" class="px-2.5 sm:px-3 py-1.5 text-xs font-medium rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed">Anterior</button>
+              <button @click="histPagina = histPagina - 1" :disabled="histPagina <= 1" class="px-3 py-1.5 text-xs font-bold rounded-md border disabled:opacity-30" style="border-color: rgb(var(--tl-border)); color: rgb(var(--tl-text)); background: rgb(var(--tl-surface));">Anterior</button>
               <template v-for="p in histPaginasVisiveis" :key="p">
-                <button v-if="p === '...'" disabled class="px-2 py-1.5 text-xs text-gray-400">...</button>
-                <button v-else @click="histPagina = p" class="px-2.5 sm:px-3 py-1.5 text-xs font-medium rounded-md border transition-colors" :class="histPagina === p ? 'bg-indigo-600 text-white border-indigo-600' : 'border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-600'">{{ p }}</button>
+                <button v-if="p === '...'" disabled class="px-2 py-1.5 text-xs" style="color: rgb(var(--tl-text-muted));">...</button>
+                <button v-else @click="histPagina = p" class="px-3 py-1.5 text-xs font-bold rounded-md border" :style="histPagina === p ? 'background: rgb(var(--tl-primary)); color: white; border-color: rgb(var(--tl-primary));' : 'border-color: rgb(var(--tl-border)); color: rgb(var(--tl-text)); background: rgb(var(--tl-surface));'">{{ p }}</button>
               </template>
-              <button @click="histPagina = histPagina + 1" :disabled="histPagina >= histTotalPaginas" class="px-2.5 sm:px-3 py-1.5 text-xs font-medium rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed">Próxima</button>
+              <button @click="histPagina = histPagina + 1" :disabled="histPagina >= histTotalPaginas" class="px-3 py-1.5 text-xs font-bold rounded-md border disabled:opacity-30" style="border-color: rgb(var(--tl-border)); color: rgb(var(--tl-text)); background: rgb(var(--tl-surface));">Proxima</button>
             </div>
           </div>
         </template>
@@ -296,55 +314,55 @@
 
     <!-- Modal Preview -->
     <Teleport to="body">
-      <div v-if="preview.visivel" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4" @click.self="fecharPreview">
-        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] flex flex-col">
-          <div class="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-200 dark:border-slate-600">
+      <div v-if="preview.visivel" class="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4" style="background: rgba(0,0,0,0.6);" @click.self="fecharPreview">
+        <div class="rounded-xl shadow-2xl w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] flex flex-col" style="background: rgb(var(--tl-surface));">
+          <div class="flex items-center justify-between px-5 py-4" style="border-bottom: 1px solid rgb(var(--tl-border));">
             <div>
-              <h3 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Preview do Email</h3>
-              <p v-if="preview.contato" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Para: {{ preview.contato.nome || '' }} &lt;{{ preview.contato.email }}&gt;</p>
+              <h3 class="text-lg font-bold" style="color: rgb(var(--tl-text));">Preview do Email</h3>
+              <p v-if="preview.contato" class="text-xs mt-0.5" style="color: rgb(var(--tl-text-muted));">Para: {{ preview.contato.nome || '' }} &lt;{{ preview.contato.email }}&gt;</p>
             </div>
-            <button @click="fecharPreview" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-gray-600 transition-colors">
+            <button @click="fecharPreview" class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors hover:opacity-70" style="color: rgb(var(--tl-text-muted));">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
           </div>
-          <div class="flex-1 overflow-auto p-1.5 sm:p-2 bg-gray-100 dark:bg-slate-900">
+          <div class="flex-1 overflow-auto p-2" style="background: rgb(var(--tl-surface-alt));">
             <LoadingSpinner v-if="preview.loading" size="sm" class="py-12" />
-            <iframe v-else :srcdoc="preview.html" class="w-full bg-white rounded-lg shadow-sm border-0" style="min-height: 400px; height: 70vh;"></iframe>
+            <iframe v-else :srcdoc="preview.html" class="w-full rounded-lg shadow-sm border-0" style="min-height: 400px; height: 70vh; background: white;"></iframe>
           </div>
         </div>
       </div>
     </Teleport>
 
-    <!-- Modal Progresso de Envio -->
+    <!-- Modal Progresso -->
     <Teleport to="body">
-      <div v-if="progressoEnvio.visivel" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">📧 Enviando Emails</h3>
+      <div v-if="progressoEnvio.visivel" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.6);">
+        <div class="rounded-xl shadow-2xl w-full max-w-md p-6" style="background: rgb(var(--tl-surface));">
+          <h3 class="text-lg font-bold mb-4 text-center" style="color: rgb(var(--tl-text));">📧 Enviando Emails</h3>
           <div class="mb-4">
-            <div class="flex justify-between text-sm text-gray-600 dark:text-gray-300 mb-2">
+            <div class="flex justify-between text-sm font-medium mb-2" style="color: rgb(var(--tl-text));">
               <span>{{ progressoEnvio.enviados + progressoEnvio.falhas }} de {{ progressoEnvio.total }}</span>
-              <span>{{ Math.round(((progressoEnvio.enviados + progressoEnvio.falhas) / progressoEnvio.total) * 100) }}%</span>
+              <span>{{ Math.round(((progressoEnvio.enviados + progressoEnvio.falhas) / Math.max(progressoEnvio.total, 1)) * 100) }}%</span>
             </div>
-            <div class="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-3">
-              <div class="h-3 rounded-full transition-all duration-300 bg-gradient-to-r from-indigo-500 to-purple-500"
-                :style="{ width: ((progressoEnvio.enviados + progressoEnvio.falhas) / progressoEnvio.total * 100) + '%' }">
+            <div class="w-full rounded-full h-3" style="background: rgb(var(--tl-border));">
+              <div class="h-3 rounded-full transition-all duration-300" style="background: linear-gradient(135deg, rgb(var(--tl-primary)), #8b5cf6);"
+                :style="{ width: ((progressoEnvio.enviados + progressoEnvio.falhas) / Math.max(progressoEnvio.total, 1) * 100) + '%' }">
               </div>
             </div>
           </div>
           <div class="grid grid-cols-2 gap-3 mb-4">
-            <div class="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-              <p class="text-2xl font-bold text-green-600">{{ progressoEnvio.enviados }}</p>
-              <p class="text-xs text-green-700 dark:text-green-400">Enviados</p>
+            <div class="text-center p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl">
+              <p class="text-2xl font-bold text-emerald-600">{{ progressoEnvio.enviados }}</p>
+              <p class="text-xs font-bold text-emerald-700 dark:text-emerald-400">Enviados</p>
             </div>
-            <div class="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+            <div class="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-xl">
               <p class="text-2xl font-bold text-red-600">{{ progressoEnvio.falhas }}</p>
-              <p class="text-xs text-red-700 dark:text-red-400">Falhas</p>
+              <p class="text-xs font-bold text-red-700 dark:text-red-400">Falhas</p>
             </div>
           </div>
-          <p v-if="progressoEnvio.emailAtual" class="text-xs text-gray-500 dark:text-gray-400 text-center truncate">
+          <p v-if="progressoEnvio.emailAtual" class="text-xs text-center truncate mb-3" style="color: rgb(var(--tl-text-muted));">
             Enviando para: {{ progressoEnvio.emailAtual }}
           </p>
-          <button v-if="!enviando" @click="progressoEnvio.visivel = false" class="btn btn-primary w-full mt-4">
+          <button v-if="!enviando" @click="progressoEnvio.visivel = false" class="btn-primary w-full py-2.5 rounded-lg text-sm font-bold">
             Fechar
           </button>
         </div>
@@ -366,7 +384,7 @@ const POR_PAGINA = 15
 
 const tabs = [
   { key: 'contatos', label: '📋 Contatos' },
-  { key: 'historico', label: '📊 Histórico' }
+  { key: 'historico', label: '📊 Historico' }
 ]
 
 const abaAtiva = ref('contatos')
@@ -382,12 +400,21 @@ const fileInput = ref(null)
 
 const novoContato = ref({ nome: '', email: '' })
 const configEnvio = ref({
-  assunto: 'Conheça o TradeLink - Plataforma de Gestão de Investimentos',
+  assunto: 'Conheca o TradeLink - Plataforma de Gestao de Investimentos',
   campanha: 'leads-consultores-mar2026'
 })
 
 const preview = ref({ visivel: false, loading: false, html: '', contato: null })
 const progressoEnvio = ref({ visivel: false, total: 0, enviados: 0, falhas: 0, emailAtual: '' })
+
+// --- Helpers ---
+function getRealIdx(paginatedIdx) {
+  const item = contatosFiltrados.value[paginatedIdx + paginaInicio.value]
+  return contatos.value.indexOf(item)
+}
+function isSelected(paginatedIdx) {
+  return selecionados.value.includes(getRealIdx(paginatedIdx))
+}
 
 // --- Filtro ---
 const contatosFiltrados = computed(() => {
@@ -398,20 +425,17 @@ const contatosFiltrados = computed(() => {
 
 const todosVisiveisSelecionados = computed(() => {
   if (contatosFiltrados.value.length === 0) return false
-  return contatosFiltrados.value.every((_, idx) => {
-    const realIdx = contatos.value.indexOf(contatosFiltrados.value[idx])
-    return selecionados.value.includes(realIdx)
-  })
+  return contatosFiltrados.value.every(c => selecionados.value.includes(contatos.value.indexOf(c)))
 })
 
-// --- Paginação Contatos ---
+// --- Paginacao Contatos ---
 const totalPaginas = computed(() => Math.max(1, Math.ceil(contatosFiltrados.value.length / POR_PAGINA)))
 const paginaInicio = computed(() => (pagina.value - 1) * POR_PAGINA)
 const paginaFim = computed(() => paginaInicio.value + POR_PAGINA)
 const contatosPaginados = computed(() => contatosFiltrados.value.slice(paginaInicio.value, paginaFim.value))
 const paginasVisiveis = computed(() => gerarPaginas(pagina.value, totalPaginas.value))
 
-// --- Paginação Histórico ---
+// --- Paginacao Historico ---
 const histTotalPaginas = computed(() => Math.max(1, Math.ceil(historico.value.length / POR_PAGINA)))
 const histPaginaInicio = computed(() => (histPagina.value - 1) * POR_PAGINA)
 const histPaginaFim = computed(() => histPaginaInicio.value + POR_PAGINA)
@@ -434,53 +458,33 @@ watch(busca, () => { pagina.value = 1 })
 function importarCSV(event) {
   const file = event.target.files[0]
   if (!file) return
-
   const reader = new FileReader()
   reader.onload = (e) => {
     const text = e.target.result
     const lines = text.split(/\r?\n/).filter(l => l.trim())
     if (lines.length === 0) return
-
-    // Detectar separador
     const sep = lines[0].includes(';') ? ';' : ','
-
-    // Detectar se primeira linha é header
     const firstLine = lines[0].toLowerCase()
     const startIdx = (firstLine.includes('nome') || firstLine.includes('email') || firstLine.includes('empresa')) ? 1 : 0
-
     let importados = 0
     const emailsExistentes = new Set(contatos.value.map(c => c.email.toLowerCase()))
-
     for (let i = startIdx; i < lines.length; i++) {
       const cols = lines[i].split(sep).map(c => c.trim().replace(/^["']|["']$/g, ''))
       if (cols.length < 1) continue
-
-      // Tentar encontrar coluna de email
       let email = '', nome = ''
       for (const col of cols) {
-        if (col.includes('@') && col.includes('.')) {
-          email = col.toLowerCase()
-          break
-        }
+        if (col.includes('@') && col.includes('.')) { email = col.toLowerCase(); break }
       }
-
       if (!email) continue
-
-      // Nome é a primeira coluna que não é email
       for (const col of cols) {
-        if (!col.includes('@') && col.length > 1) {
-          nome = col
-          break
-        }
+        if (!col.includes('@') && col.length > 1) { nome = col; break }
       }
-
       if (!emailsExistentes.has(email)) {
         contatos.value.push({ nome, email })
         emailsExistentes.add(email)
         importados++
       }
     }
-
     toast.success(`${importados} contato(s) importado(s)!`)
     if (fileInput.value) fileInput.value.value = ''
   }
@@ -491,21 +495,13 @@ function importarCSV(event) {
 function adicionarContato() {
   const email = novoContato.value.email.trim().toLowerCase()
   if (!email) return
-
-  if (contatos.value.some(c => c.email.toLowerCase() === email)) {
-    toast.warning('Este email já está na lista.')
-    return
-  }
-
-  contatos.value.push({
-    nome: novoContato.value.nome.trim(),
-    email
-  })
+  if (contatos.value.some(c => c.email.toLowerCase() === email)) { toast.warning('Email ja esta na lista.'); return }
+  contatos.value.push({ nome: novoContato.value.nome.trim(), email })
   novoContato.value = { nome: '', email: '' }
   toast.success('Contato adicionado!')
 }
 
-// --- Seleção ---
+// --- Selecao ---
 function toggleSelecionado(idx) {
   const i = selecionados.value.indexOf(idx)
   if (i === -1) selecionados.value.push(idx)
@@ -514,11 +510,11 @@ function toggleSelecionado(idx) {
 
 function selecionarTodos() {
   if (todosVisiveisSelecionados.value) {
-    const indices = contatosFiltrados.value.map((_, idx) => contatos.value.indexOf(contatosFiltrados.value[idx]))
+    const indices = contatosFiltrados.value.map(c => contatos.value.indexOf(c))
     selecionados.value = selecionados.value.filter(i => !indices.includes(i))
   } else {
     const set = new Set(selecionados.value)
-    contatosFiltrados.value.forEach((_, idx) => set.add(contatos.value.indexOf(contatosFiltrados.value[idx])))
+    contatosFiltrados.value.forEach(c => set.add(contatos.value.indexOf(c)))
     selecionados.value = [...set]
   }
 }
@@ -548,72 +544,51 @@ async function abrirPreview(contato) {
     preview.value.loading = false
   }
 }
-
-function fecharPreview() {
-  preview.value.visivel = false
-}
+function fecharPreview() { preview.value.visivel = false }
 
 // --- Enviar ---
 async function enviarEmLote() {
   if (selecionados.value.length === 0) return
-
   const contatosSelecionados = selecionados.value.map(idx => contatos.value[idx]).filter(c => c && c.email)
-
-  if (contatosSelecionados.length > 100) {
-    toast.error('Máximo de 100 emails por lote. Selecione menos contatos.')
-    return
-  }
-
+  if (contatosSelecionados.length > 100) { toast.error('Maximo 100 emails por lote.'); return }
   const ok = await confirm({
     title: 'Confirmar envio',
-    message: `Enviar email de apresentação para ${contatosSelecionados.length} contato(s)?\n\nAssunto: ${configEnvio.value.assunto}\nCampanha: ${configEnvio.value.campanha || '(sem tag)'}`,
+    message: `Enviar email para ${contatosSelecionados.length} contato(s)?\n\nAssunto: ${configEnvio.value.assunto}\nCampanha: ${configEnvio.value.campanha || '(sem tag)'}`,
     confirmText: 'Enviar',
     variant: 'info'
   })
   if (!ok) return
-
   enviando.value = true
-  progressoEnvio.value = {
-    visivel: true,
-    total: contatosSelecionados.length,
-    enviados: 0,
-    falhas: 0,
-    emailAtual: contatosSelecionados[0]?.email || ''
-  }
-
+  progressoEnvio.value = { visivel: true, total: contatosSelecionados.length, enviados: 0, falhas: 0, emailAtual: contatosSelecionados[0]?.email || '' }
   try {
     const payload = contatosSelecionados.map(c => ({ email: c.email, nome: c.nome || '' }))
     const res = await emailMarketingApi.enviar(payload, configEnvio.value.assunto, configEnvio.value.campanha)
     const resultados = res.data || []
-
     const enviados = resultados.filter(r => r.status === 'ENVIADO').length
     const falhas = resultados.filter(r => r.status === 'FALHA').length
-
     progressoEnvio.value.enviados = enviados
     progressoEnvio.value.falhas = falhas
     progressoEnvio.value.emailAtual = ''
-
-    if (enviados > 0) toast.success(`${enviados} email(s) enviado(s) com sucesso!`)
+    if (enviados > 0) toast.success(`${enviados} email(s) enviado(s)!`)
     if (falhas > 0) toast.error(`${falhas} email(s) falharam.`)
-
     selecionados.value = []
     await carregarHistorico()
   } catch (e) {
-    toast.error(e.response?.data?.mensagem || e.response?.data?.message || 'Erro ao enviar emails.')
+    toast.error(e.response?.data?.mensagem || e.response?.data?.message || 'Erro ao enviar.')
     progressoEnvio.value.visivel = false
   } finally {
     enviando.value = false
   }
 }
 
-// --- Histórico ---
+// --- Historico ---
 async function carregarHistorico() {
   loadingHistorico.value = true
   try {
     const res = await emailMarketingApi.historico()
     historico.value = res.data || []
   } catch (e) {
-    toast.error('Erro ao carregar histórico.')
+    toast.error('Erro ao carregar historico.')
   } finally {
     loadingHistorico.value = false
   }
@@ -629,3 +604,20 @@ watch(abaAtiva, (tab) => {
   if (tab === 'historico' && historico.value.length === 0) carregarHistorico()
 })
 </script>
+
+<style scoped>
+input[type="file"]::file-selector-button {
+  background: rgb(var(--tl-primary));
+  color: white;
+  border: none;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  font-weight: 700;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+input[type="file"]::file-selector-button:hover {
+  opacity: 0.85;
+}
+</style>
