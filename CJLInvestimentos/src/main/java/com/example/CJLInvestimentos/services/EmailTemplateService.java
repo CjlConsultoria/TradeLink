@@ -1333,7 +1333,10 @@ public class EmailTemplateService {
 
     /** Template de email marketing / apresentacao para leads externos (B2B). */
     public String buildEmailMarketing(String nomeDestinatario) {
-        String nome = (nomeDestinatario != null && !nomeDestinatario.isBlank()) ? escape(nomeDestinatario) : "Prezado(a)";
+        boolean temNome = nomeDestinatario != null && !nomeDestinatario.isBlank();
+        String saudacao = temNome
+                ? "Ola, <strong style='color:#1e293b;'>" + escape(nomeDestinatario) + "</strong>!"
+                : "Ola!";
 
         String body = """
             <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="margin:0 0 20px;">
@@ -1348,7 +1351,7 @@ public class EmailTemplateService {
             """;
 
         body += "<p style='margin:0 0 16px; color:#334155; font-size:15px; line-height:1.6;'>"
-                + "Ola, <strong style='color:#1e293b;'>" + nome + "</strong>!</p>";
+                + saudacao + "</p>";
 
         body += "<p style='margin:0 0 16px; color:#334155; font-size:15px; line-height:1.6;'>"
                 + "Somos o <strong>TradeLink</strong>, uma plataforma completa para <strong>consultores, assessores e gestores de investimentos</strong> "

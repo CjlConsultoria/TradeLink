@@ -12,7 +12,7 @@ export default {
   historicoPorCampanha(campanha) {
     return api.get(`${BASE}/historico/${campanha}`)
   },
-  preview() {
-    return api.get(`${BASE}/preview`)
+  preview(nome) {
+    return api.get(`${BASE}/preview`, { params: nome ? { nome } : {} })
   }
 }

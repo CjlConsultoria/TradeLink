@@ -93,8 +93,8 @@ public class EmailMarketingService {
         return resultados;
     }
 
-    public String preview() {
-        return emailTemplateService.buildEmailMarketing("Exemplo de Lead");
+    public String preview(String nome) {
+        return emailTemplateService.buildEmailMarketing(nome);
     }
 
     public List<EmailMarketingResponse> historico() {

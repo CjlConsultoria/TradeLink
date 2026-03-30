@@ -535,7 +535,7 @@ function removerSelecionados() {
 async function abrirPreview(contato) {
   preview.value = { visivel: true, loading: true, html: '', contato }
   try {
-    const res = await emailMarketingApi.preview()
+    const res = await emailMarketingApi.preview(contato?.nome || null)
     preview.value.html = res.data.html
   } catch (e) {
     toast.error('Erro ao carregar preview.')

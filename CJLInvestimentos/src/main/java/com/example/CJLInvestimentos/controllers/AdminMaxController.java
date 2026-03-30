@@ -410,8 +410,9 @@ public class AdminMaxController {
     }
 
     @GetMapping("/email-marketing/preview")
-    public ResponseEntity<Map<String, String>> previewEmailMarketing() {
-        String html = emailMarketingService.preview();
+    public ResponseEntity<Map<String, String>> previewEmailMarketing(
+            @RequestParam(required = false) String nome) {
+        String html = emailMarketingService.preview(nome);
         return ResponseEntity.ok(Map.of("html", html));
     }
 }
